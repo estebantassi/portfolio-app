@@ -5,7 +5,7 @@ const db = mysql.createPool({
     host: "localhost",
     user: "root",
     password: "",
-    database: 'main'
+    database: 'portfolioapp'
 }).promise()
 
 module.exports = db;
