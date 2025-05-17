@@ -1,9 +1,29 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import Anyroute from './context/anyroute.jsx'
+import { ToastProvider } from './context/toastcontext.jsx'
+import { BrowserRouter, Route, Routes, Navigate } from 'react-router'
+import "./css/index.css"
+
 import App from './App.jsx'
+import Signup from './pages/signup.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <BrowserRouter>
+      <ToastProvider>
+
+        <Routes>
+          <Route path="*" element={<Navigate to='/home' />} />
+
+          <Route element={<Anyroute />}>
+            <Route path="/home" element={<App />} />
+            <Route path="/signup" element={<Signup />} />
+          </Route>
+
+        </Routes>
+
+      </ToastProvider>
+    </BrowserRouter>
   </StrictMode>,
 )

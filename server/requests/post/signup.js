@@ -2,8 +2,6 @@ const db = require('../../config/database')
 const bcrypt = require('bcrypt')
 require('dotenv').config()
 
-const IsEmailValid = require('../../tools/checks').IsEmailValid
-
 const Signup = async (req, res) => {
 
     if (!req.body) return res.status(400).json("Wrong request")
@@ -23,7 +21,9 @@ const Signup = async (req, res) => {
 
     if (password != passwordcheck) return res.status(400).json("Passwords don't match")
     if (email != emailcheck) return res.status(400).json("Emails don't match")
-    if (!IsEmailValid(email)) return res.status(400).json("Email isn't valid")
+        
+    const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+    if (!emailRegexp.test(email)) return res.status(400).json("Email isn't valid")
 
     const passwordsalt = await bcrypt.genSalt()
     const cryptedpassword = await bcrypt.hash(password, passwordsalt)

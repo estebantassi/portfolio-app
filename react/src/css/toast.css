@@ -1,0 +1,54 @@
+:root {
+    --toast-padding-height: 15px;
+    --toast-text-height: 15px;
+    --toast-margin-height: 10px;
+    --toastbox-top: 10px;
+  }
+
+.toast{
+    color: white;
+    padding: var(--toast-padding-height) 25px var(--toast-padding-height) 25px;
+    font-size: var(--toast-text-height);
+
+    border-radius: 20px;
+    
+
+    animation: toast 5s ease-in-out;
+    animation-fill-mode: forwards;
+    margin-bottom: var(--toast-margin-height);
+
+    border: 2px;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: white;
+}
+
+.toastbox{
+    z-index: 100;
+    
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items:end;
+
+    position: fixed;
+    top: var(--toastbox-top);
+    right: 50px;
+}
+
+@keyframes toast {
+    0% {
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+        margin-top: 0;
+    }
+    100% {
+        opacity: 0;
+        margin-top: -62.5px;
+    }
+}
