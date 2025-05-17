@@ -39,7 +39,7 @@ const Signup = async (req, res) => {
     } catch (err) {
         if (err.errno == 1062) return res.status(400).json("This email is already taken")
 
-        console.log(err)
+        return res.status(400).json("An error occured, please try again later")
     }
 
 }

@@ -7,6 +7,7 @@ import "./css/index.css"
 
 import Home from './pages/home.jsx'
 import Signup from './pages/signup.jsx'
+import Login from './pages/login.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')).render(
           <Route element={<Anyroute />}>
             <Route path="/home" element={<Home />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
           </Route>
 
         </Routes>

@@ -77,7 +77,7 @@ function Signup() {
 
         <label>Password Check</label>
         <input value={data.passwordcheck} onChange={(e) => setData({ ...data, passwordcheck: e.target.value })} />
-
+        
         <button disabled={isbuttondisabled}>SIGNUP</button>
       </form>
     </>
