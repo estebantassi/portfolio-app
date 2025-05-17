@@ -1,10 +1,12 @@
 import { useEffect, useState, useContext } from 'react';
 import { ToastContext } from '../context/toastcontext';
+import { AuthContext } from '../context/authcontext';
 import axios from '../api/axios';
 
 function Signup() {
 
   const { addToast } = useContext(ToastContext)
+  const { signup } = useContext(AuthContext)
 
   const [data, setData] = useState({
     username: "",
@@ -46,16 +48,7 @@ function Signup() {
     const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
     if (!emailRegexp.test(data.email)) return addToast("Email isn't valid", "red")
 
-    try {
-
-      const response = await axios.post('/signup', {
-        ...data
-      })
-
-      addToast(response.data, "green")
-    } catch (err) {
-      addToast(err.response.data, "red")
-    }
+    signup(data)
   }
 
   return (

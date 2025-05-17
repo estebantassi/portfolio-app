@@ -24,6 +24,8 @@
 }
 
 .toastbox{
+    background-color: transparent;
+
     z-index: 100;
     
     margin: 0;

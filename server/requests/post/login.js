@@ -1,5 +1,6 @@
 const db = require('../../config/database')
 const bcrypt = require('bcrypt')
+var jwt = require('jsonwebtoken')
 require('dotenv').config()
 
 const Login = async (req, res) => {
@@ -12,7 +13,7 @@ const Login = async (req, res) => {
 
     try {
         const [[request]] = await db.query(`
-            SELECT password
+            SELECT password, id, username
             FROM users
             WHERE email=?
             `, [email])
@@ -22,22 +23,25 @@ const Login = async (req, res) => {
         const match = await bcrypt.compare(password, request.password)
         if (!match) return res.status(400).json("Wrong password")
 
-        //Log the user
-        res.cookie("accesstoken", "test token, replace with actual token", {
+        var accesstoken = jwt.sign({ id: request.id }, process.env.ACCESS_TOKEN_SECRET)
+        res.cookie("accesstoken", accesstoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
+            path: "/",
             maxAge: 60 * 1000
         })
 
-        res.cookie("refreshtoken", "test token, replace with actual token", {
+        var refreshtoken = jwt.sign({ id: request.id }, process.env.REFRESH_TOKEN_SECRET)
+        res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
-            maxAge: 10 * 1000
+            path: "/refreshtoken",
+            maxAge: 60 * 60 * 1000
         })
 
-        return res.status(200).json("Successfully logged in")
+        return res.status(200).json({ message: "Successfully logged in", user: {username: request.username, id: request.id}})
     } catch (err) {
         return res.status(400).json("An error occured, please try again later")
     }

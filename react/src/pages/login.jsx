@@ -1,10 +1,12 @@
 import { useEffect, useState, useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
+import { AuthContext } from '../context/authcontext'
 import axios from '../api/axios'
 
 function Login() {
 
   const { addToast } = useContext(ToastContext)
+  const { login } = useContext(AuthContext)
 
   const [data, setData] = useState({
     email: "",
@@ -31,18 +33,7 @@ function Login() {
 
     for (const [key, value] of Object.entries(data)) if (value == "") return addToast("Please fill in all the fields", "red")
 
-    try {
-
-      const response = await axios.post('/login', {
-        ...data
-      }, {
-        withCredentials: true
-      })
-
-      addToast(response.data, "green")
-    } catch (err) {
-      addToast(err.response.data, "red")
-    }
+    login(data)
   }
 
   return (
