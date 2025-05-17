@@ -5,7 +5,7 @@ import { ToastProvider } from './context/toastcontext.jsx'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router'
 import "./css/index.css"
 
-import App from './App.jsx'
+import Home from './pages/home.jsx'
 import Signup from './pages/signup.jsx'
 
 createRoot(document.getElementById('root')).render(
@@ -17,7 +17,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="*" element={<Navigate to='/home' />} />
 
           <Route element={<Anyroute />}>
-            <Route path="/home" element={<App />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/signup" element={<Signup />} />
           </Route>
 

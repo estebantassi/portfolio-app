@@ -1,13 +1,12 @@
-import { Outlet, useNavigate } from "react-router"
+import { NavLink } from "react-router"
 
 function Navbar() {
-  let navigate = useNavigate();
 
   return (
     <>
     <nav>
-      <div onClick={() => navigate("/home")}>Home</div>
-      <div onClick={() => navigate("/signup")}>Signup</div>
+      <NavLink to="/home">Home</NavLink>
+      <NavLink to="/signup">Signup</NavLink>
     </nav>
     </>
   )
