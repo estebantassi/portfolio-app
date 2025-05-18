@@ -21,12 +21,7 @@ app.post('/login', require('./requests/post/login').Login)
 
 app.get('/istokenvalid', require('./requests/get/istokenvalid').IsTokenValid)
 
-app.get('/refreshtoken/clearcookies', (req, res) => {
-    console.log(req.cookies)
-    res.clearCookie("refreshtoken", { path: "/refreshtoken" })
-    res.clearCookie("accesstoken", { path: "/" })
-    return res.status(200).json("Cookies cleared")
-})
+app.get('/refreshtoken/logout', require('./requests/get/logout').Logout)
 
 app.get('/refreshtoken/update', require('./requests/get/updateaccesstoken').UpdateAccessToken)
 

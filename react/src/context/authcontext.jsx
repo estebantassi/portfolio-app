@@ -1,4 +1,4 @@
-import { createContext, useState, useContext } from "react"
+import { createContext, useState, useContext, useEffect, useRef } from "react"
 import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import Cookies from 'js-cookie'
@@ -8,7 +8,8 @@ export const AuthContext = createContext()
 export const AuthProvider = ({ children }) => {
 
     const { addToast } = useContext(ToastContext)
-    const [user, setUser] = useState(JSON.parse(Cookies.get("user")))
+    const [user, setUser] = useState(Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null)
+    const timeoutRef = useRef(null)
 
     const login = async (data) => {
         try {
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }) => {
 
             setUser(response.data.user)
             Cookies.set("user", JSON.stringify(response.data.user))
+            checkauth()
             addToast(response.data.message, "green")
         } catch (err) {
             addToast(err.response.data, "red")
@@ -36,6 +38,51 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
             addToast(err.response.data, "red")
         }
+    }
+
+    const logout = async () => {
+        try {
+            const response = await axios.get('/refreshtoken/logout', {
+                withCredentials: true
+            })
+
+            setUser(null)
+            Cookies.remove("user")
+
+            addToast(response.data, "green")
+        } catch (err) {
+            addToast(err.response.data, "red")
+        }
+    }
+
+    useEffect(() => {
+        checkauth()
+
+        return () => {
+            if (timeoutRef.current)
+                clearTimeout(timeoutRef.current)
+        }
+    }, [user])
+
+    const checkauth = async () => {
+        if (!user) return
+
+        if (localStorage.getItem("authtimer") < Date.now() - 3000) {
+            localStorage.setItem("authtimer", Date.now())
+        }
+
+        timeoutRef.current = setTimeout(() => {
+
+            checktoken().catch((err) => {
+                addToast("An unexpected error caused you to get logged out", "red")
+                logout()
+            })
+
+            localStorage.setItem("authtimer", Date.now())
+            checkauth()
+            console.log("Checked user")
+
+        }, localStorage.getItem("authtimer") - Date.now() + 3000)
     }
 
     //Call this when making requests
@@ -62,6 +109,7 @@ export const AuthProvider = ({ children }) => {
 
     let contextData = {
         user,
+        logout,
         login,
         signup
     }

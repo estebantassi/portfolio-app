@@ -6,24 +6,12 @@ import axios from '../api/axios'
 function Home() {
 
   const { addToast } = useContext(ToastContext)
-  const { user } = useContext(AuthContext)
-
-  const clearcookies = async () => {
-    try {
-      const response = await axios.get('/refreshtoken/clearcookies', {
-        withCredentials: true
-      })
-
-      addToast(response.data, "green")
-    } catch (err) {
-      addToast(err.response.data, "red")
-    }
-  }
+  const { user, logout } = useContext(AuthContext)
 
   return (
     <>
       <h1>{ user ? user.username : "home"}</h1>
-      <button onClick={clearcookies}>Clear Cookies</button>
+      <button onClick={logout}>Clear Cookies</button>
     </>
   )
 }
