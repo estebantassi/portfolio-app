@@ -6,12 +6,11 @@ import axios from '../api/axios'
 function Home() {
 
   const { addToast } = useContext(ToastContext)
-  const { user, logout } = useContext(AuthContext)
+  const { user } = useContext(AuthContext)
 
   return (
     <>
       <h1>{ user ? user.username : "home"}</h1>
-      <button onClick={logout}>Clear Cookies</button>
     </>
   )
 }

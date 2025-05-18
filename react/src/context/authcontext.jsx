@@ -2,11 +2,13 @@ import { createContext, useState, useContext, useEffect, useRef } from "react"
 import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import Cookies from 'js-cookie'
+import { useNavigate } from "react-router"
 
 export const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
 
+    const navigate = useNavigate()
     const { addToast } = useContext(ToastContext)
     const [user, setUser] = useState(Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null)
     const timeoutRef = useRef(null)
@@ -22,6 +24,7 @@ export const AuthProvider = ({ children }) => {
             setUser(response.data.user)
             Cookies.set("user", JSON.stringify(response.data.user))
             checkauth()
+            navigate("/home")
             addToast(response.data.message, "green")
         } catch (err) {
             addToast(err.response.data, "red")
@@ -34,6 +37,7 @@ export const AuthProvider = ({ children }) => {
                 ...data
             })
 
+            navigate("/login")
             addToast(response.data, "green")
         } catch (err) {
             addToast(err.response.data, "red")
@@ -53,6 +57,7 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
             addToast(err.response.data, "red")
         }
+        navigate("/home")
     }
 
     useEffect(() => {
