@@ -45,13 +45,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     const logout = async () => {
+        Cookies.remove("user")
+        setUser(null)
+
         try {
             const response = await axios.get('/refreshtoken/logout', {
                 withCredentials: true
             })
-
-            setUser(null)
-            Cookies.remove("user")
 
             addToast(response.data, "green")
         } catch (err) {
@@ -78,12 +78,8 @@ export const AuthProvider = ({ children }) => {
 
         timeoutRef.current = setTimeout(() => {
 
-            checktoken().catch((err) => {
-                addToast("An unexpected error caused you to get logged out", "red")
-                logout()
-            })
-
             localStorage.setItem("authtimer", Date.now())
+            checktoken()
             checkauth()
             console.log("Checked user")
 
@@ -108,6 +104,7 @@ export const AuthProvider = ({ children }) => {
             await axios.get('/refreshtoken/update', { withCredentials: true })
             return true
         } catch (err) {
+            logout()
             return false
         }
     }

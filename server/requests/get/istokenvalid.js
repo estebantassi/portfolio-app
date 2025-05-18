@@ -7,7 +7,6 @@ const IsTokenValid = async (req, res) => {
 
     if (!req.cookies.accesstoken) return res.status(400).json("Missing token")
 
-    console.log(req.cookies)
     const accesstoken = req.cookies.accesstoken
 
     try {
