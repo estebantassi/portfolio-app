@@ -21,13 +21,31 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
+            addToast(response.data.message, "green")
+            return true
+        } catch (err) {
+            addToast(err.response.data, "red")
+            return false
+        }
+    }
+
+    const logincode = async (code) =>
+    {
+        try {
+            const response = await axios.post('/logincode', {
+                code
+            }, {
+                withCredentials: true
+            })
+
             setUser(response.data.user)
             Cookies.set("user", JSON.stringify(response.data.user))
             checkauth()
             navigate("/home")
             addToast(response.data.message, "green")
-        } catch (err) {
-            addToast(err.response.data, "red")
+        } catch (err)
+        {
+             addToast(err.response.data, "red")
         }
     }
 
@@ -113,7 +131,8 @@ export const AuthProvider = ({ children }) => {
         user,
         logout,
         login,
-        signup
+        signup,
+        logincode
     }
 
     return (

@@ -18,6 +18,7 @@ app.use(bodyParser.json({ limit: '10mb' }))
 
 app.post('/signup', require('./requests/post/signup').Signup)
 app.post('/login', require('./requests/post/login').Login)
+app.post('/logincode', require('./requests/post/logincode').LoginCode)
 
 app.get('/istokenvalid', require('./requests/get/istokenvalid').IsTokenValid)
 
