@@ -9,10 +9,11 @@ const GetTokenData = async (req, token, type) => {
         if (type == "access") secret = process.env.ACCESS_TOKEN_SECRET
         if (type == "refresh") secret = process.env.REFRESH_TOKEN_SECRET
         if (type == "temp") secret = process.env.TEMP_TOKEN_SECRET
+        if (type == "verifyemail") secret = process.env.VERIFYEMAIL_TOKEN_SECRET
 
         const decode = jwt.verify(token, secret)
 
-        if (type != "temp") {
+        if (type != "temp" && type != "verifyemail") {
             const [[request]] = await db.query(`
             SELECT accesstokens, refreshtokens
             FROM users

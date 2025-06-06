@@ -14,9 +14,10 @@ import Home from './pages/home.jsx'
 import Signup from './pages/signup.jsx'
 import Login from './pages/login.jsx'
 import Logout from './pages/logout.jsx'
+import VerifyEmail from './pages/verifyemail.jsx'
+
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
@@ -30,6 +31,7 @@ createRoot(document.getElementById('root')).render(
 
             <Route element={<Logoutroute />}>
               <Route path="/signup" element={<Signup />} />
+              <Route path="/verifyemail/:link" element={<VerifyEmail />} />
               <Route path="/login" element={<Login />} /> 
             </Route>
 
@@ -41,6 +43,5 @@ createRoot(document.getElementById('root')).render(
 
         </AuthProvider>
       </ToastProvider>
-    </BrowserRouter>
-  </StrictMode>,
+    </BrowserRouter>,
 )

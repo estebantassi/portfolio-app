@@ -54,7 +54,7 @@ const LoginCode = async (req, res) => {
             secure: true,
             sameSite: 'Strict',
             path: "/",
-            maxAge: process.env.ACCESS_TOKEN_DURATION * 60 * 1000
+            maxAge: process.env.ACCESS_TOKEN_DURATION * 60 * 60 * 1000
         })
 
         var refreshtoken = jwt.sign({ id: request.id, ip: ip }, process.env.REFRESH_TOKEN_SECRET)
@@ -63,7 +63,7 @@ const LoginCode = async (req, res) => {
             secure: true,
             sameSite: 'Strict',
             path: "/refreshtoken",
-            maxAge: process.env.REFRESH_TOKEN_DURATION * 60 * 1000
+            maxAge: process.env.REFRESH_TOKEN_DURATION * 60 * 60 * 1000
         })
 
         res.clearCookie("temptoken", { path: "/" })
@@ -105,7 +105,6 @@ const LoginCode = async (req, res) => {
 
         return res.status(200).json({ message: "Successfully logged in", user: { username: request.username, id: request.id } })
     } catch (err) {
-        console.log(err)
         return res.status(400).json("An error occured, please try again later")
     }
 

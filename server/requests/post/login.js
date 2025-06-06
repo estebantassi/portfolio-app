@@ -16,12 +16,14 @@ const Login = async (req, res) => {
 
     try {
         const [[request]] = await db.query(`
-            SELECT password, logincodes, id
+            SELECT password, logincodes, id, verified
             FROM users
             WHERE email=?
             `, [email])
 
         if (!request) return res.status(400).json("User not found")
+
+        if (request.verified == 0) return res.status(400).json("Your email isn't verified, please check your inbox")
 
         const match = await bcrypt.compare(password, request.password)
         if (!match) return res.status(400).json("Wrong password")
@@ -56,24 +58,23 @@ const Login = async (req, res) => {
             WHERE email=?
             `, [newlogincodes, email])
 
-transporter.sendMail({
-    from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-    to: request.username + ' <' + email + '>',
-    subject: "Login code",
-    html: `
-    <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">
-        <h3 style="margin-bottom: 10px;">Here is your login code:</h3>
-        <h1 style="margin: 0; font-size: 36px; color: #2c3e50;">${code}</h1>
-        <p style="margin-top: 20px; font-size: 14px; color: #555;">
-            If you did not request this code, please contact our support team and change your password.
-        </p>
-    </div>
-    `,
-});
+    transporter.sendMail({
+        from: '"Portfolio security system" <' + process.env.EMAIL + '>',
+        to: request.username + ' <' + email + '>',
+        subject: "Login code",
+        html: `
+        <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: black;">Here is your login code:</h2>
+            <h1 style="margin-top: 10; color: #2c3e50;">${code}</h1>
+            <h3 style="margin-top: 20px; color: black;">
+                If you did not request this code, please contact our support team and change your password.
+            </h3>
+        </div>
+        `,
+    })
 
         return res.status(200).json({ message: "A login code has been sent to your email" })
     } catch (err) {
-        console.log(err)
         return res.status(400).json("An error occured, please try again later")
     }
 
