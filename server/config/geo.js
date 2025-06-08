@@ -10,12 +10,13 @@ let lookup
 })()
 
 function getClientIp(req) {
-return "78.122.30.59"
+  return "78.122.30.59"
+  return req.socket.remoteAddress
+  
   const xForwarded = req.headers['x-forwarded-for']
   if (xForwarded) {
     return xForwarded.split(',')[0].trim()
   }
-  return req.socket.remoteAddress
 }
 
 function getGeoFromIp(ip) {

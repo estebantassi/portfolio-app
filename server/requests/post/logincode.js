@@ -18,7 +18,6 @@ const LoginCode = async (req, res) => {
     try {
 
         const data = await GetTokenData(req, temptoken, "temp")
-        console.log(data)
         if (data == null) return res.status(400).json("Time expired")
 
         const [[request]] = await db.query(`
@@ -47,6 +46,8 @@ const LoginCode = async (req, res) => {
 
         console.log(geo.city.names.en)
         console.log(geo.country.iso_code)
+
+        res.clearCookie("refreshtoken", { path: "/refreshtoken" })
 
         var accesstoken = jwt.sign({ id: request.id, ip: ip }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {

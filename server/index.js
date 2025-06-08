@@ -23,8 +23,9 @@ app.post('/login', require('./requests/post/login').Login)
 app.post('/logincode', require('./requests/post/logincode').LoginCode)
 
 app.get('/istokenvalid', require('./requests/get/istokenvalid').IsTokenValid)
+app.post('/getsensitivedata', require('./requests/post/getsensitivedata').GetSensitiveData)
 
-app.get('/refreshtoken/logout', require('./requests/get/logout').Logout)
+app.get('/refreshtoken/logout', require('./requests/post/logout').Logout)
 
 app.get('/refreshtoken/update', require('./requests/get/updateaccesstoken').UpdateAccessToken)
 

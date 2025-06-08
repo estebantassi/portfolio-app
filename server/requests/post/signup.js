@@ -2,7 +2,6 @@ const db = require('../../config/database')
 const bcrypt = require('bcrypt')
 require('dotenv').config()
 var jwt = require('jsonwebtoken')
-require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 
 const Signup = async (req, res) => {

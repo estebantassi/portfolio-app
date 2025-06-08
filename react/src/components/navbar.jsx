@@ -13,6 +13,7 @@ function Navbar() {
       {user ? <></> : <NavLink to="/signup">Signup</NavLink>}
       {user ? <></> : <NavLink to="/login">Login</NavLink>}
       {user ? <NavLink to="/logout">Logout</NavLink> : <></>}
+      {user ? <NavLink to="/accountsettings">Account Settings</NavLink> : <></>}
     </nav>
     </>
   )

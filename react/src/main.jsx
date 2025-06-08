@@ -15,6 +15,7 @@ import Signup from './pages/signup.jsx'
 import Login from './pages/login.jsx'
 import Logout from './pages/logout.jsx'
 import VerifyEmail from './pages/verifyemail.jsx'
+import AccountSettings from './pages/accountsettings.jsx'
 
 
 createRoot(document.getElementById('root')).render(
@@ -37,6 +38,7 @@ createRoot(document.getElementById('root')).render(
 
             <Route element={<Protectedroute />}>
               <Route path="/logout" element={<Logout />} />
+              <Route path="/accountsettings" element={<AccountSettings />} />
             </Route>
 
           </Routes>
