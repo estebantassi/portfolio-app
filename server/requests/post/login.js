@@ -14,11 +14,15 @@ const Login = async (req, res) => {
     const email = req.body.email
     const password = req.body.password
 
+    const connection = await db.getConnection()
     try {
-        const [[request]] = await db.query(`
+        await connection.beginTransaction()
+
+        const [[request]] = await connection.query(`
             SELECT password, logincodes, id, verified
             FROM users
             WHERE email=?
+            FOR UPDATE
             `, [email])
 
         if (!request) return res.status(400).json("User not found")
@@ -52,11 +56,13 @@ const Login = async (req, res) => {
         })
 
 
-        await db.query(`
+        await connection.query(`
             UPDATE users
             SET logincodes = ?
             WHERE email=?
             `, [newlogincodes, email])
+
+        await connection.commit()
 
     transporter.sendMail({
         from: '"Portfolio security system" <' + process.env.EMAIL + '>',
@@ -75,7 +81,10 @@ const Login = async (req, res) => {
 
         return res.status(200).json({ message: "A login code has been sent to your email" })
     } catch (err) {
+        await connection.rollback()
         return res.status(400).json("An error occured, please try again later")
+    } finally {
+        connection.release()
     }
 
 }

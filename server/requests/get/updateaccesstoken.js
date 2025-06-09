@@ -12,11 +12,15 @@ const UpdateAccessToken = async (req, res) => {
     const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
     if (data == null) return res.status(400).json("Invalid token")
 
+    const connection = await db.getConnection()
     try {
-        const [[request]] = await db.query(`
+        await connection.beginTransaction()
+
+        const [[request]] = await connection.query(`
             SELECT email, refreshtokens, accesstokens
             FROM users
             WHERE id=?
+            FOR UPDATE
         `, [data.id])
 
         if (!request) return res.status(400).json("User not found")
@@ -85,15 +89,19 @@ const UpdateAccessToken = async (req, res) => {
             }
         })
 
-        await db.query(`
+        await connection.query(`
             UPDATE users
             SET accesstokens=?, refreshtokens=?
             WHERE email=?
             `, [newaccesstokensstr, newrefreshtokensstr, request.email])
 
+        await connection.commit()
         return res.status(200).json("Updated token")
     } catch (err) {
+        await connection.rollback()
         return res.status(400).json("An error occured, please try again later")
+    } finally {
+        connection.release()
     }
 }
 

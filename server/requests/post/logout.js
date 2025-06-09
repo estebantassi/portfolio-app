@@ -9,14 +9,16 @@ const Logout = async (req, res) => {
     res.clearCookie("refreshtoken", { path: "/refreshtoken" })
     res.clearCookie("accesstoken", { path: "/" })
 
+    const connection = await db.getConnection()
     try {
         const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
         if (!data || !data.id) return res.status(400).json("Invalid token")
 
-        const [[request]] = await db.query(`
+        const [[request]] = await connection.query(`
             SELECT refreshtokens, accesstokens
             FROM users
             WHERE id=?
+            FOR UPDATE
             `, [data.id])
 
         if (!request) return res.status(400).json("User doesn't exist")
@@ -46,15 +48,20 @@ const Logout = async (req, res) => {
             }
         })
 
-        await db.query(`
+        await connection.query(`
             UPDATE users
             SET accesstokens = ?, refreshtokens = ?
             WHERE id=?
             `, [newaccesstokens, newrefreshtokens, data.id])
 
+        await connection.commit()
+
         return res.status(200).json("Successfully logged out")
     } catch (err) {
+        await connection.rollback()
         return res.status(400).json("Error logging you out")
+    } finally {
+        connection.release()
     }
 }
 

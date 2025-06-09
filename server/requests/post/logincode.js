@@ -15,15 +15,17 @@ const LoginCode = async (req, res) => {
     const code = req.body.code
     const temptoken = req.cookies.temptoken
 
+    const connection = await db.getConnection()
     try {
 
         const data = await GetTokenData(req, temptoken, "temp")
         if (data == null) return res.status(400).json("Time expired")
 
-        const [[request]] = await db.query(`
+        const [[request]] = await connection.query(`
             SELECT logincodes, id, username, refreshtokens, accesstokens, email
             FROM users
             WHERE id=?
+            FOR UPDATE
             `, [data.id])
 
         if (!request) return res.status(400).json("User not found")
@@ -55,7 +57,7 @@ const LoginCode = async (req, res) => {
             secure: true,
             sameSite: 'Strict',
             path: "/",
-            maxAge: process.env.ACCESS_TOKEN_DURATION * 60 * 60 * 1000
+            maxAge: 10 * 1000
         })
 
         var refreshtoken = jwt.sign({ id: request.id, ip: ip }, process.env.REFRESH_TOKEN_SECRET)
@@ -91,11 +93,13 @@ const LoginCode = async (req, res) => {
             }
         })
 
-        await db.query(`
+        await connection.query(`
             UPDATE users
             SET accesstokens=?, refreshtokens=?, logincodes=?
             WHERE email=?
             `, [newaccesstokens, newrefreshtokens, newlogincodes, request.email])
+
+        await connection.commit()
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
@@ -106,7 +110,10 @@ const LoginCode = async (req, res) => {
 
         return res.status(200).json({ message: "Successfully logged in", user: { username: request.username, id: request.id } })
     } catch (err) {
+        await connection.rollback()
         return res.status(400).json("An error occured, please try again later")
+    } finally {
+        connection.release()
     }
 
 }
