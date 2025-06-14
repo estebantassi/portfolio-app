@@ -34,19 +34,23 @@ const Login = async (req, res) => {
 
         const code = generatelogincode()
 
+        const tempDurationMs = Number(process.env.TEMP_TOKEN_DURATION) * 60 * 60 * 1000
         const temptoken = jwt.sign({ id: request.id }, process.env.TEMP_TOKEN_SECRET)
         res.cookie("temptoken", temptoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
             path: "/",
-            maxAge: process.env.TEMP_TOKEN_DURATION * 60 * 60 * 1000
+            maxAge: tempDurationMs
         })
+
+        const date = new Date()
+        date.setTime(date.getTime() + tempDurationMs)
 
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
-            VALUES (?, ?, ?, NOW() + INTERVAL ` + process.env.TEMP_TOKEN_DURATION + ` HOUR)
-        `, [request.id, 'logincode', code])
+            VALUES (?, ?, ?, ?)
+        `, [request.id, 'logincode', code, date])
 
         await connection.commit()
 

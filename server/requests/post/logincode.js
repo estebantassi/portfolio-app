@@ -6,6 +6,7 @@ const transporter = require('../../config/mailsender').transporter
 const { getClientIp, getGeoFromIp } = require('../../config/geo')
 const { generatelogincode } = require("../../tools/tools")
 const { GetTokenData } = require('../../tools/gettokendata')
+const { v4: uuidv4 } = require('uuid')
 
 const LoginCode = async (req, res) => {
 
@@ -41,33 +42,44 @@ const LoginCode = async (req, res) => {
         res.clearCookie("accesstoken", { path: "/" })
         res.clearCookie("temptoken", { path: "/" })
 
-        var accesstoken = jwt.sign({ id: request.userid, ip: ip }, process.env.ACCESS_TOKEN_SECRET)
+        const refreshDurationMs = Number(process.env.REFRESH_TOKEN_DURATION) * 60 * 60 * 1000
+        const accessDurationMs = Number(process.env.ACCESS_TOKEN_DURATION) * 60 * 60 * 1000
+
+        const accesstokenjti = uuidv4()
+        var accesstoken = jwt.sign({ id: request.userid, ip: ip, jti: accesstokenjti }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
             path: "/",
-            maxAge: 10 * 1000
+            maxAge: accessDurationMs
         })
 
-        var refreshtoken = jwt.sign({ id: request.userid, ip: ip }, process.env.REFRESH_TOKEN_SECRET)
+        const refreshtokenjti = uuidv4()
+        var refreshtoken = jwt.sign({ id: request.userid, ip: ip, jti: refreshtokenjti }, process.env.REFRESH_TOKEN_SECRET)
         res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
             path: "/refreshtoken",
-            maxAge: process.env.REFRESH_TOKEN_DURATION * 60 * 60 * 1000
+            maxAge: refreshDurationMs
         })
 
-        await connection.query(`
-            INSERT INTO tokens (userid, type, value, expires_at)
-            VALUES (?, ?, ?, NOW() + INTERVAL ` + process.env.REFRESH_TOKEN_DURATION + ` HOUR)
-        `, [request.userid, 'refresh', refreshtoken])
+        const refreshdate = new Date()
+        refreshdate.setTime(refreshdate.getTime() + refreshDurationMs)
+
+        const accessdate = new Date()
+        accessdate.setTime(accessdate.getTime() + accessDurationMs)
 
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
-            VALUES (?, ?, ?, NOW() + INTERVAL 30 SECOND)
-        `, [request.userid, 'access', accesstoken])
+            VALUES (?, ?, ?, ?)
+        `, [request.userid, 'refresh', refreshtokenjti, refreshdate])
+
+        await connection.query(`
+            INSERT INTO tokens (userid, type, value, expires_at)
+            VALUES (?, ?, ?, ?)
+        `, [request.userid, 'access', accesstokenjti, accessdate])
 
         await connection.query(`
             DELETE FROM tokens

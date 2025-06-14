@@ -14,14 +14,14 @@ const VerifyEmail = async (req, res) => {
     const connection = await db.getConnection()
     try {
         const data = await GetTokenData(req, req.body.token, "verifyemail")
-        if (data == null) return res.status(400).json("Invalid link")
+        if (!data || !data.id || !data.jti || !data.email) return res.status(400).json("Invalid link")
 
         const [[request]] = await connection.query(`
             SELECT value, id, userid
             FROM tokens
             WHERE userid=? AND value=? AND type=?
             FOR UPDATE
-            `, [data.id, req.body.token, "signup"])
+            `, [data.id, data.jti, "signup"])
 
         if (!request) return res.status(400).json("Error")
 

@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 require('dotenv').config()
 var jwt = require('jsonwebtoken')
 const transporter = require('../../config/mailsender').transporter
+const { v4: uuidv4 } = require('uuid')
 
 const Signup = async (req, res) => {
 
@@ -34,19 +35,24 @@ const Signup = async (req, res) => {
     try {
         await connection.beginTransaction()
 
+        const date = new Date()
         const [[request]] = await connection.query(`
-            INSERT INTO users (username, email, password)
+            INSERT INTO users (username, email, password, created_at)
             VALUES (?, ?, ?, ?)
-        `, [username, email, cryptedpassword])
+        `, [username, email, cryptedpassword, date])
 
         if (!request) return res.status(400).json("Error with database")
 
-        const verifytoken = jwt.sign({ email, id: request.id }, process.env.VERIFYEMAIL_TOKEN_SECRET)
+        const verifyjti = uuidv4()
+        const verifytoken = jwt.sign({ email, id: request.id, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
+
+        const verificationdate = new Date()
+        verificationdate.setTime(verificationdate.getTime() + process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000)
 
         await connection.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
-            VALUES (?, ?, ?, NOW() + INTERVAL 30 MINUTE)
-        `, ["signup", verifytoken, request.id])
+            VALUES (?, ?, ?, ?)
+        `, ["signup", verifyjti, request.id, verificationdate])
 
         await transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

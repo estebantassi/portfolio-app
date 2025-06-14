@@ -10,21 +10,24 @@ const Logout = async (req, res) => {
 
     try {
         const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
-        if (!data || !data.id) return res.status(400).json("Invalid token")
+        if (!data || !data.id || data.jti) return res.status(400).json("Invalid token")
 
         await db.query(`
             DELETE FROM tokens
             WHERE userid=? AND value=? AND type=?
-            `, [data.id, req.cookies.refreshtoken, 'refresh'])
+            `, [data.id, data.jti, 'refresh'])
 
-        if (req.cookies.accesstoken)
-        {
+        if (req.cookies.accesstoken) {
             try {
-            await db.query(`
-                DELETE FROM tokens
-                WHERE userid=? AND value=? AND type=?
-                `, [data.id, req.cookies.accesstoken, 'access'])
-            } catch (err) {}
+                const data2 = await GetTokenData(req, req.cookies.accesstoken, "access")
+                if (data2 && data2.jti) {
+                    await db.query(`
+                    DELETE FROM tokens
+                    WHERE userid=? AND value=? AND type=?
+                `, [data.id, data2.jti, 'access'])
+                }
+
+            } catch (err) { }
         }
 
         return res.status(200).json("Successfully logged out")
