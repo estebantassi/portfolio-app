@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
-const { GetTokenData } = require('../../get/gettokendata')
+const { GetTokenData } = require('../get/gettokendata')
 
 const VerifyEmail = async (req, res) => {
 

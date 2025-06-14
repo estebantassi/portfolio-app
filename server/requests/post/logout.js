@@ -1,4 +1,4 @@
-const { GetTokenData } = require('../../get/gettokendata')
+const { GetTokenData } = require('../get/gettokendata')
 const db = require('../../config/database')
 
 const Logout = async (req, res) => {

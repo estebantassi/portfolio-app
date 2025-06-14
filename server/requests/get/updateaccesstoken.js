@@ -1,7 +1,7 @@
 const db = require('../../config/database')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
-const { GetTokenData } = require("../../get/gettokendata")
+const { GetTokenData } = require("../get/gettokendata")
 const { v4: uuidv4 } = require('uuid')
 
 const UpdateAccessToken = async (req, res) => {

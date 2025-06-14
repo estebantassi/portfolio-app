@@ -7,8 +7,7 @@ const { v4: uuidv4 } = require('uuid')
 
 const Signup = async (req, res) => {
 
-    if (!req.body) return res.status(400).json("Wrong request")
-    if (!req.body.username || !req.body.email || !req.body.emailcheck || !req.body.password || !req.body.passwordcheck) return res.status(400).json("Please fill out all the necessary fields")
+    if (!req.body || !req.body.username || !req.body.email || !req.body.emailcheck || !req.body.password || !req.body.passwordcheck) return res.status(400).json("Please fill out all the necessary fields")
 
     const username = req.body.username
     const email = req.body.email
@@ -72,8 +71,8 @@ const Signup = async (req, res) => {
         await connection.commit()
         return res.status(200).json("Verification link sent to your email")
     } catch (err) {
+        await connection.rollback()
         if (err.errno == 1062) return res.status(400).json("This email is already taken")
-
         return res.status(400).json("An error occured, please try again later")
     } finally {
         connection.release()

@@ -3,7 +3,7 @@ var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { getClientIp, getGeoFromIp } = require('../../config/geo')
-const { GetTokenData } = require('../../get/gettokendata')
+const { GetTokenData } = require('../get/gettokendata')
 const { v4: uuidv4 } = require('uuid')
 
 const LoginCode = async (req, res) => {

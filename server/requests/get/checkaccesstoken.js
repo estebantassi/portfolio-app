@@ -1,4 +1,4 @@
-const { GetTokenData } = require('../../get/gettokendata')
+const { GetTokenData } = require('../get/gettokendata')
 
 const CheckAccessToken = async (req, res) => {
 

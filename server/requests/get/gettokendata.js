@@ -1,7 +1,7 @@
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
-const db = require('../config/database')
-const { getClientIp } = require('../config/geo')
+const db = require('../../config/database')
+const { getClientIp } = require('../../config/geo')
 
 const GetTokenData = async (req, token, type) => {
     const secretMap = {
