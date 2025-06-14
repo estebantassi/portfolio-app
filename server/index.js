@@ -20,14 +20,14 @@ app.use(bodyParser.json({ limit: '10mb' }))
 app.post('/signup', require('./requests/post/signup').Signup)
 app.post('/verifyemail', require('./requests/post/verifyemail').VerifyEmail)
 app.post('/login', require('./requests/post/login').Login)
-app.post('/logincode', require('./requests/post/logincode').LoginCode)
+app.post('/logintoken/logincode', require('./requests/post/logincode').LoginCode)
 
-app.get('/istokenvalid', require('./requests/get/istokenvalid').IsTokenValid)
-app.post('/getsensitivedata', require('./requests/post/getsensitivedata').GetSensitiveData)
+app.get('/auth/checkaccesstoken', require('./requests/get/checkaccesstoken').CheckAccessToken)
+app.post('/auth/getsensitivedata', require('./requests/post/getsensitivedata').GetSensitiveData)
 
-app.get('/refreshtoken/logout', require('./requests/post/logout').Logout)
+app.get('/auth/refreshtoken/logout', require('./requests/post/logout').Logout)
 
-app.get('/refreshtoken/update', require('./requests/get/updateaccesstoken').UpdateAccessToken)
+app.get('/auth/refreshtoken/update', require('./requests/get/updateaccesstoken').UpdateAccessToken)
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 

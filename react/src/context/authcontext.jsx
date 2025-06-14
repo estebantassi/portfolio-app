@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            addToast(response.data.message, "green")
+            addToast(response.data, "green")
             return true
         } catch (err) {
             addToast(err.response.data, "red")
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     const logincode = async (code) =>
     {
         try {
-            const response = await axios.post('/logincode', {
+            const response = await axios.post('/logintoken/logincode', {
                 code
             }, {
                 withCredentials: true
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null)
 
         try {
-            const response = await axios.get('/refreshtoken/logout', {
+            const response = await axios.get('/auth/refreshtoken/logout', {
                 withCredentials: true
             })
 
@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
     //Call this when making requests
     const checktoken = async () => {
         try {
-            await axios.get('/istokenvalid', { withCredentials: true })
+            await axios.get('/auth/checkaccesstoken', { withCredentials: true })
             return true
         } catch (err) {
             if (err.response.data == "Missing token" || err.response.data == "Invalid token") {
@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }) => {
 
     const updatetoken = async () => {
         try {
-            await axios.get('/refreshtoken/update', { withCredentials: true })
+            await axios.get('/auth/refreshtoken/update', { withCredentials: true })
             return true
         } catch (err) {
             logout()

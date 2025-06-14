@@ -2,7 +2,7 @@ var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const db = require('../../config/database')
 const { getClientIp, getGeoFromIp } = require('../../config/geo')
-const { GetTokenData } = require('../../tools/gettokendata')
+const { GetTokenData } = require('../../get/gettokendata')
 const bcrypt = require('bcrypt')
 
 const GetSensitiveData = async (req, res) => {

@@ -4,17 +4,16 @@ const db = require('../config/database')
 const { getClientIp } = require('../config/geo')
 
 const GetTokenData = async (req, token, type) => {
-    try {
-        const secretMap = {
-            access: process.env.ACCESS_TOKEN_SECRET,
-            refresh: process.env.REFRESH_TOKEN_SECRET,
-            temp: process.env.TEMP_TOKEN_SECRET,
-            verifyemail: process.env.VERIFYEMAIL_TOKEN_SECRET,
-        }
-  
-        const secret = secretMap[type]
-        if (!secret) return null
+    const secretMap = {
+        access: process.env.ACCESS_TOKEN_SECRET,
+        refresh: process.env.REFRESH_TOKEN_SECRET,
+        temp: process.env.TEMP_TOKEN_SECRET,
+        verifyemail: process.env.VERIFYEMAIL_TOKEN_SECRET,
+    }
+    const secret = secretMap[type]
+    if (!secret) return null
 
+    try {
         const decode = jwt.verify(token, secret)
         if (!decode) return null
 
@@ -27,8 +26,7 @@ const GetTokenData = async (req, token, type) => {
                 WHERE type=? AND value=? AND userid=?
             `, [type, decode.jti, decode.id])
 
-            if (!request) return null
-            if (new Date(request.expires_at) < new Date()) return null
+            if (!request || !request.expires_at || new Date(request.expires_at) < new Date()) return null
 
             const ip = getClientIp(req)
             if (ip != decode.ip) return null
