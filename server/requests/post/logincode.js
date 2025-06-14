@@ -28,9 +28,14 @@ const LoginCode = async (req, res) => {
             FOR UPDATE
             `, [data.id, req.body.code])
 
-        if (request == null || request.userid == null || request.tokenid == null || request.username == null || request.email == null) {
+        if (request == null || request.userid == null || request.tokenid == null || request.username == null || request.email == null || request.expires_at == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
+        }
+
+        if (new Date(request.expires_at) < new Date()) {
+            connection.rollback()
+            return res.status(400).json("Code expired")
         }
 
         const ip = getClientIp(req)
@@ -85,7 +90,7 @@ const LoginCode = async (req, res) => {
             WHERE id=?
             `, [request.tokenid])
 
-        await transporter.sendMail({
+        transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
             to: request.username + ' <' + request.email + '>',
             subject: "New login on your account",

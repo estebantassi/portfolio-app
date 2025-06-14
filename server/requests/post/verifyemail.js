@@ -1,6 +1,4 @@
 const db = require('../../config/database')
-const bcrypt = require('bcrypt')
-var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { GetTokenData } = require('../get/gettokendata')
@@ -12,16 +10,24 @@ const VerifyEmail = async (req, res) => {
     const connection = await db.getConnection()
     try {
         const data = await GetTokenData(req, req.body.token, "verifyemail")
-        if (data == null || data.id == null || data.jti == null || data.email == null) return res.status(400).json("Invalid link")
+        if (data == null || data.email == null) return res.status(400).json("Invalid link")
 
         const [[request]] = await connection.query(`
-            SELECT value, id, userid
+            SELECT value, id, userid, expires_at
             FROM tokens
             WHERE userid=? AND value=? AND type=?
             FOR UPDATE
             `, [data.id, data.jti, "signup"])
 
-        if (request == null) return res.status(400).json("Error")
+        if (request == null || request.id == null || request.userid == null || request.expires_at == null) {
+            await connection.rollback()
+            return res.status(400).json("Error")
+        }
+        
+        if (new Date(request.expires_at) < new Date()) {
+            await connection.rollback()
+            return res.status(400).json("Verification expired, the account you created will be deleted within 24 hours")
+        }
 
         await connection.query(`
             DELETE FROM tokens
@@ -34,8 +40,6 @@ const VerifyEmail = async (req, res) => {
             WHERE id=?
             `, [request.userid])
 
-        await connection.commit()
-
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
             to: 'User <' + data.email + '>',
@@ -47,6 +51,7 @@ const VerifyEmail = async (req, res) => {
         `,
         })
 
+        await connection.commit()
         return res.status(200).json({ message: "Email verified" })
     } catch (err) {
         await connection.rollback()

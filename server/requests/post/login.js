@@ -58,7 +58,7 @@ const Login = async (req, res) => {
             VALUES (?, ?, ?, ?)
         `, [request.id, 'logincode', code, date])
 
-        await transporter.sendMail({
+        transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
             to: request.username + ' <' + email + '>',
             subject: "Login code",

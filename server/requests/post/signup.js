@@ -40,20 +40,23 @@ const Signup = async (req, res) => {
             VALUES (?, ?, ?, ?)
         `, [username, email, cryptedpassword, date])
 
-        if (request == null || request.insertId == null) return res.status(400).json("Error with database")
+        if (request == null || request.insertId == null) {
+            await connection.rollback()
+            return res.status(400).json("Couldn't create account")
+        }
 
         const verifyjti = uuidv4()
         const verifytoken = jwt.sign({ email, id: request.insertId, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
 
-        const verificationdate = new Date()
-        verificationdate.setTime(verificationdate.getTime() + process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000)
+        const verificationDurationMs = process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000
+        const verificationdate = new Date(Date.now() + verificationDurationMs)
 
         await connection.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
             VALUES (?, ?, ?, ?)
         `, ["signup", verifyjti, request.insertId, verificationdate])
 
-        await transporter.sendMail({
+        transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
             to: username + ' <' + email + '>',
             subject: "Verification link",
@@ -77,7 +80,6 @@ const Signup = async (req, res) => {
     } finally {
         connection.release()
     }
-
 }
 
 module.exports = { Signup }
