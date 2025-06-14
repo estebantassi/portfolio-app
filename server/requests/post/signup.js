@@ -30,23 +30,25 @@ const Signup = async (req, res) => {
     const passwordsalt = await bcrypt.genSalt()
     const cryptedpassword = await bcrypt.hash(password, passwordsalt)
 
+    const connection = await db.getConnection()
     try {
+        await connection.beginTransaction()
 
-        const verifytoken = jwt.sign({ email }, process.env.VERIFYEMAIL_TOKEN_SECRET)
-        res.cookie("verifytoken", verifytoken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Strict',
-            path: "/",
-            maxAge: process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 1000
-        })
-
-        await db.query(`
-            INSERT INTO users (username, email, password, verificationtoken)
+        const [[request]] = await connection.query(`
+            INSERT INTO users (username, email, password)
             VALUES (?, ?, ?, ?)
-        `, [username, email, cryptedpassword, verifytoken])
+        `, [username, email, cryptedpassword])
 
-        transporter.sendMail({
+        if (!request) return res.status(400).json("Error with database")
+
+        const verifytoken = jwt.sign({ email, id: request.id }, process.env.VERIFYEMAIL_TOKEN_SECRET)
+
+        await connection.query(`
+            INSERT INTO tokens (type, value, userid, expires_at)
+            VALUES (?, ?, ?, NOW() + INTERVAL 30 MINUTE)
+        `, ["signup", verifytoken, request.id])
+
+        await transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
             to: username + ' <' + email + '>',
             subject: "Verification link",
@@ -61,11 +63,14 @@ const Signup = async (req, res) => {
             `,
         })
 
+        await connection.commit()
         return res.status(200).json("Verification link sent to your email")
     } catch (err) {
         if (err.errno == 1062) return res.status(400).json("This email is already taken")
 
         return res.status(400).json("An error occured, please try again later")
+    } finally {
+        connection.release()
     }
 
 }

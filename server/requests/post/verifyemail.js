@@ -16,21 +16,25 @@ const VerifyEmail = async (req, res) => {
         const data = await GetTokenData(req, req.body.token, "verifyemail")
         if (data == null) return res.status(400).json("Invalid link")
 
-
         const [[request]] = await connection.query(`
-            SELECT verificationtoken
-            FROM users
-            WHERE email=?
+            SELECT value, id, userid
+            FROM tokens
+            WHERE userid=? AND value=? AND type=?
             FOR UPDATE
-            `, [data.email])
+            `, [data.id, req.body.token, "signup"])
 
-        if (request.verificationtoken != req.body.token) return res.status(400).json("Error")
+        if (!request) return res.status(400).json("Error")
+
+        await connection.query(`
+            DELETE FROM tokens
+            WHERE id=?
+            `, [request.id])
 
         await connection.query(`
             UPDATE users
-            SET verificationtoken="", verified=1
-            WHERE email=?
-            `, [data.email])
+            SET verified=1
+            WHERE id=?
+            `, [request.userid])
 
         await connection.commit()
 

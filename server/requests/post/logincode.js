@@ -22,36 +22,26 @@ const LoginCode = async (req, res) => {
         if (data == null) return res.status(400).json("Time expired")
 
         const [[request]] = await connection.query(`
-            SELECT logincodes, id, username, refreshtokens, accesstokens, email
-            FROM users
-            WHERE id=?
+            SELECT users.id AS userid, username, email, value, expires_at, tokens.id AS tokenid
+            FROM tokens
+            INNER JOIN users ON tokens.userid = users.id
+            WHERE userid = ? AND value=?
             FOR UPDATE
-            `, [data.id])
+            `, [data.id, code])
 
-        if (!request) return res.status(400).json("User not found")
+        if (!request) return res.status(400).json("Invalid code")
 
-        let logincodes = request.logincodes.split(" , ")
-        if (!logincodes.includes(code)) return res.status(400).json("Invalid code")
-
-        const index = logincodes.indexOf(code);
-        if (index > -1) {
-            logincodes.splice(index, 1)
-        }
-        let newlogincodes
-        logincodes.forEach(element => {
-            if (newlogincodes == "") newlogincodes = element
-            else newlogincodes = newlogincodes + " , " + element
-        })
+        //DO THIS WHEN MANUAL DATES ARE ADDED TO THE DB
+        //if (new Date(request.expires_at) < new Date()) return res.status(400).json("Code expired")
 
         const ip = getClientIp(req)
         const geo = getGeoFromIp(ip)
 
-        console.log(geo.city.names.en)
-        console.log(geo.country.iso_code)
-
         res.clearCookie("refreshtoken", { path: "/refreshtoken" })
+        res.clearCookie("accesstoken", { path: "/" })
+        res.clearCookie("temptoken", { path: "/" })
 
-        var accesstoken = jwt.sign({ id: request.id, ip: ip }, process.env.ACCESS_TOKEN_SECRET)
+        var accesstoken = jwt.sign({ id: request.userid, ip: ip }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {
             httpOnly: true,
             secure: true,
@@ -60,7 +50,7 @@ const LoginCode = async (req, res) => {
             maxAge: 10 * 1000
         })
 
-        var refreshtoken = jwt.sign({ id: request.id, ip: ip }, process.env.REFRESH_TOKEN_SECRET)
+        var refreshtoken = jwt.sign({ id: request.userid, ip: ip }, process.env.REFRESH_TOKEN_SECRET)
         res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,
             secure: true,
@@ -69,35 +59,20 @@ const LoginCode = async (req, res) => {
             maxAge: process.env.REFRESH_TOKEN_DURATION * 60 * 60 * 1000
         })
 
-        res.clearCookie("temptoken", { path: "/" })
-
-        let oldrefreshtokens = request.refreshtokens.split(" , ").slice(-2)
-        oldrefreshtokens.push(refreshtoken)
-
-        let newrefreshtokens = ""
-        oldrefreshtokens.forEach(element => {
-            if (element != "") {
-                if (newrefreshtokens == "") newrefreshtokens = element
-                else newrefreshtokens = newrefreshtokens + " , " + element
-            }
-        })
-
-        let oldaccesstokens = request.accesstokens.split(" , ").slice(-2)
-        oldaccesstokens.push(accesstoken)
-
-        let newaccesstokens = ""
-        oldaccesstokens.forEach(element => {
-            if (element != "") {
-                if (newaccesstokens == "") newaccesstokens = element
-                else newaccesstokens = newaccesstokens + " , " + element
-            }
-        })
+        await connection.query(`
+            INSERT INTO tokens (userid, type, value, expires_at)
+            VALUES (?, ?, ?, NOW() + INTERVAL ` + process.env.REFRESH_TOKEN_DURATION + ` HOUR)
+        `, [request.userid, 'refresh', refreshtoken])
 
         await connection.query(`
-            UPDATE users
-            SET accesstokens=?, refreshtokens=?, logincodes=?
-            WHERE email=?
-            `, [newaccesstokens, newrefreshtokens, newlogincodes, request.email])
+            INSERT INTO tokens (userid, type, value, expires_at)
+            VALUES (?, ?, ?, NOW() + INTERVAL 30 SECOND)
+        `, [request.userid, 'access', accesstoken])
+
+        await connection.query(`
+            DELETE FROM tokens
+            WHERE id=?
+            `, [request.tokenid])
 
         await connection.commit()
 
@@ -108,9 +83,10 @@ const LoginCode = async (req, res) => {
             html: "<p>Hello ! Someone logged into your account ! If it's not you, there's an issue !</p>",
         })
 
-        return res.status(200).json({ message: "Successfully logged in", user: { username: request.username, id: request.id } })
+        return res.status(200).json({ message: "Successfully logged in", user: { username: request.username, id: request.userid } })
     } catch (err) {
         await connection.rollback()
+        console.log(err)
         return res.status(400).json("An error occured, please try again later")
     } finally {
         connection.release()

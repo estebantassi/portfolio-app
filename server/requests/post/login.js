@@ -19,7 +19,7 @@ const Login = async (req, res) => {
         await connection.beginTransaction()
 
         const [[request]] = await connection.query(`
-            SELECT password, logincodes, id, verified
+            SELECT password, id, verified
             FROM users
             WHERE email=?
             FOR UPDATE
@@ -34,33 +34,19 @@ const Login = async (req, res) => {
 
         const code = generatelogincode()
 
-        let oldlogincodes = request.logincodes.split(" , ").slice(-2)
-        oldlogincodes.push(code) 
-
-        let newlogincodes = ""
-        oldlogincodes.forEach(element => {
-            if (element != "")
-            {
-            if (newlogincodes == "") newlogincodes = element
-            else newlogincodes = newlogincodes + " , " + element
-            }
-        })
-
         const temptoken = jwt.sign({ id: request.id }, process.env.TEMP_TOKEN_SECRET)
         res.cookie("temptoken", temptoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
             path: "/",
-            maxAge: process.env.TEMP_TOKEN_DURATION * 60 * 1000
+            maxAge: process.env.TEMP_TOKEN_DURATION * 60 * 60 * 1000
         })
 
-
         await connection.query(`
-            UPDATE users
-            SET logincodes = ?
-            WHERE email=?
-            `, [newlogincodes, email])
+            INSERT INTO tokens (userid, type, value, expires_at)
+            VALUES (?, ?, ?, NOW() + INTERVAL ` + process.env.TEMP_TOKEN_DURATION + ` HOUR)
+        `, [request.id, 'logincode', code])
 
         await connection.commit()
 

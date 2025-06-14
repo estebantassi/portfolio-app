@@ -16,38 +16,20 @@ const UpdateAccessToken = async (req, res) => {
     try {
         await connection.beginTransaction()
 
-        const [[request]] = await connection.query(`
-            SELECT email, refreshtokens, accesstokens
-            FROM users
-            WHERE id=?
+        const [[newrequest]] = await connection.query(`
+            SELECT value, id
+            FROM tokens
+            WHERE value=? AND type=? AND userid=?
             FOR UPDATE
-        `, [data.id])
+        `, [req.cookies.refreshtoken, 'refresh', data.id])
 
-        if (!request) return res.status(400).json("User not found")
+        if (!newrequest) return res.status(400).json("User not found")
 
-        //check if the tokens are expired in the database
-        let newaccesstokens = []
-        for (const element of request.accesstokens.split(" , ")) {
-            try {
-                const decode = jwt.verify(element, process.env.ACCESS_TOKEN_SECRET)
-                if (decode.exp) newaccesstokens.push(element)
-            } catch (err) {
-            }
-        }
-
-        let newrefreshtokens = []
-        for (const element of request.refreshtokens.split(" , ")) {
-            try {
-                const decode = jwt.verify(element, process.env.REFRESH_TOKEN_SECRET)
-                if (decode.exp) newrefreshtokens.push(element)
-            } catch (err) {
-            }
-        }
-
-        //Remove the refresh token we're currently using, we're going to generate a new one
-        const index = newrefreshtokens.indexOf(req.cookies.refreshtoken)
-        if (index > -1) newrefreshtokens.splice(index, 1)
         const ip = getClientIp(req)
+
+
+        res.clearCookie("refreshtoken", { path: "/refreshtoken" })
+        res.clearCookie("accesstoken", { path: "/" })
 
         var accesstoken = jwt.sign({ id: data.id, ip: ip }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {
@@ -55,7 +37,7 @@ const UpdateAccessToken = async (req, res) => {
             secure: true,
             sameSite: 'Strict',
             path: "/",
-            maxAge: process.env.ACCESS_TOKEN_DURATION * 60 * 60 * 1000
+            maxAge: 10 * 1000
         })
 
         var refreshtoken = jwt.sign({ id: data.id, ip: ip }, process.env.REFRESH_TOKEN_SECRET)
@@ -67,33 +49,16 @@ const UpdateAccessToken = async (req, res) => {
             maxAge: process.env.REFRESH_TOKEN_DURATION * 60 *  60 * 1000
         })
 
-        let oldrefreshtokens = newrefreshtokens.slice(-2)
-        oldrefreshtokens.push(refreshtoken)
-
-        let newrefreshtokensstr = ""
-        oldrefreshtokens.forEach(element => {
-            if (element != "") {
-                if (newrefreshtokensstr == "") newrefreshtokensstr = element
-                else newrefreshtokensstr = newrefreshtokensstr + " , " + element
-            }
-        })
-
-        let oldaccesstokens = newaccesstokens.slice(-2)
-        oldaccesstokens.push(accesstoken)
-
-        let newaccesstokensstr = ""
-        oldaccesstokens.forEach(element => {
-            if (element != "") {
-                if (newaccesstokensstr == "") newaccesstokensstr = element
-                else newaccesstokensstr = newaccesstokensstr + " , " + element
-            }
-        })
+        await connection.query(`
+            UPDATE tokens
+            SET value=?, expires_at=NOW() + INTERVAL ` + process.env.REFRESH_TOKEN_DURATION + ` HOUR
+            WHERE id=?
+            `, [refreshtoken, newrequest.id])
 
         await connection.query(`
-            UPDATE users
-            SET accesstokens=?, refreshtokens=?
-            WHERE email=?
-            `, [newaccesstokensstr, newrefreshtokensstr, request.email])
+            INSERT INTO tokens (userid, type, value, expires_at)
+            VALUES (?, ?, ?, NOW() + INTERVAL 30 SECOND)
+        `, [data.id, 'access', accesstoken])
 
         await connection.commit()
         return res.status(200).json("Updated token")
