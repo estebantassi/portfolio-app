@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid')
 
 const Signup = async (req, res) => {
 
-    if (!req.body || !req.body.username || !req.body.email || !req.body.emailcheck || !req.body.password || !req.body.passwordcheck) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.password == null || req.body.passwordcheck == null) return res.status(400).json("Please fill out all the necessary fields")
 
     const username = req.body.username
     const email = req.body.email
@@ -35,15 +35,15 @@ const Signup = async (req, res) => {
         await connection.beginTransaction()
 
         const date = new Date()
-        const [[request]] = await connection.query(`
+        const [request] = await connection.query(`
             INSERT INTO users (username, email, password, created_at)
             VALUES (?, ?, ?, ?)
         `, [username, email, cryptedpassword, date])
 
-        if (!request) return res.status(400).json("Error with database")
+        if (request == null || request.insertId == null) return res.status(400).json("Error with database")
 
         const verifyjti = uuidv4()
-        const verifytoken = jwt.sign({ email, id: request.id, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
+        const verifytoken = jwt.sign({ email, id: request.insertId, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
 
         const verificationdate = new Date()
         verificationdate.setTime(verificationdate.getTime() + process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000)
@@ -51,7 +51,7 @@ const Signup = async (req, res) => {
         await connection.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
             VALUES (?, ?, ?, ?)
-        `, ["signup", verifyjti, request.id, verificationdate])
+        `, ["signup", verifyjti, request.insertId, verificationdate])
 
         await transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

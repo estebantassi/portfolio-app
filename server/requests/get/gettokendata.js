@@ -11,14 +11,14 @@ const GetTokenData = async (req, token, type) => {
         verifyemail: process.env.VERIFYEMAIL_TOKEN_SECRET,
     }
     const secret = secretMap[type]
-    if (!secret) return null
+    if (secret == null) return null
 
     try {
         const decode = jwt.verify(token, secret)
-        if (!decode) return null
+        if (decode == null) return null
 
         if (type == "refresh" || type == "access") {
-            if (!decode.jti || !decode.id || !decode.ip) return null
+            if (decode.jti == null || decode.id == null || decode.ip == null) return null
 
             const [[request]] = await db.query(`
                 SELECT id, value, expires_at
@@ -26,7 +26,7 @@ const GetTokenData = async (req, token, type) => {
                 WHERE type=? AND value=? AND userid=?
             `, [type, decode.jti, decode.id])
 
-            if (!request || !request.expires_at || new Date(request.expires_at) < new Date()) return null
+            if (request == null || request.expires_at == null || new Date(request.expires_at) < new Date()) return null
 
             const ip = getClientIp(req)
             if (ip != decode.ip) return null

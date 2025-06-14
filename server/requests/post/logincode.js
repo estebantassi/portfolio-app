@@ -8,14 +8,14 @@ const { v4: uuidv4 } = require('uuid')
 
 const LoginCode = async (req, res) => {
 
-    if (!req.body || !req.cookies || !req.body.code || !req.cookies.temptoken) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.body == null || req.cookies == null || req.body.code == null || req.cookies.logintoken == null) return res.status(400).json("Please fill out all the necessary fields")
 
     const connection = await db.getConnection()
     try {
         await connection.beginTransaction()
 
-        const data = await GetTokenData(req, req.cookies.temptoken, "temp")
-        if (!data) {
+        const data = await GetTokenData(req, req.cookies.logintoken, "temp")
+        if (data == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
         }
@@ -28,7 +28,7 @@ const LoginCode = async (req, res) => {
             FOR UPDATE
             `, [data.id, req.body.code])
 
-        if (!request || !request.userid || !request.tokenid || !request.username || !request.email) {
+        if (request == null || request.userid == null || request.tokenid == null || request.username == null || request.email == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
         }
@@ -36,12 +36,12 @@ const LoginCode = async (req, res) => {
         const ip = getClientIp(req)
         const geo = getGeoFromIp(ip)
 
-        res.clearCookie("refreshtoken", { path: "/refreshtoken" })
+        res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
         res.clearCookie("accesstoken", { path: "/auth" })
         res.clearCookie("logintoken", { path: "/logintoken" })
         
-        const accessdate = new Date(Date.now() + accessDurationMs)
         const accessDurationMs = Number(process.env.ACCESS_TOKEN_DURATION) * 60 * 60 * 1000
+        const accessdate = new Date(Date.now() + accessDurationMs)
         const accesstokenjti = uuidv4()
         var accesstoken = jwt.sign({ id: request.userid, ip: ip, jti: accesstokenjti }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {
@@ -52,26 +52,26 @@ const LoginCode = async (req, res) => {
             maxAge: accessDurationMs
         })
 
-        const [[tokenrequest]] = await connection.query(`
+        const [tokenrequest] = await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
         `, [request.userid, 'access', accesstokenjti, accessdate])
 
-        if (!tokenrequest || !tokenrequest.id)
+        if (tokenrequest == null || tokenrequest.insertId == null)
         {
             await connection.rollback()
             return res.status(400).json("Error")
         }
 
-        const refreshdate = new Date(Date.now() + refreshDurationMs)
         const refreshDurationMs = Number(process.env.REFRESH_TOKEN_DURATION) * 60 * 60 * 1000
+        const refreshdate = new Date(Date.now() + refreshDurationMs)
         const refreshtokenjti = uuidv4()
-        var refreshtoken = jwt.sign({ id: request.userid, ip: ip, jti: refreshtokenjti, accesstokenid: tokenrequest.id }, process.env.REFRESH_TOKEN_SECRET)
+        var refreshtoken = jwt.sign({ id: request.userid, ip: ip, jti: refreshtokenjti, accesstokenid: tokenrequest.insertId }, process.env.REFRESH_TOKEN_SECRET)
         res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
-            path: "/refreshtoken",
+            path: "/auth/refreshtoken",
             maxAge: refreshDurationMs
         })
 

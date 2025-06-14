@@ -8,7 +8,7 @@ const { generatelogincode } = require("../../tools/tools")
 
 const Login = async (req, res) => {
 
-    if (!req.body || !req.body.email || !req.body.password) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.body == null || req.body.email == null || req.body.password == null) return res.status(400).json("Please fill out all the necessary fields")
 
     const email = req.body.email
     const password = req.body.password
@@ -24,12 +24,12 @@ const Login = async (req, res) => {
             FOR UPDATE
             `, [email])
 
-        if (!request) {
+        if (request == null || request.password == null || request.verified == null || request.id == null) {
             await connection.rollback()
             return res.status(400).json("User not found")
         }
 
-        if (request.verified == 0) {
+        if (request.verified === 0) {
             await connection.rollback()
             return res.status(400).json("Your email isn't verified, please check your inbox")
         }
@@ -42,8 +42,8 @@ const Login = async (req, res) => {
 
         const code = generatelogincode()
 
-        const date = new Date(Date.now() + tempDurationMs)
         const tempDurationMs = Number(process.env.TEMP_TOKEN_DURATION) * 60 * 60 * 1000
+        const date = new Date(Date.now() + tempDurationMs)
         const temptoken = jwt.sign({ id: request.id }, process.env.TEMP_TOKEN_SECRET)
         res.cookie("logintoken", temptoken, {
             httpOnly: true,

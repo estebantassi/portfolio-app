@@ -5,6 +5,7 @@ const { GetTokenData } = require("../get/gettokendata")
 const { v4: uuidv4 } = require('uuid')
 
 const UpdateAccessToken = async (req, res) => {
+    console.log(req.cookies)
     if (!req.cookies || !req.cookies.refreshtoken) return res.status(400).json("Missing token")
 
     const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
@@ -26,11 +27,11 @@ const UpdateAccessToken = async (req, res) => {
             return res.status(400).json("Token revoked")
         }
 
-        res.clearCookie("refreshtoken", { path: "/refreshtoken" })
+        res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
         res.clearCookie("accesstoken", { path: "/auth" })
         
-        const accessdate = new Date(Date.now() + accessDurationMs)
         const accessDurationMs = Number(process.env.ACCESS_TOKEN_DURATION) * 60 * 60 * 1000
+        const accessdate = new Date(Date.now() + accessDurationMs)
         const accesstokenjti = uuidv4()
         var accesstoken = jwt.sign({ id: data.id, ip: data.ip, jti: accesstokenjti }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {
@@ -48,26 +49,26 @@ const UpdateAccessToken = async (req, res) => {
             `, [data.accesstokenid])
         } catch (err) {}
 
-        const [[tokenrequest]] = await connection.query(`
+        const [tokenrequest] = await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
         `, [data.id, 'access', accesstokenjti, accessdate])
 
-        if (!tokenrequest || !tokenrequest.id)
+        if (!tokenrequest || !tokenrequest.insertId)
         {
             await connection.rollback()
             return res.status(400).json("Error")
         }
         
-        const refreshdate = new Date(Date.now() + refreshDurationMs)
         const refreshDurationMs = Number(process.env.REFRESH_TOKEN_DURATION) * 60 * 60 * 1000
+        const refreshdate = new Date(Date.now() + refreshDurationMs)
         const refreshtokenjti = uuidv4()
-        var refreshtoken = jwt.sign({ id: data.id, ip: data.ip, jti: refreshtokenjti, accesstokenid: tokenrequest.id }, process.env.REFRESH_TOKEN_SECRET)
+        var refreshtoken = jwt.sign({ id: data.id, ip: data.ip, jti: refreshtokenjti, accesstokenid: tokenrequest.insertId }, process.env.REFRESH_TOKEN_SECRET)
         res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
-            path: "/refreshtoken",
+            path: "/auth/refreshtoken",
             maxAge: refreshDurationMs
         })
 

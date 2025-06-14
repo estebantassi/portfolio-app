@@ -7,14 +7,12 @@ const { GetTokenData } = require('../get/gettokendata')
 
 const VerifyEmail = async (req, res) => {
 
-    if (!req.body) return res.status(400).json("Wrong request")
-    if (!req.body.token) return res.status(400).json("Error")
-
+    if (req.body == null || req.body.token == null) return res.status(400).json("Missing token")
 
     const connection = await db.getConnection()
     try {
         const data = await GetTokenData(req, req.body.token, "verifyemail")
-        if (!data || !data.id || !data.jti || !data.email) return res.status(400).json("Invalid link")
+        if (data == null || data.id == null || data.jti == null || data.email == null) return res.status(400).json("Invalid link")
 
         const [[request]] = await connection.query(`
             SELECT value, id, userid
@@ -23,7 +21,7 @@ const VerifyEmail = async (req, res) => {
             FOR UPDATE
             `, [data.id, data.jti, "signup"])
 
-        if (!request) return res.status(400).json("Error")
+        if (request == null) return res.status(400).json("Error")
 
         await connection.query(`
             DELETE FROM tokens

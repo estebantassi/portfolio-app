@@ -123,6 +123,7 @@ export const AuthProvider = ({ children }) => {
             return true
         } catch (err) {
             logout()
+            console.log(err)
             return false
         }
     }
