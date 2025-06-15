@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
-const { getClientIp, getGeoFromIp } = require('../../config/geo')
 const { generatelogincode } = require("../../tools/tools")
 
 const Login = async (req, res) => {
@@ -13,8 +12,10 @@ const Login = async (req, res) => {
     const email = req.body.email
     const password = req.body.password
 
-    const connection = await db.getConnection()
+    
+    let connection
     try {
+        connection = await db.getConnection()
         await connection.beginTransaction()
 
         const [[request]] = await connection.query(`
@@ -76,10 +77,10 @@ const Login = async (req, res) => {
         await connection.commit()
         return res.status(200).json("A login code has been sent to your email" )
     } catch (err) {
-        await connection.rollback()
+        if (connection) await connection.rollback()
         return res.status(400).json("An error occured, please try again later")
     } finally {
-        connection.release()
+        if (connection) connection.release()
     }
 
 }

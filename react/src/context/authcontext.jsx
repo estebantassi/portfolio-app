@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }) => {
             addToast(response.data, "green")
             return true
         } catch (err) {
-            addToast(err.response.data, "red")
+            if (err.response.data) addToast(err.response.data, "red")
+            else addToast("Server not responding", "red")
             return false
         }
     }

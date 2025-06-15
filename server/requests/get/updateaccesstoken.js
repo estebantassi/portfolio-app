@@ -11,8 +11,9 @@ const UpdateAccessToken = async (req, res) => {
     const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
     if (!data || !data.accesstokenid) return res.status(400).json("Invalid token")
 
-    const connection = await db.getConnection()
+    let connection
     try {
+        connection = await db.getConnection()
         await connection.beginTransaction()
 
         const [[request]] = await connection.query(`
@@ -81,10 +82,10 @@ const UpdateAccessToken = async (req, res) => {
         await connection.commit()
         return res.status(200).json("Updated token")
     } catch (err) {
-        await connection.rollback()
+        if (connection) await connection.rollback()
         return res.status(400).json("An error occured, please try again later")
     } finally {
-        connection.release()
+        if (connection) connection.release()
     }
 }
 

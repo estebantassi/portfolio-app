@@ -30,8 +30,9 @@ const Signup = async (req, res) => {
     const passwordsalt = await bcrypt.genSalt()
     const cryptedpassword = await bcrypt.hash(password, passwordsalt)
 
-    const connection = await db.getConnection()
+    let connection
     try {
+        connection = await db.getConnection()
         await connection.beginTransaction()
 
         const date = new Date()
@@ -74,11 +75,11 @@ const Signup = async (req, res) => {
         await connection.commit()
         return res.status(200).json("Verification link sent to your email")
     } catch (err) {
-        await connection.rollback()
-        if (err.errno == 1062) return res.status(400).json("This email is already taken")
+        if (connection) await connection.rollback()
+        if (err.errno && err.errno == 1062) return res.status(400).json("This email is already taken")
         return res.status(400).json("An error occured, please try again later")
     } finally {
-        connection.release()
+        if (connection) connection.release()
     }
 }
 

@@ -10,8 +10,9 @@ const LoginCode = async (req, res) => {
 
     if (req.body == null || req.cookies == null || req.body.code == null || req.cookies.logintoken == null) return res.status(400).json("Please fill out all the necessary fields")
 
-    const connection = await db.getConnection()
+    let connection
     try {
+        connection = await db.getConnection()
         await connection.beginTransaction()
 
         const data = await GetTokenData(req, req.cookies.logintoken, "temp")
@@ -100,10 +101,10 @@ const LoginCode = async (req, res) => {
         await connection.commit()
         return res.status(200).json({ message: "Successfully logged in", user: { username: request.username, id: request.userid } })
     } catch (err) {
-        await connection.rollback()
+        if (connection) await connection.rollback()
         return res.status(400).json("An error occured, please try again later")
     } finally {
-        connection.release()
+        if (connection) connection.release()
     }
 }
 

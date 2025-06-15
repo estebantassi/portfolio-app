@@ -7,8 +7,9 @@ const VerifyEmail = async (req, res) => {
 
     if (req.body == null || req.body.token == null) return res.status(400).json("Missing token")
 
-    const connection = await db.getConnection()
+    let connection
     try {
+        connection = await db.getConnection()
         const data = await GetTokenData(req, req.body.token, "verifyemail")
         if (data == null || data.email == null) return res.status(400).json("Invalid link")
 
@@ -54,10 +55,10 @@ const VerifyEmail = async (req, res) => {
         await connection.commit()
         return res.status(200).json({ message: "Email verified" })
     } catch (err) {
-        await connection.rollback()
+        if (connection) await connection.rollback()
         return res.status(400).json("An error occured, please try again later")
     } finally {
-        connection.release()
+        if (connection) connection.release()
     }
 
 }
