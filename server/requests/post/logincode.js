@@ -1,4 +1,5 @@
 const db = require('../../config/database')
+const bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
@@ -16,18 +17,32 @@ const LoginCode = async (req, res) => {
         await connection.beginTransaction()
 
         const data = await GetTokenData(req, req.cookies.logintoken, "temp")
-        if (data == null) {
+        if (data == null || data.jti == null || data.id == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
         }
 
-        const [[request]] = await connection.query(`
+        const [[request2]] = await connection.query(`
+            SELECT value, id
+            FROM tokens
+            WHERE value=? AND userid=? AND type=?
+            FOR UPDATE
+            `, [data.jti, data.id, 'logintoken'])
+
+        if (request2 == null || request2.id == null) {
+            connection.rollback()
+            return res.status(400).json("Invalid code")
+        }
+
+        const [requests] = await connection.query(`
             SELECT users.id AS userid, username, email, value, expires_at, tokens.id AS tokenid
             FROM tokens
             INNER JOIN users ON tokens.userid = users.id
-            WHERE userid = ? AND value=?
+            WHERE userid = ? AND value=? AND type=?
             FOR UPDATE
-            `, [data.id, req.body.code])
+            `, [data.id, req.body.code, 'logincode'])
+
+        const request = requests[0]
 
         if (request == null || request.userid == null || request.tokenid == null || request.username == null || request.email == null || request.expires_at == null) {
             connection.rollback()
@@ -45,7 +60,10 @@ const LoginCode = async (req, res) => {
         res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
         res.clearCookie("accesstoken", { path: "/auth" })
         res.clearCookie("logintoken", { path: "/logintoken" })
-        
+
+        const ipsalt = await bcrypt.genSalt()
+        const cryptedip = await bcrypt.hash(ip, ipsalt)
+
         const accessDurationMs = Number(process.env.ACCESS_TOKEN_DURATION) * 60 * 60 * 1000
         const accessdate = new Date(Date.now() + accessDurationMs)
         const accesstokenjti = uuidv4()
@@ -59,12 +77,11 @@ const LoginCode = async (req, res) => {
         })
 
         const [tokenrequest] = await connection.query(`
-            INSERT INTO tokens (userid, type, value, expires_at)
-            VALUES (?, ?, ?, ?)
-        `, [request.userid, 'access', accesstokenjti, accessdate])
+            INSERT INTO tokens (userid, type, value, expires_at, ip)
+            VALUES (?, ?, ?, ?, ?)
+        `, [request.userid, 'access', accesstokenjti, accessdate, cryptedip])
 
-        if (tokenrequest == null || tokenrequest.insertId == null)
-        {
+        if (tokenrequest == null || tokenrequest.insertId == null) {
             await connection.rollback()
             return res.status(400).json("Error")
         }
@@ -82,14 +99,24 @@ const LoginCode = async (req, res) => {
         })
 
         await connection.query(`
-            INSERT INTO tokens (userid, type, value, expires_at)
-            VALUES (?, ?, ?, ?)
-        `, [request.userid, 'refresh', refreshtokenjti, refreshdate])
+            INSERT INTO tokens (userid, type, value, expires_at, ip)
+            VALUES (?, ?, ?, ?, ?)
+        `, [request.userid, 'refresh', refreshtokenjti, refreshdate, cryptedip])
 
-        await connection.query(`
+
+        try {
+            await connection.query(`
             DELETE FROM tokens
             WHERE id=?
             `, [request.tokenid])
+        } catch (err) { }
+
+        try {
+            await connection.query(`
+            DELETE FROM tokens
+            WHERE id=?
+            `, [request2.id])
+        } catch (err) { }
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

@@ -4,6 +4,7 @@ var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { generatelogincode } = require("../../tools/tools")
+const { v4: uuidv4 } = require('uuid')
 
 const Login = async (req, res) => {
 
@@ -45,7 +46,8 @@ const Login = async (req, res) => {
 
         const tempDurationMs = Number(process.env.TEMP_TOKEN_DURATION) * 60 * 60 * 1000
         const date = new Date(Date.now() + tempDurationMs)
-        const temptoken = jwt.sign({ id: request.id }, process.env.TEMP_TOKEN_SECRET)
+        const temptokenjti = uuidv4()
+        const temptoken = jwt.sign({ id: request.id, jti: temptokenjti }, process.env.TEMP_TOKEN_SECRET)
         res.cookie("logintoken", temptoken, {
             httpOnly: true,
             secure: true,
@@ -58,6 +60,11 @@ const Login = async (req, res) => {
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
         `, [request.id, 'logincode', code, date])
+
+        await connection.query(`
+            INSERT INTO tokens (userid, type, value, expires_at)
+            VALUES (?, ?, ?, ?)
+        `, [request.id, 'logintoken', temptokenjti, date])
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

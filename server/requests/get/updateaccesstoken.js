@@ -1,11 +1,11 @@
 const db = require('../../config/database')
+const bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const { GetTokenData } = require("../get/gettokendata")
 const { v4: uuidv4 } = require('uuid')
 
 const UpdateAccessToken = async (req, res) => {
-    console.log(req.cookies)
     if (!req.cookies || !req.cookies.refreshtoken) return res.status(400).json("Missing token")
 
     const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
@@ -31,6 +31,9 @@ const UpdateAccessToken = async (req, res) => {
         res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
         res.clearCookie("accesstoken", { path: "/auth" })
         
+        const ipsalt = await bcrypt.genSalt()
+        const cryptedip = await bcrypt.hash(data.ip, ipsalt)
+
         const accessDurationMs = Number(process.env.ACCESS_TOKEN_DURATION) * 60 * 60 * 1000
         const accessdate = new Date(Date.now() + accessDurationMs)
         const accesstokenjti = uuidv4()
@@ -51,9 +54,9 @@ const UpdateAccessToken = async (req, res) => {
         } catch (err) {}
 
         const [tokenrequest] = await connection.query(`
-            INSERT INTO tokens (userid, type, value, expires_at)
-            VALUES (?, ?, ?, ?)
-        `, [data.id, 'access', accesstokenjti, accessdate])
+            INSERT INTO tokens (userid, type, value, expires_at, ip)
+            VALUES (?, ?, ?, ?, ?)
+        `, [data.id, 'access', accesstokenjti, accessdate, cryptedip])
 
         if (!tokenrequest || !tokenrequest.insertId)
         {

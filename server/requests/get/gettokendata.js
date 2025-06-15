@@ -2,6 +2,7 @@ var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const db = require('../../config/database')
 const { getClientIp } = require('../../config/geo')
+const bcrypt = require('bcrypt')
 
 const GetTokenData = async (req, token, type) => {
     const secretMap = {
@@ -21,19 +22,22 @@ const GetTokenData = async (req, token, type) => {
             if (decode.jti == null || decode.id == null || decode.ip == null) return null
 
             const [[request]] = await db.query(`
-                SELECT id, value, expires_at
+                SELECT id, value, expires_at, ip
                 FROM tokens
                 WHERE type=? AND value=? AND userid=?
             `, [type, decode.jti, decode.id])
 
-            if (request == null || request.expires_at == null || new Date(request.expires_at) < new Date()) return null
+            if (request == null || request.expires_at == null || request.ip == null || new Date(request.expires_at) < new Date()) return null
 
             const ip = getClientIp(req)
-            if (ip != decode.ip) return null
+
+            const match = await bcrypt.compare(ip, request.ip)
+            if (!match) return null
         }
 
         return decode
     } catch (err) {
+        console.log(err)
         return null
     }
 }
