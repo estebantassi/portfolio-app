@@ -21,23 +21,22 @@ const GetTokenData = async (req, token, type) => {
         if (type == "refresh" || type == "access") {
             if (decode.jti == null || decode.id == null || decode.ip == null) return null
 
-            const [[request]] = await db.query(`
+            const [requests] = await db.query(`
                 SELECT id, value, expires_at, ip
                 FROM tokens
                 WHERE type=? AND value=? AND userid=?
             `, [type, decode.jti, decode.id])
 
+            const request = requests[0]
             if (request == null || request.expires_at == null || request.ip == null || new Date(request.expires_at) < new Date()) return null
 
             const ip = getClientIp(req)
-
             const match = await bcrypt.compare(ip, request.ip)
             if (!match) return null
         }
 
         return decode
     } catch (err) {
-        console.log(err)
         return null
     }
 }

@@ -85,7 +85,7 @@ const Login = async (req, res) => {
         return res.status(200).json("A login code has been sent to your email" )
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(400).json("An error occured, please try again later")
+        return res.status(500).json("An error occured, please try again later")
     } finally {
         if (connection) connection.release()
     }

@@ -16,12 +16,14 @@ const UpdateAccessToken = async (req, res) => {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
-        const [[request]] = await connection.query(`
+        const [requests] = await connection.query(`
             SELECT value, id, expires_at
             FROM tokens
             WHERE value=? AND type=? AND userid=?
             FOR UPDATE
         `, [data.jti, 'refresh', data.id])
+
+        const request = requests[0]
 
         if (!request || !request.expires_at || !request.id || new Date(request.expires_at) < new Date()) {
             await connection.rollback()
@@ -86,7 +88,7 @@ const UpdateAccessToken = async (req, res) => {
         return res.status(200).json("Updated token")
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(400).json("An error occured, please try again later")
+        return res.status(500).json("An error occured, please try again later")
     } finally {
         if (connection) connection.release()
     }

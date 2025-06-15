@@ -22,13 +22,14 @@ const LoginCode = async (req, res) => {
             return res.status(400).json("Invalid code")
         }
 
-        const [[request2]] = await connection.query(`
+        const [requests2] = await connection.query(`
             SELECT value, id
             FROM tokens
             WHERE value=? AND userid=? AND type=?
             FOR UPDATE
             `, [data.jti, data.id, 'logintoken'])
 
+        const request2 = requests2[0]
         if (request2 == null || request2.id == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
@@ -43,7 +44,6 @@ const LoginCode = async (req, res) => {
             `, [data.id, req.body.code, 'logincode'])
 
         const request = requests[0]
-
         if (request == null || request.userid == null || request.tokenid == null || request.username == null || request.email == null || request.expires_at == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
@@ -129,7 +129,7 @@ const LoginCode = async (req, res) => {
         return res.status(200).json({ message: "Successfully logged in", user: { username: request.username, id: request.userid } })
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(400).json("An error occured, please try again later")
+        return res.status(500).json("An error occured, please try again later")
     } finally {
         if (connection) connection.release()
     }

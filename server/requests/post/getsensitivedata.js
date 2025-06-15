@@ -21,13 +21,13 @@ const GetSensitiveData = async (req, res) => {
             WHERE id=?
         `, [data.id])
 
-        if (request == null) return res.status(400).json("User not found")
+        if (request == null || request.email == null || request.password == null) return res.status(400).json("User not found")
         const match = await bcrypt.compare(req.body.password, request.password)
         if (!match) return res.status(400).json("Wrong password")
 
         return res.status(200).json({data: {email: request.email}})
     } catch (err) {
-        return res.status(400).json("Error")
+        return res.status(500).json("An error occured, please try again later")
     }
 }
 

@@ -13,13 +13,14 @@ const VerifyEmail = async (req, res) => {
         const data = await GetTokenData(req, req.body.token, "verifyemail")
         if (data == null || data.email == null) return res.status(400).json("Invalid link")
 
-        const [[request]] = await connection.query(`
+        const [requests] = await connection.query(`
             SELECT value, id, userid, expires_at
             FROM tokens
             WHERE userid=? AND value=? AND type=?
             FOR UPDATE
             `, [data.id, data.jti, "signup"])
 
+        const request = requests[0]
         if (request == null || request.id == null || request.userid == null || request.expires_at == null) {
             await connection.rollback()
             return res.status(400).json("Error")
@@ -56,7 +57,7 @@ const VerifyEmail = async (req, res) => {
         return res.status(200).json({ message: "Email verified" })
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(400).json("An error occured, please try again later")
+        return res.status(500).json("An error occured, please try again later")
     } finally {
         if (connection) connection.release()
     }

@@ -31,7 +31,7 @@ const Logout = async (req, res) => {
 
         return res.status(200).json("Successfully logged out")
     } catch (err) {
-        return res.status(400).json("Error logging you out")
+        return res.status(500).json("An error occured, please try again later")
     }
 }
 

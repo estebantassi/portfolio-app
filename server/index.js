@@ -39,3 +39,10 @@ setInterval(async () => {
     AND created_at < NOW() - INTERVAL 24 HOUR
     `)
 }, 60 * 1000);
+
+setInterval(async () => {
+    await db.query(`
+    DELETE FROM tokens 
+    WHERE expires_at < ?
+    `, [new Date()])
+}, 60 * 1000);
