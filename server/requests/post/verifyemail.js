@@ -10,6 +10,8 @@ const VerifyEmail = async (req, res) => {
     let connection
     try {
         connection = await db.getConnection()
+        await connection.beginTransaction()
+
         const data = await GetTokenData(req, req.body.token, "verifyemail")
         if (data == null || data.email == null) return res.status(400).json("Invalid link")
 

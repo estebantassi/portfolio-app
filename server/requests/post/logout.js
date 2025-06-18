@@ -1,5 +1,6 @@
 const { GetTokenData } = require('../get/gettokendata')
 const db = require('../../config/database')
+const { CheckUserExpirations } = require("../remove/checkuserexpirations")
 
 const Logout = async (req, res) => {
 
@@ -28,6 +29,8 @@ const Logout = async (req, res) => {
                 }
             } catch (err) { }
         }
+
+        CheckUserExpirations(data.id)
 
         return res.status(200).json("Successfully logged out")
     } catch (err) {

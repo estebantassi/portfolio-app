@@ -4,6 +4,7 @@ var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const { GetTokenData } = require("../get/gettokendata")
 const { v4: uuidv4 } = require('uuid')
+const { CheckUserExpirations } = require("../remove/checkuserexpirations")
 
 const UpdateAccessToken = async (req, res) => {
     if (!req.cookies || !req.cookies.refreshtoken) return res.status(400).json("Missing token")
@@ -83,6 +84,8 @@ const UpdateAccessToken = async (req, res) => {
             SET value=?, expires_at=?
             WHERE id=?
             `, [refreshtokenjti, refreshdate, request.id])
+            
+        CheckUserExpirations(request.id)
 
         await connection.commit()
         return res.status(200).json("Updated token")

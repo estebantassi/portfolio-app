@@ -5,6 +5,7 @@ require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { generatelogincode } = require("../../tools/tools")
 const { v4: uuidv4 } = require('uuid')
+const { CheckUserExpirations } = require("../remove/checkuserexpirations")
 
 const Login = async (req, res) => {
 
@@ -80,6 +81,8 @@ const Login = async (req, res) => {
             </div>
             `,
         })
+
+        CheckUserExpirations(request.id)
 
         await connection.commit()
         return res.status(200).json("A login code has been sent to your email" )
