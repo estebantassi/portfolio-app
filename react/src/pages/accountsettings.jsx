@@ -31,7 +31,7 @@ function AccountSettings() {
     }, 3000)
 
     try {
-        const request = await axios.post('/getsensitivedata', {
+        const request = await axios.post('/auth/getsensitivedata', {
             password
         }, {
             withCredentials: true
