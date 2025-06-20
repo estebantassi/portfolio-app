@@ -16,7 +16,7 @@ const LoginCode = async (req, res) => {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
-        const data = await GetTokenData(req, req.cookies.logintoken, "temp")
+        const data = await GetTokenData(req, req.cookies.logintoken, "logintoken")
         if (data == null || data.jti == null || data.id == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
@@ -47,11 +47,6 @@ const LoginCode = async (req, res) => {
         if (request == null || request.userid == null || request.tokenid == null || request.username == null || request.email == null || request.expires_at == null) {
             connection.rollback()
             return res.status(400).json("Invalid code")
-        }
-
-        if (new Date(request.expires_at) < new Date()) {
-            connection.rollback()
-            return res.status(400).json("Code expired")
         }
 
         const ip = getClientIp(req)

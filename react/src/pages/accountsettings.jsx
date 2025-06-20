@@ -13,6 +13,9 @@ function AccountSettings() {
   const [isbuttondisabled, setIsbuttondisabled] = useState(true)
 
   const [email, setEmail] = useState('')
+  const [ischangingemail, setIschangingemail] = useState(false)
+  const [newemail, setNewemail] = useState("")
+  const [newemailcheck, setNewemailcheck] = useState("")
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -37,8 +40,30 @@ function AccountSettings() {
             withCredentials: true
         })
 
+        addToast(request.data.message, "green")
         setEmail(request.data.data.email)
         setIsauth(true)
+    } catch (err) {
+        addToast(err.response.data, "red")
+    }
+  }
+
+    const requestnewemail = async (e) => {
+    e.preventDefault()
+
+    setIsbuttondisabled(true)
+    setTimeout(() => {
+      setIsbuttondisabled(false)
+    }, 3000)
+
+    try {
+        const request = await axios.post('/auth/sensitivedata/requestemailchange', {
+            newemail, newemailcheck
+        }, {
+            withCredentials: true
+        })
+
+        addToast(request.data, "green")
     } catch (err) {
         addToast(err.response.data, "red")
     }
@@ -50,6 +75,13 @@ function AccountSettings() {
 
     <p>Email: {email}</p>
 
+        <form onSubmit={(e) => requestnewemail(e)}>
+          <label>New email</label>
+          <input value={newemail} onChange={(e) => setNewemail(e.target.value)} />
+          <input value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} />
+
+          <button disabled={isbuttondisabled}>Change email</button>
+        </form>
     </>
       :
       <>

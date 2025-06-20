@@ -26,7 +26,7 @@ const UpdateAccessToken = async (req, res) => {
 
         const request = requests[0]
 
-        if (!request || !request.expires_at || !request.id || new Date(request.expires_at) < new Date()) {
+        if (!request || !request.expires_at || !request.id) {
             await connection.rollback()
             return res.status(400).json("Token revoked")
         }

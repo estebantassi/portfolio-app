@@ -7,13 +7,13 @@ const VerifyEmail = async (req, res) => {
 
     if (req.body == null || req.body.token == null) return res.status(400).json("Missing token")
 
+    const data = await GetTokenData(req, req.body.token, "verifyemail")
+    if (data == null || data.email == null) return res.status(400).json("Invalid link")
+
     let connection
     try {
         connection = await db.getConnection()
         await connection.beginTransaction()
-
-        const data = await GetTokenData(req, req.body.token, "verifyemail")
-        if (data == null || data.email == null) return res.status(400).json("Invalid link")
 
         const [requests] = await connection.query(`
             SELECT value, id, userid, expires_at
@@ -26,11 +26,6 @@ const VerifyEmail = async (req, res) => {
         if (request == null || request.id == null || request.userid == null || request.expires_at == null) {
             await connection.rollback()
             return res.status(400).json("Error")
-        }
-        
-        if (new Date(request.expires_at) < new Date()) {
-            await connection.rollback()
-            return res.status(400).json("Verification expired, the account you created will be deleted within 24 hours")
         }
 
         await connection.query(`
