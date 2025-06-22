@@ -15,14 +15,14 @@ const Signup = async (req, res) => {
     const password = req.body.password
     const passwordcheck = req.body.passwordcheck
 
+    if (password != passwordcheck) return res.status(400).json("Passwords don't match")
+    if (email != emailcheck) return res.status(400).json("Emails don't match")
+
     if (username.length > process.env.MAX_USERNAME_LENGTH) return res.status(400).json("Username is too long")
     if (username.length < process.env.MIN_USERNAME_LENGTH) return res.status(400).json("Username is too short")
 
     if (password.length > process.env.MAX_PASSWORD_LENGTH) return res.status(400).json("Password is too long")
     if (password.length < process.env.MIN_PASSWORD_LENGTH) return res.status(400).json("Password is too short")
-
-    if (password != passwordcheck) return res.status(400).json("Passwords don't match")
-    if (email != emailcheck) return res.status(400).json("Emails don't match")
         
     const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
     if (!emailRegexp.test(email)) return res.status(400).json("Email isn't valid")

@@ -12,7 +12,8 @@ const GetTokenData = async (req, token, type) => {
         verifyemail: process.env.VERIFYEMAIL_TOKEN_SECRET,
         sensitivedata: process.env.SENSITIVEDATA_TOKEN_SECRET,
         oldemailcheck: process.env.OLDEMAILCHECK_TOKEN_SECRET,
-        newemailcheck: process.env.NEWEMAILCHECK_TOKEN_SECRET
+        newemailcheck: process.env.NEWEMAILCHECK_TOKEN_SECRET,
+        passwordemailcheck: process.env.PASSWORDEMAILCHECK_TOKEN_SECRET,
     }
     const secret = secretMap[type]
     if (secret == null) return null

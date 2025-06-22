@@ -21,16 +21,12 @@ const OldEmailCheck = async (req, res) => {
             WHERE type=? AND value=? AND userid=?
         `, ["oldemailcheck", data.jti, data.id])
 
-        console.log("here")
-
         const verifyjti = uuidv4()
         const verifytoken = jwt.sign({ oldemail: data.oldemail, newemail: data.newemail, id: data.id, jti: verifyjti, username: data.username }, process.env.NEWEMAILCHECK_TOKEN_SECRET)
    
         const verificationDurationMs = process.env.NEWEMAILCHECK_TOKEN_DURATION * 60 * 60 * 1000
         const verificationdate = new Date(Date.now() + verificationDurationMs)
 
-
-        console.log("am here")
         await db.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
             VALUES (?, ?, ?, ?)

@@ -23,10 +23,12 @@ app.post('/login', require('./requests/post/login').Login)
 app.post('/logintoken/logincode', require('./requests/post/logincode').LoginCode)
 app.post('/oldemailcheck', require('./requests/post/oldemailcheck').OldEmailCheck)
 app.post('/newemailcheck', require('./requests/post/newemailcheck').NewEmailCheck)
+app.post('/passwordemailcheck', require('./requests/post/passwordemailcheck').PasswordEmailCheck)
 
 app.get('/auth/checkaccesstoken', require('./requests/get/checkaccesstoken').CheckAccessToken)
 app.post('/auth/getsensitivedata', require('./requests/post/getsensitivedata').GetSensitiveData)
 app.post('/auth/sensitivedata/requestemailchange', require('./requests/post/requestemailchange').RequestEmailChange)
+app.post('/auth/sensitivedata/requestpasswordchange', require('./requests/post/requestpasswordchange').RequestPasswordChange)
 
 app.get('/auth/refreshtoken/logout', require('./requests/post/logout').Logout)
 

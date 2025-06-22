@@ -56,7 +56,7 @@ const NewEmailCheck = async (req, res) => {
             WHERE id=?
             `, [data.newemail, data.id])
 
-        await db.query(`
+        await connection.query(`
             DELETE FROM tokens
             WHERE type=? AND value=? AND userid=?
         `, ["newemailcheck", data.jti, data.id])
