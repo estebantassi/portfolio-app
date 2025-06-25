@@ -17,12 +17,12 @@ const GetSensitiveData = async (req, res) => {
         if (data == null) return res.status(400).json("Invalid token")
 
         const [[request]] = await db.query(`
-            SELECT email, password
+            SELECT email, password, 2FA
             FROM users
             WHERE id=?
         `, [data.id])
 
-        if (request == null || request.email == null || request.password == null) return res.status(400).json("User not found")
+        if (request == null || request.email == null || request.password == null || request["2FA"] == null) return res.status(400).json("User not found")
         const match = await bcrypt.compare(req.body.password, request.password)
         if (!match) return res.status(400).json("Wrong password")
 
@@ -43,7 +43,7 @@ const GetSensitiveData = async (req, res) => {
             VALUES (?, ?, ?, ?)
         `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
 
-        return res.status(200).json({message: "This is your sensitive data, please do not share it", data: {email: request.email}})
+        return res.status(200).json({message: "This is your sensitive data, please do not share it", data: {email: request.email, "2FA": request["2FA"]}})
     } catch (err) {
         return res.status(500).json("An error occured, please try again later")
     }
