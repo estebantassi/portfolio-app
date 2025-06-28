@@ -2,13 +2,14 @@ import { useContext, useEffect } from 'react'
 import { ToastContext } from '../context/toastcontext'
 import { AuthContext } from '../context/authcontext'
 import axios from '../api/axios'
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from "react-router"
 
 function AccountSettings() {
 
   const navigate = useNavigate()
-
+  const controllerRef = useRef(null)
+  const timeoutRef = useRef(null)
 
   const { addToast } = useContext(ToastContext)
   const { user } = useContext(AuthContext)
@@ -21,7 +22,6 @@ function AccountSettings() {
 
   const [has2FA, setHas2FA] = useState(false)
   const [email, setEmail] = useState('')
-  const [ischangingemail, setIschangingemail] = useState(false)
   const [newemail, setNewemail] = useState("")
   const [newemailcheck, setNewemailcheck] = useState("")
 
@@ -33,34 +33,42 @@ function AccountSettings() {
   const [code2FA, setCode2FA] = useState("")
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startrequest()
 
     const leavepagetimeout = setTimeout(() => {
       navigate('/home')
     }, 10 * 60 * 1000)
 
     return () => {
-      clearTimeout(timeout)
       clearTimeout(leavepagetimeout)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (controllerRef.current) controllerRef.current.abort()
     }
   }, [])
 
-  const accesssettings = async (e) => {
-    e.preventDefault()
-
+  const startrequest = () => {
     setIsbuttondisabled(true)
-    setTimeout(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+    if (controllerRef.current) controllerRef.current.abort()
+    controllerRef.current = new AbortController()
+
+    timeoutRef.current = setTimeout(() => {
       setIsbuttondisabled(false)
     }, 3000)
+  }
+
+  const accesssettings = async (e) => {
+    e.preventDefault()
+    startrequest()
 
     try {
       const request = await axios.post('/auth/getsensitivedata', {
         password,
         code: accesscode2FA
       }, {
-        withCredentials: true
+        withCredentials: true,
+        signal: controllerRef.current.signal
       })
 
       if (request.data.hasaccess) {
@@ -74,23 +82,24 @@ function AccountSettings() {
       }
 
     } catch (err) {
-      addToast(err.response.data, "red")
+      if (axios.isCancel(err)) {
+        console.log("Request cancelled", err.message)
+      } else {
+        addToast(err.response?.data || "An error occurred", "red")
+      }
     }
   }
 
   const requestnewemail = async (e) => {
     e.preventDefault()
-
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startrequest()
 
     try {
       const request = await axios.post('/auth/sensitivedata/requestemailchange', {
         newemail, newemailcheck
       }, {
-        withCredentials: true
+        withCredentials: true,
+        signal: controllerRef.current.signal
       })
 
       setNewemail("")
@@ -104,17 +113,14 @@ function AccountSettings() {
 
   const requestnewpassword = async (e) => {
     e.preventDefault()
-
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startrequest()
 
     try {
       const request = await axios.post('/auth/sensitivedata/requestpasswordchange', {
         newpassword, newpasswordcheck
       }, {
-        withCredentials: true
+        withCredentials: true,
+        signal: controllerRef.current.signal
       })
 
       setNewpassword("")
@@ -128,15 +134,12 @@ function AccountSettings() {
 
   const request2fa = async (e) => {
     e.preventDefault()
-
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startrequest()
 
     try {
       const request = await axios.post('/auth/sensitivedata/request2fa', {}, {
-        withCredentials: true
+        withCredentials: true,
+        signal: controllerRef.current.signal
       })
 
       setQrcode(request.data.data)
@@ -149,17 +152,14 @@ function AccountSettings() {
 
   const check2FAcode = async (e) => {
     e.preventDefault()
-
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startrequest()
 
     try {
       const request = await axios.post('/auth/sensitivedata/enable2FA', {
         code: code2FA
       }, {
-        withCredentials: true
+        withCredentials: true,
+        signal: controllerRef.current.signal
       })
 
       setCode2FA("")
@@ -172,17 +172,14 @@ function AccountSettings() {
 
   const disable2FA = async (e) => {
     e.preventDefault()
-
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startrequest()
 
     try {
       const request = await axios.post('/auth/sensitivedata/disable2fa', {
 
       }, {
-        withCredentials: true
+        withCredentials: true,
+        signal: controllerRef.current.signal
       })
 
       setHas2FA(false)
