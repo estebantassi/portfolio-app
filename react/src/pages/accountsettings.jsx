@@ -3,13 +3,20 @@ import { ToastContext } from '../context/toastcontext'
 import { AuthContext } from '../context/authcontext'
 import axios from '../api/axios'
 import { useState } from 'react'
+import { useNavigate } from "react-router"
 
 function AccountSettings() {
+
+  const navigate = useNavigate()
+
 
   const { addToast } = useContext(ToastContext)
   const { user } = useContext(AuthContext)
   const [isauth, setIsauth] = useState(false)
   const [password, setPassword] = useState("")
+  const [showaccesscode2FA, setShowaccesscode2FA] = useState(false)
+  const [accesscode2FA, setAccesscode2FA] = useState("")
+
   const [isbuttondisabled, setIsbuttondisabled] = useState(true)
 
   const [has2FA, setHas2FA] = useState(false)
@@ -30,7 +37,14 @@ function AccountSettings() {
       setIsbuttondisabled(false)
     }, 3000)
 
-    return () => clearTimeout(timeout)
+    const leavepagetimeout = setTimeout(() => {
+      navigate('/home')
+    }, 10 * 60 * 1000)
+
+    return () => {
+      clearTimeout(timeout)
+      clearTimeout(leavepagetimeout)
+    }
   }, [])
 
   const accesssettings = async (e) => {
@@ -43,15 +57,22 @@ function AccountSettings() {
 
     try {
       const request = await axios.post('/auth/getsensitivedata', {
-        password
+        password,
+        code: accesscode2FA
       }, {
         withCredentials: true
       })
 
-      addToast(request.data.message, "green")
-      setEmail(request.data.data.email)
-      setHas2FA(request.data.data["2FA"])
-      setIsauth(true)
+      if (request.data.hasaccess) {
+        setPassword("")
+        addToast(request.data.message, "green")
+        setEmail(request.data.data.email)
+        setHas2FA(request.data.data["2FA"])
+        setIsauth(true)
+      } else {
+        setShowaccesscode2FA(true)
+      }
+
     } catch (err) {
       addToast(err.response.data, "red")
     }
@@ -91,7 +112,7 @@ function AccountSettings() {
 
     try {
       const request = await axios.post('/auth/sensitivedata/requestpasswordchange', {
-        password, newpassword, newpasswordcheck
+        newpassword, newpasswordcheck
       }, {
         withCredentials: true
       })
@@ -141,6 +162,30 @@ function AccountSettings() {
         withCredentials: true
       })
 
+      setCode2FA("")
+      setHas2FA(true)
+      addToast(request.data, "green")
+    } catch (err) {
+      addToast(err.response.data, "red")
+    }
+  }
+
+  const disable2FA = async (e) => {
+    e.preventDefault()
+
+    setIsbuttondisabled(true)
+    setTimeout(() => {
+      setIsbuttondisabled(false)
+    }, 3000)
+
+    try {
+      const request = await axios.post('/auth/sensitivedata/disable2fa', {
+
+      }, {
+        withCredentials: true
+      })
+
+      setHas2FA(false)
       addToast(request.data, "green")
     } catch (err) {
       addToast(err.response.data, "red")
@@ -169,7 +214,13 @@ function AccountSettings() {
         <button disabled={isbuttondisabled}>Change password</button>
       </form>
 
-      {has2FA ? <h1>2FA Enabled</h1> : <></>}
+      {has2FA ? <>
+        <h1>2FA Enabled</h1>
+
+        <form onSubmit={(e) => disable2FA(e)}>
+          <button>Disable 2FA</button>
+        </form>
+      </> : <></>}
 
       {!qrcode && !isqrcodescanned && !has2FA ? <>
 
@@ -208,9 +259,17 @@ function AccountSettings() {
       :
       <>
         <form onSubmit={(e) => accesssettings(e)}>
-          <p>Please enter your password to access this data.</p>
-          <label>Password</label>
-          <input value={password} onChange={(e) => setPassword(e.target.value)} />
+          {
+            showaccesscode2FA ? <>
+              <label>Enter 2FA code from Authenticator App</label>
+              <input value={accesscode2FA} onChange={(e) => setAccesscode2FA(e.target.value)} />
+            </>
+              :
+              <>
+                <label>Password</label>
+                <input value={password} onChange={(e) => setPassword(e.target.value)} />
+              </>
+          }
 
           <button disabled={isbuttondisabled}>Verify password</button>
         </form>

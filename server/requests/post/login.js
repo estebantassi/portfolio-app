@@ -14,20 +14,20 @@ const Login = async (req, res) => {
     const email = req.body.email
     const password = req.body.password
 
-    
+
     let connection
     try {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
         const [[request]] = await connection.query(`
-            SELECT password, id, verified
+            SELECT password, id, verified, 2FA
             FROM users
             WHERE email=?
             FOR UPDATE
             `, [email])
 
-        if (request == null || request.password == null || request.verified == null || request.id == null) {
+        if (request == null || request.password == null || request.verified == null || request.id == null || request['2FA'] == null) {
             await connection.rollback()
             return res.status(400).json("User not found")
         }
@@ -60,18 +60,22 @@ const Login = async (req, res) => {
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
-        `, [request.id, 'logincode', code, date])
-
-        await connection.query(`
-            INSERT INTO tokens (userid, type, value, expires_at)
-            VALUES (?, ?, ?, ?)
         `, [request.id, 'logintoken', temptokenjti, date])
 
-        transporter.sendMail({
-            from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-            to: request.username + ' <' + email + '>',
-            subject: "Login code",
-            html: `
+        if (request['2FA'] == 0) {
+            await connection.query(`
+                INSERT INTO tokens (userid, type, value, expires_at)
+                VALUES (?, ?, ?, ?)
+            `, [request.id, 'logincode', code, date])
+
+
+
+
+            transporter.sendMail({
+                from: '"Portfolio security system" <' + process.env.EMAIL + '>',
+                to: request.username + ' <' + email + '>',
+                subject: "Login code",
+                html: `
             <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">
                 <h2 style="color: black;">Here is your login code:</h2>
                 <h1 style="margin-top: 10; color: #2c3e50;">${code}</h1>
@@ -80,12 +84,13 @@ const Login = async (req, res) => {
                 </h3>
             </div>
             `,
-        })
+            })
+        }
 
         CheckUserExpirations(request.id)
 
         await connection.commit()
-        return res.status(200).json("A login code has been sent to your email" )
+        return res.status(200).json({ message: request['2FA'] ? "Enter your 2FA Authenticator Code" : "A login code has been sent to your email", "2FA": request['2FA'] })
     } catch (err) {
         if (connection) await connection.rollback()
         return res.status(500).json("An error occured, please try again later")

@@ -12,9 +12,10 @@ function generatelogincode() {
 }
 
 const ALGORITHM = 'aes-256-gcm';
-const KEY = Buffer.from(process.env.SECRET_ENCRYPTION_KEY, 'hex')
 
-function encryptSecret(secret) {
+function encryptSecret(secret, keyvalue) {
+  const KEY = Buffer.from(keyvalue, 'hex')
+
   const iv = crypto.randomBytes(12)
   const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv)
 
@@ -28,7 +29,9 @@ function encryptSecret(secret) {
   return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`
 }
 
-function decryptSecret(encryptedString) {
+function decryptSecret(encryptedString, keyvalue) {
+  const KEY = Buffer.from(keyvalue, 'hex')
+
   const [ivHex, tagHex, encryptedHex] = encryptedString.split(':')
   const iv = Buffer.from(ivHex, 'hex')
   const tag = Buffer.from(tagHex, 'hex')

@@ -16,6 +16,7 @@ function Login() {
 
   const [showLoginCode, setShowLoginCode] = useState(false)
   const [code, setCode] = useState("")
+  const [isusing2FA, setIsusing2FA] = useState(false)
 
 
   useEffect(() => {
@@ -37,7 +38,8 @@ function Login() {
     for (const [key, value] of Object.entries(data)) if (value == "") return addToast("Please fill in all the fields", "red")
 
       login(data).then((data) => {
-        if(data == true) setShowLoginCode(true)
+        if (data == 2) setIsusing2FA(true)
+        if(data != 0) setShowLoginCode(true)
       })
   }
 
@@ -49,7 +51,7 @@ function Login() {
       setIsbuttondisabled(false)
     }, 3000)
 
-    if (code == "" || code.length > 5 || code.length < 5) return addToast("Code must be 5 characters long", "red")
+    if (!isusing2FA && (code == "" || code.length > 5 || code.length < 5)) return addToast("Code must be 5 characters long", "red")
 
     logincode(code)
   }
@@ -62,7 +64,7 @@ function Login() {
   showLoginCode ? 
   <>
         <form onSubmit={(e) => codeform(e)}>
-        <label>Code</label>
+        <label>{isusing2FA ? "Authenticator App Code" : "Email Code" }</label>
         <input value={code} onChange={(e) => setCode(e.target.value)}/>
 
         <button disabled={isbuttondisabled}>Verify code</button>

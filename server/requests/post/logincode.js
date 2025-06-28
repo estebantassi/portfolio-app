@@ -5,6 +5,7 @@ require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { getClientIp, getGeoFromIp } = require('../../config/geo')
 const { GetTokenData } = require('../get/gettokendata')
+const { Check2FAcode } = require('../get/check2facode')
 const { v4: uuidv4 } = require('uuid')
 
 const LoginCode = async (req, res) => {
@@ -19,34 +20,37 @@ const LoginCode = async (req, res) => {
         const data = await GetTokenData(req, req.cookies.logintoken, "logintoken")
         if (data == null || data.jti == null || data.id == null) {
             connection.rollback()
-            return res.status(400).json("Invalid code")
+            return res.status(400).json("Invalid token")
         }
 
-        const [requests2] = await connection.query(`
-            SELECT value, id
-            FROM tokens
-            WHERE value=? AND userid=? AND type=?
+        const [[requestuser]] = await connection.query(`
+            SELECT 2FA, username, email
+            FROM users
+            WHERE id = ?
             FOR UPDATE
-            `, [data.jti, data.id, 'logintoken'])
+        `, [data.id])
+        
+        if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email == null) return res.status(400).json("User not found")
 
-        const request2 = requests2[0]
-        if (request2 == null || request2.id == null) {
-            connection.rollback()
-            return res.status(400).json("Invalid code")
-        }
-
-        const [requests] = await connection.query(`
-            SELECT users.id AS userid, username, email, value, expires_at, tokens.id AS tokenid
-            FROM tokens
-            INNER JOIN users ON tokens.userid = users.id
-            WHERE userid = ? AND value=? AND type=?
-            FOR UPDATE
+        let requests
+        let request
+        if (requestuser['2FA'] == 0)
+        {
+            [requests] = await connection.query(`
+                SELECT expires_at, id
+                FROM tokens
+                WHERE userid = ? AND value=? AND type=?
             `, [data.id, req.body.code, 'logincode'])
 
-        const request = requests[0]
-        if (request == null || request.userid == null || request.tokenid == null || request.username == null || request.email == null || request.expires_at == null) {
-            connection.rollback()
-            return res.status(400).json("Invalid code")
+            request = requests[0]
+            if (request == null || request.id == null || request.expires_at == null) {
+                connection.rollback()
+                return res.status(400).json("Invalid code")
+            }
+        } else if (requestuser['2FA'] == 1)
+        {
+            const is2FAvalid = await Check2FAcode(data.id, req.body.code)
+            if (!is2FAvalid) return res.status(400).json("Invalid code")
         }
 
         const ip = getClientIp(req)
@@ -62,7 +66,7 @@ const LoginCode = async (req, res) => {
         const accessDurationMs = Number(process.env.ACCESS_TOKEN_DURATION) * 60 * 60 * 1000
         const accessdate = new Date(Date.now() + accessDurationMs)
         const accesstokenjti = uuidv4()
-        var accesstoken = jwt.sign({ id: request.userid, ip: ip, jti: accesstokenjti }, process.env.ACCESS_TOKEN_SECRET)
+        var accesstoken = jwt.sign({ id: data.id, ip: ip, jti: accesstokenjti }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {
             httpOnly: true,
             secure: true,
@@ -74,7 +78,7 @@ const LoginCode = async (req, res) => {
         const [tokenrequest] = await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at, ip)
             VALUES (?, ?, ?, ?, ?)
-        `, [request.userid, 'access', accesstokenjti, accessdate, cryptedip])
+        `, [data.id, 'access', accesstokenjti, accessdate, cryptedip])
 
         if (tokenrequest == null || tokenrequest.insertId == null) {
             await connection.rollback()
@@ -84,7 +88,7 @@ const LoginCode = async (req, res) => {
         const refreshDurationMs = Number(process.env.REFRESH_TOKEN_DURATION) * 60 * 60 * 1000
         const refreshdate = new Date(Date.now() + refreshDurationMs)
         const refreshtokenjti = uuidv4()
-        var refreshtoken = jwt.sign({ id: request.userid, ip: ip, jti: refreshtokenjti, accesstokenid: tokenrequest.insertId }, process.env.REFRESH_TOKEN_SECRET)
+        var refreshtoken = jwt.sign({ id: data.id, ip: ip, jti: refreshtokenjti, accesstokenid: tokenrequest.insertId }, process.env.REFRESH_TOKEN_SECRET)
         res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,
             secure: true,
@@ -96,32 +100,27 @@ const LoginCode = async (req, res) => {
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at, ip)
             VALUES (?, ?, ?, ?, ?)
-        `, [request.userid, 'refresh', refreshtokenjti, refreshdate, cryptedip])
+        `, [data.id, 'refresh', refreshtokenjti, refreshdate, cryptedip])
 
-
-        try {
-            await connection.query(`
-            DELETE FROM tokens
-            WHERE id=?
-            `, [request.tokenid])
-        } catch (err) { }
-
-        try {
-            await connection.query(`
-            DELETE FROM tokens
-            WHERE id=?
-            `, [request2.id])
-        } catch (err) { }
+        if (requestuser['2FA'] == 0)
+        {
+            try {
+                await connection.query(`
+                DELETE FROM tokens
+                WHERE id=?
+                `, [request.id])
+            } catch (err) { }
+        }
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-            to: request.username + ' <' + request.email + '>',
+            to: requestuser.username + ' <' + requestuser.email + '>',
             subject: "New login on your account",
             html: "<p>Hello ! Someone logged into your account ! If it's not you, there's an issue !</p>",
         })
 
         await connection.commit()
-        return res.status(200).json({ message: "Successfully logged in", user: { username: request.username, id: request.userid } })
+        return res.status(200).json({ message: "Successfully logged in", user: { username: requestuser.username, id: data.id } })
     } catch (err) {
         if (connection) await connection.rollback()
         return res.status(500).json("An error occured, please try again later")

@@ -11,7 +11,7 @@ const RequestPasswordChange = async (req, res) => {
 
     if (req.cookies == null || req.body == null) return res.status(400).json("Wrong request")
     if (req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json("Missing token")
-    if (req.body.password == null || req.body.newpassword == null || req.body.newpasswordcheck == null) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.body.newpassword == null || req.body.newpasswordcheck == null) return res.status(400).json("Please fill out all the necessary fields")
 
     if (req.body.newpassword != req.body.newpasswordcheck) return res.status(400).json("Passwords don't match")
 

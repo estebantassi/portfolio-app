@@ -16,7 +16,7 @@ const Request2FA = async (req, res) => {
     if (data2 == null) return res.status(400).json("Invalid token")
 
     const secret = speakeasy.generateSecret({ name: 'Portfolio' })
-    let cryptedsecret = encryptSecret(secret.base32)
+    let cryptedsecret = encryptSecret(secret.base32, process.env.SECRET_ENCRYPTION_KEY)
 
     let connection
     try {

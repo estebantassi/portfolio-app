@@ -31,6 +31,7 @@ app.post('/auth/sensitivedata/requestemailchange', require('./requests/post/requ
 app.post('/auth/sensitivedata/requestpasswordchange', require('./requests/post/requestpasswordchange').RequestPasswordChange)
 app.post('/auth/sensitivedata/request2fa', require('./requests/post/request2fa').Request2FA)
 app.post('/auth/sensitivedata/enable2fa', require('./requests/post/enable2fa').Enable2FA)
+app.post('/auth/sensitivedata/disable2fa', require('./requests/post/disable2fa').Disable2FA)
 
 app.get('/auth/refreshtoken/logout', require('./requests/post/logout').Logout)
 

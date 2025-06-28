@@ -21,12 +21,13 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            addToast(response.data, "green")
-            return true
+            addToast(response.data.message, "green")
+            if (response.data["2FA"]) return 2
+            else return 1
         } catch (err) {
             if (err.response.data) addToast(err.response.data, "red")
             else addToast("Server not responding", "red")
-            return false
+            return 0
         }
     }
 

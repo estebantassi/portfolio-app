@@ -31,7 +31,7 @@ const Enable2FA = async (req, res) => {
         if (request["2FA"] == true) return res.status(400).json("2FA already enabled")
         if (request["2FAsecret"] == "") return res.status(400).json("Invalid request")
 
-        let secret = decryptSecret(request["2FAsecret"])
+        let secret = decryptSecret(request["2FAsecret"], process.env.SECRET_ENCRYPTION_KEY)
 
         console.log(req.body.code)
         const isVerified = speakeasy.totp.verify({
