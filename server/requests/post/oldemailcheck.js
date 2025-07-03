@@ -9,11 +9,11 @@ const transporter = require('../../config/mailsender').transporter
 
 const OldEmailCheck = async (req, res) => {
 
-    if (req.body == null || req.body.token == null) return res.status(400).json("Missing token")
+    if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
 
     const data = await GetTokenData(req, req.body.token, "oldemailcheck")
     
-    if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json("Invalid link")
+    if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json({message: "Invalid link"})
 
     try {
         await db.query(`
@@ -47,9 +47,9 @@ const OldEmailCheck = async (req, res) => {
             `,
         })
 
-        return res.status(200).json("An email has been sent to your new email")
+        return res.status(200).json({message: "An email has been sent to your new email"})
     } catch (err) {
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     }
 }
 

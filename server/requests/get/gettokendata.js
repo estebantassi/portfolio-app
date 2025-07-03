@@ -9,7 +9,7 @@ const GetTokenData = async (req, token, type) => {
         access: process.env.ACCESS_TOKEN_SECRET,
         refresh: process.env.REFRESH_TOKEN_SECRET,
         logintoken: process.env.TEMP_TOKEN_SECRET,
-        verifyemail: process.env.VERIFYEMAIL_TOKEN_SECRET,
+        signup: process.env.VERIFYEMAIL_TOKEN_SECRET,
         sensitivedata: process.env.SENSITIVEDATA_TOKEN_SECRET,
         oldemailcheck: process.env.OLDEMAILCHECK_TOKEN_SECRET,
         newemailcheck: process.env.NEWEMAILCHECK_TOKEN_SECRET,
@@ -31,9 +31,6 @@ const GetTokenData = async (req, token, type) => {
         const request = requests[0]
         if (request == null || request.expires_at == null || request.id == null) return null
 
-
-        
-
         if (new Date(request.expires_at) < new Date())
         {
             if (type == "refresh" && decode.accesstokenid != null)
@@ -54,6 +51,14 @@ const GetTokenData = async (req, token, type) => {
 
         if (type == "refresh" || type == "access")
         {
+            const [[userreq]] = await connection.query(`
+                SELECT verified
+                FROM users
+                WHERE id=?
+            `, [decode.id])
+
+            if (userreq == null || userreq.verified == 0) return null
+
             if (decode.ip == null || request.ip == null) return null
 
             const ip = getClientIp(req)
@@ -61,6 +66,7 @@ const GetTokenData = async (req, token, type) => {
             if (!match) return null
         }
 
+        decode.tokenid = request.id
         return decode
     } catch (err) {
         return null

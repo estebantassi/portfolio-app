@@ -6,26 +6,29 @@ const { GetTokenData } = require('../get/gettokendata')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../config/mailsender').transporter
+const { encrypt, decrypt } = require('../../tools/tools')
 
 const PasswordEmailCheck = async (req, res) => {
 
-    if (req.body == null || req.body.token == null) return res.status(400).json("Missing token")
+    if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
 
     const data = await GetTokenData(req, req.body.token, "passwordemailcheck")
 
-    if (data == null || data.newpassword == null) return res.status(400).json("Invalid link")
+    if (data == null || data.newpassword == null) return res.status(400).json({message: "Invalid link"})
 
     try {
         const [[request]] = await db.query(`
-            SELECT email, username, password
+            SELECT email_encrypted, username, password
             FROM users
             WHERE id=?
         `, [data.id])
 
-        if (request == null || request.email == null || request.username == null || request.password == null) return res.status(400).json("User not found")
+        if (request == null || request.email_encrypted == null || request.username == null || request.password == null) return res.status(400).json({message: "User not found"})
 
         const match = await bcrypt.compare(data.newpassword, request.password)
-        if (match) return res.status(400).json("You can't use the same password")
+        if (match) return res.status(400).json({message: "You can't use the same password"})
+
+        const decryptedemail = decrypt(request.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)
 
         const passwordsalt = await bcrypt.genSalt()
         const cryptedpassword = await bcrypt.hash(data.newpassword, passwordsalt)
@@ -45,7 +48,7 @@ const PasswordEmailCheck = async (req, res) => {
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-            to: request.username + ' <' + request.email + '>',
+            to: request.username + ' <' + decryptedemail + '>',
             subject: "Your password has been changed",
             html: `
             <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">
@@ -57,9 +60,9 @@ const PasswordEmailCheck = async (req, res) => {
             `,
         })
 
-        return res.status(200).json("Password changed")
+        return res.status(200).json({message: "Password changed"})
     } catch (err) {
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     }
 }
 

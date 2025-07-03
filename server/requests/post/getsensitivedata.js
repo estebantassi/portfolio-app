@@ -6,26 +6,27 @@ const { GetTokenData } = require('../get/gettokendata')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
 const { Check2FAcode } = require('../get/check2facode')
+const { encrypt, decrypt } = require('../../tools/tools')
 
 const GetSensitiveData = async (req, res) => {
 
-    if (req.cookies == null || req.body == null) return res.status(400).json("Wrong request")
-    if (req.cookies.accesstoken == null) return res.status(400).json("Missing token")
-    if (req.body.password == null) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.cookies == null || req.body == null) return res.status(400).json({message: "Wrong request"})
+    if (req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
+    if (req.body.password == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
 
     try {
         const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-        if (data == null) return res.status(400).json("Invalid token")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
 
         const [[request]] = await db.query(`
-            SELECT email, password, 2FA
+            SELECT email_encrypted, password, 2FA
             FROM users
             WHERE id=?
         `, [data.id])
 
-        if (request == null || request.email == null || request.password == null || request["2FA"] == null) return res.status(400).json("User not found")
+        if (request == null || request.email_encrypted == null || request.password == null || request["2FA"] == null) return res.status(400).json({message: "User not found"})
         const match = await bcrypt.compare(req.body.password, request.password)
-        if (!match) return res.status(400).json("Wrong password")
+        if (!match) return res.status(400).json({message: "Wrong password"})
 
         if (request["2FA"] == 1)
         {
@@ -34,7 +35,7 @@ const GetSensitiveData = async (req, res) => {
                 return res.status(200).json({message: "2FA required", hasaccess: false})
             }
             const is2FAvalid = await Check2FAcode(data.id, req.body.code)
-            if (!is2FAvalid) return res.status(400).json("Invalid code")
+            if (!is2FAvalid) return res.status(400).json({message: "Invalid code"})
         }
 
         const sensitivedataDurationMs = Number(process.env.SENSITIVEDATA_TOKEN_DURATION) * 60 * 60 * 1000
@@ -54,9 +55,11 @@ const GetSensitiveData = async (req, res) => {
             VALUES (?, ?, ?, ?)
         `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
 
-        return res.status(200).json({message: "This is your sensitive data, please do not share it", data: {email: request.email, "2FA": request["2FA"]}, hasaccess: true})
+        const decryptedemail = decrypt(request.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)
+
+        return res.status(200).json({message: "This is your sensitive data, please do not share it", email: decryptedemail, "2FA": request["2FA"], hasaccess: true})
     } catch (err) {
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     }
 }
 

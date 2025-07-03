@@ -7,10 +7,10 @@ const { v4: uuidv4 } = require('uuid')
 const { CheckUserExpirations } = require("../remove/checkuserexpirations")
 
 const UpdateAccessToken = async (req, res) => {
-    if (!req.cookies || !req.cookies.refreshtoken) return res.status(400).json("Missing token")
+    if (!req.cookies || !req.cookies.refreshtoken) return res.status(400).json({message: "Missing token"})
 
     const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
-    if (!data || !data.accesstokenid) return res.status(400).json("Invalid token")
+    if (!data || !data.accesstokenid) return res.status(400).json({message: "Invalid token"})
 
     let connection
     try {
@@ -28,7 +28,7 @@ const UpdateAccessToken = async (req, res) => {
 
         if (!request || !request.expires_at || !request.id) {
             await connection.rollback()
-            return res.status(400).json("Token revoked")
+            return res.status(400).json({message: "Token revoked"})
         }
 
         res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
@@ -64,7 +64,7 @@ const UpdateAccessToken = async (req, res) => {
         if (!tokenrequest || !tokenrequest.insertId)
         {
             await connection.rollback()
-            return res.status(400).json("Error")
+            return res.status(400).json({message: "Error"})
         }
         
         const refreshDurationMs = Number(process.env.REFRESH_TOKEN_DURATION) * 60 * 60 * 1000
@@ -88,10 +88,10 @@ const UpdateAccessToken = async (req, res) => {
         CheckUserExpirations(request.id)
 
         await connection.commit()
-        return res.status(200).json("Updated token")
+        return res.status(200).json({message: "Updated token"})
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     } finally {
         if (connection) connection.release()
     }

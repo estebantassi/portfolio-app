@@ -6,41 +6,43 @@ const transporter = require('../../config/mailsender').transporter
 const { generatelogincode } = require("../../tools/tools")
 const { v4: uuidv4 } = require('uuid')
 const { CheckUserExpirations } = require("../remove/checkuserexpirations")
+const { encrypt, decrypt, hash } = require('../../tools/tools')
 
 const Login = async (req, res) => {
 
-    if (req.body == null || req.body.email == null || req.body.password == null) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.body == null || req.body.email == null || req.body.password == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
 
     const email = req.body.email
     const password = req.body.password
-
 
     let connection
     try {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
+        const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
+
         const [[request]] = await connection.query(`
             SELECT password, id, verified, 2FA
             FROM users
-            WHERE email=?
+            WHERE email_hash=?
             FOR UPDATE
-            `, [email])
+            `, [hashedemail])
 
         if (request == null || request.password == null || request.verified == null || request.id == null || request['2FA'] == null) {
             await connection.rollback()
-            return res.status(400).json("User not found")
+            return res.status(400).json({message: "User not found"})
         }
 
         if (request.verified === 0) {
             await connection.rollback()
-            return res.status(400).json("Your email isn't verified, please check your inbox")
+            return res.status(400).json({message: "Your email isn't verified, please check your inbox"})
         }
 
         const match = await bcrypt.compare(password, request.password)
         if (!match) {
             await connection.rollback()
-            return res.status(400).json("Wrong password")
+            return res.status(400).json({message: "Wrong password"})
         }
 
         const code = generatelogincode()
@@ -68,9 +70,6 @@ const Login = async (req, res) => {
                 VALUES (?, ?, ?, ?)
             `, [request.id, 'logincode', code, date])
 
-
-
-
             transporter.sendMail({
                 from: '"Portfolio security system" <' + process.env.EMAIL + '>',
                 to: request.username + ' <' + email + '>',
@@ -93,7 +92,7 @@ const Login = async (req, res) => {
         return res.status(200).json({ message: request['2FA'] ? "Enter your 2FA Authenticator Code" : "A login code has been sent to your email", "2FA": request['2FA'] })
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     } finally {
         if (connection) connection.release()
     }

@@ -4,10 +4,12 @@ require('dotenv').config()
 var jwt = require('jsonwebtoken')
 const transporter = require('../../config/mailsender').transporter
 const { v4: uuidv4 } = require('uuid')
+const { encrypt, decrypt, hash } = require('../../tools/tools')
 
 const Signup = async (req, res) => {
 
-    if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.password == null || req.body.passwordcheck == null) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.password == null || req.body.passwordcheck == null)
+        return res.status(400).json({message: "Please fill out all the necessary fields"})
 
     const username = req.body.username
     const email = req.body.email
@@ -15,20 +17,22 @@ const Signup = async (req, res) => {
     const password = req.body.password
     const passwordcheck = req.body.passwordcheck
 
-    if (password != passwordcheck) return res.status(400).json("Passwords don't match")
-    if (email != emailcheck) return res.status(400).json("Emails don't match")
+    if (password != passwordcheck) return res.status(400).json({message: "Passwords don't match"})
+    if (email != emailcheck) return res.status(400).json({message: "Emails don't match"})
 
-    if (username.length > process.env.MAX_USERNAME_LENGTH) return res.status(400).json("Username is too long")
-    if (username.length < process.env.MIN_USERNAME_LENGTH) return res.status(400).json("Username is too short")
+    if (username.length > process.env.MAX_USERNAME_LENGTH) return res.status(400).json({message: "Username is too long"})
+    if (username.length < process.env.MIN_USERNAME_LENGTH) return res.status(400).json({message: "Username is too short"})
 
-    if (password.length > process.env.MAX_PASSWORD_LENGTH) return res.status(400).json("Password is too long")
-    if (password.length < process.env.MIN_PASSWORD_LENGTH) return res.status(400).json("Password is too short")
+    if (password.length > process.env.MAX_PASSWORD_LENGTH) return res.status(400).json({message: "Password is too long"})
+    if (password.length < process.env.MIN_PASSWORD_LENGTH) return res.status(400).json({message: "Password is too short"})
         
     const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-    if (!emailRegexp.test(email)) return res.status(400).json("Email isn't valid")
+    if (!emailRegexp.test(email)) return res.status(400).json({message: "Email isn't valid"})
 
     const passwordsalt = await bcrypt.genSalt()
     const cryptedpassword = await bcrypt.hash(password, passwordsalt)
+    const encryptedemail = encrypt(email, process.env.EMAIL_ENCRYPTION_KEY)
+    const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
 
     let connection
     try {
@@ -37,13 +41,13 @@ const Signup = async (req, res) => {
 
         const date = new Date()
         const [request] = await connection.query(`
-            INSERT INTO users (username, email, password, created_at)
-            VALUES (?, ?, ?, ?)
-        `, [username, email, cryptedpassword, date])
+            INSERT INTO users (username, email_hash, email_encrypted, password, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        `, [username, hashedemail, encryptedemail, cryptedpassword, date])
 
         if (request == null || request.insertId == null) {
             await connection.rollback()
-            return res.status(400).json("Couldn't create account")
+            return res.status(400).json({message: "Couldn't create account"})
         }
 
         const verifyjti = uuidv4()
@@ -73,11 +77,11 @@ const Signup = async (req, res) => {
         })
 
         await connection.commit()
-        return res.status(200).json("Verification link sent to your email")
+        return res.status(200).json({message: "Verification link sent to your email"})
     } catch (err) {
         if (connection) await connection.rollback()
-        if (err.errno && err.errno == 1062) return res.status(400).json("This email is already taken")
-        return res.status(500).json("An error occured, please try again later")
+        if (err.errno && err.errno == 1062) return res.status(400).json({message: "This email is already taken"})
+        return res.status(500).json({message: "An error occured, please try again later"})
     } finally {
         if (connection) connection.release()
     }

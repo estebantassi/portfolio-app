@@ -7,10 +7,12 @@ const { getClientIp, getGeoFromIp } = require('../../config/geo')
 const { GetTokenData } = require('../get/gettokendata')
 const { Check2FAcode } = require('../get/check2facode')
 const { v4: uuidv4 } = require('uuid')
+const { encrypt, decrypt } = require('../../tools/tools')
 
 const LoginCode = async (req, res) => {
 
-    if (req.body == null || req.cookies == null || req.body.code == null || req.cookies.logintoken == null) return res.status(400).json("Please fill out all the necessary fields")
+    if (req.body == null || req.cookies == null || req.body.code == null || req.cookies.logintoken == null)
+        return res.status(400).json({message: "Please fill out all the necessary fields"})
 
     let connection
     try {
@@ -20,17 +22,18 @@ const LoginCode = async (req, res) => {
         const data = await GetTokenData(req, req.cookies.logintoken, "logintoken")
         if (data == null || data.jti == null || data.id == null) {
             connection.rollback()
-            return res.status(400).json("Invalid token")
+            return res.status(400).json({message: "Invalid token"})
         }
 
         const [[requestuser]] = await connection.query(`
-            SELECT 2FA, username, email
+            SELECT 2FA, username, email_encrypted
             FROM users
             WHERE id = ?
             FOR UPDATE
         `, [data.id])
         
-        if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email == null) return res.status(400).json("User not found")
+        if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email_encrypted == null)
+            return res.status(400).json({message: "User not found"})
 
         let requests
         let request
@@ -45,12 +48,12 @@ const LoginCode = async (req, res) => {
             request = requests[0]
             if (request == null || request.id == null || request.expires_at == null) {
                 connection.rollback()
-                return res.status(400).json("Invalid code")
+                return res.status(400).json({message: "Invalid code"})
             }
         } else if (requestuser['2FA'] == 1)
         {
             const is2FAvalid = await Check2FAcode(data.id, req.body.code)
-            if (!is2FAvalid) return res.status(400).json("Invalid code")
+            if (!is2FAvalid) return res.status(400).json({message: "Invalid code"})
         }
 
         const ip = getClientIp(req)
@@ -82,7 +85,7 @@ const LoginCode = async (req, res) => {
 
         if (tokenrequest == null || tokenrequest.insertId == null) {
             await connection.rollback()
-            return res.status(400).json("Error")
+            return res.status(400).json({message: "Error"})
         }
 
         const refreshDurationMs = Number(process.env.REFRESH_TOKEN_DURATION) * 60 * 60 * 1000
@@ -112,9 +115,11 @@ const LoginCode = async (req, res) => {
             } catch (err) { }
         }
 
+        const decryptedemail = decrypt(requestuser.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)
+
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-            to: requestuser.username + ' <' + requestuser.email + '>',
+            to: requestuser.username + ' <' + decryptedemail + '>',
             subject: "New login on your account",
             html: "<p>Hello ! Someone logged into your account ! If it's not you, there's an issue !</p>",
         })
@@ -123,7 +128,7 @@ const LoginCode = async (req, res) => {
         return res.status(200).json({ message: "Successfully logged in", user: { username: requestuser.username, id: data.id } })
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     } finally {
         if (connection) connection.release()
     }

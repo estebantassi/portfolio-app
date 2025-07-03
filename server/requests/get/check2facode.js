@@ -3,7 +3,7 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const transporter = require('../../config/mailsender').transporter
 const speakeasy = require('speakeasy')
-const { decryptSecret } = require('../../tools/tools')
+const { decrypt } = require('../../tools/tools')
 
 const Check2FAcode = async (userid, code) => {
 
@@ -18,7 +18,7 @@ const Check2FAcode = async (userid, code) => {
         if (request["2FA"] == 0) return false
         if (request["2FAsecret"] == "") return false
 
-        let secret = decryptSecret(request["2FAsecret"], process.env.SECRET_ENCRYPTION_KEY)
+        let secret = decrypt(request["2FAsecret"], process.env.SECRET_ENCRYPTION_KEY)
         
         const isVerified = speakeasy.totp.verify({
             secret: secret,

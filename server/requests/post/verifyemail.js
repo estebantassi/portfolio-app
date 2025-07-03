@@ -5,39 +5,26 @@ const { GetTokenData } = require('../get/gettokendata')
 
 const VerifyEmail = async (req, res) => {
 
-    if (req.body == null || req.body.token == null) return res.status(400).json("Missing token")
+    if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
 
-    const data = await GetTokenData(req, req.body.token, "verifyemail")
-    if (data == null || data.email == null) return res.status(400).json("Invalid link")
+    const data = await GetTokenData(req, req.body.token, "signup")
+    if (data == null || data.email == null) return res.status(400).json({message: "Invalid link"})
 
     let connection
     try {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
-        const [requests] = await connection.query(`
-            SELECT value, id, userid, expires_at
-            FROM tokens
-            WHERE userid=? AND value=? AND type=?
-            FOR UPDATE
-            `, [data.id, data.jti, "signup"])
-
-        const request = requests[0]
-        if (request == null || request.id == null || request.userid == null || request.expires_at == null) {
-            await connection.rollback()
-            return res.status(400).json("Error")
-        }
-
         await connection.query(`
             DELETE FROM tokens
             WHERE id=?
-            `, [request.id])
+            `, [data.tokenid])
 
         await connection.query(`
             UPDATE users
             SET verified=1
             WHERE id=?
-            `, [request.userid])
+            `, [data.id])
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
@@ -51,10 +38,10 @@ const VerifyEmail = async (req, res) => {
         })
 
         await connection.commit()
-        return res.status(200).json({ message: "Email verified" })
+        return res.status(200).json({message: "Email verified"})
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     } finally {
         if (connection) connection.release()
     }

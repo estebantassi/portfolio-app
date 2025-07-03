@@ -4,14 +4,14 @@ const { CheckUserExpirations } = require("../remove/checkuserexpirations")
 
 const Logout = async (req, res) => {
 
-    if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json("Already logged out")
+    if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json({message: "Already logged out"})
 
     res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
     res.clearCookie("accesstoken", { path: "/auth" })
 
     try {
         const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
-        if (data == null) return res.status(400).json("Invalid token")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
 
         await db.query(`
             DELETE FROM tokens
@@ -32,9 +32,9 @@ const Logout = async (req, res) => {
 
         CheckUserExpirations(data.id)
 
-        return res.status(200).json("Successfully logged out")
+        return res.status(200).json({message: "Successfully logged out"})
     } catch (err) {
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     }
 }
 

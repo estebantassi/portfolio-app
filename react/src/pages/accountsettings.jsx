@@ -71,22 +71,22 @@ function AccountSettings() {
         signal: controllerRef.current.signal
       })
 
-      if (request.data.hasaccess) {
+      if (request == null || request.data == null) throw "Error"
+      const data = request.data
+      if (data.hasaccess == null || data.email == null || data["2FA"] == null) throw "Error"
+
+      if (request.hasaccess) {
         setPassword("")
-        addToast(request.data.message, "green")
-        setEmail(request.data.data.email)
-        setHas2FA(request.data.data["2FA"])
+        addToast(data?.message || "Success", "green")
+        setEmail(data.email)
+        setHas2FA(data["2FA"])
         setIsauth(true)
       } else {
         setShowaccesscode2FA(true)
       }
 
     } catch (err) {
-      if (axios.isCancel(err)) {
-        console.log("Request cancelled", err.message)
-      } else {
-        addToast(err.response?.data || "An error occurred", "red")
-      }
+      addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
 
@@ -105,9 +105,9 @@ function AccountSettings() {
       setNewemail("")
       setNewemailcheck("")
 
-      addToast(request.data, "green")
+      addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response.data, "red")
+      addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
 
@@ -126,9 +126,9 @@ function AccountSettings() {
       setNewpassword("")
       setNewpasswordcheck("")
 
-      addToast(request.data, "green")
+      addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response.data, "red")
+      addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
 
@@ -141,12 +141,12 @@ function AccountSettings() {
         withCredentials: true,
         signal: controllerRef.current.signal
       })
-
+      if (request == null || request.data == null || request.data.data == null) throw "Error"
       setQrcode(request.data.data)
 
-      addToast(request.data.message, "green")
+      addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response.data, "red")
+      addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
 
@@ -164,9 +164,9 @@ function AccountSettings() {
 
       setCode2FA("")
       setHas2FA(true)
-      addToast(request.data, "green")
+      addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response.data, "red")
+      addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
 
@@ -183,9 +183,9 @@ function AccountSettings() {
       })
 
       setHas2FA(false)
-      addToast(request.data, "green")
+      addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response.data, "red")
+      addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
 

@@ -21,12 +21,11 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            addToast(response.data.message, "green")
+            addToast(response?.data?.message || "Success", "green")
             if (response.data["2FA"]) return 2
             else return 1
         } catch (err) {
-            if (err.response.data) addToast(err.response.data, "red")
-            else addToast("Server not responding", "red")
+            addToast(err.response?.data?.message || "An error occurred", "red")
             return 0
         }
     }
@@ -44,10 +43,10 @@ export const AuthProvider = ({ children }) => {
             Cookies.set("user", JSON.stringify(response.data.user))
             checkauth()
             navigate("/home")
-            addToast(response.data.message, "green")
+            addToast(response?.data?.message || "Success", "green")
         } catch (err)
         {
-             addToast(err.response.data, "red")
+            addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
@@ -58,9 +57,9 @@ export const AuthProvider = ({ children }) => {
             })
 
             navigate("/login")
-            addToast(response.data, "green")
+            addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            addToast(err.response.data, "red")
+            addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
@@ -73,9 +72,9 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            addToast(response.data, "green")
+            addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            addToast(err.response.data, "red")
+            addToast(err.response?.data?.message || "An error occurred", "red")
         }
         navigate("/home")
     }
@@ -112,6 +111,7 @@ export const AuthProvider = ({ children }) => {
             await axios.get('/auth/checkaccesstoken', { withCredentials: true })
             return true
         } catch (err) {
+            if (err.response == null || err.response.data == null) return false
             if (err.response.data == "Missing token" || err.response.data == "Invalid token") {
                 return updatetoken()
             }
@@ -125,7 +125,6 @@ export const AuthProvider = ({ children }) => {
             return true
         } catch (err) {
             logout()
-            console.log(err)
             return false
         }
     }

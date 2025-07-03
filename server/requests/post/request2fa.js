@@ -3,20 +3,20 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encryptSecret } = require('../../tools/tools')
+const { encrypt, decrypt } = require('../../tools/tools')
 
 const Request2FA = async (req, res) => {
 
-    if (req.cookies == null) return res.status(400).json("Wrong request")
-    if (req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json("Missing token")
+    if (req.cookies == null) return res.status(400).json({message: "Wrong request"})
+    if (req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
 
     const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-    if (data == null) return res.status(400).json("Invalid token")
+    if (data == null) return res.status(400).json({message: "Invalid token"})
     const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
-    if (data2 == null) return res.status(400).json("Invalid token")
+    if (data2 == null) return res.status(400).json({message: "Invalid token"})
 
     const secret = speakeasy.generateSecret({ name: 'Portfolio' })
-    let cryptedsecret = encryptSecret(secret.base32, process.env.SECRET_ENCRYPTION_KEY)
+    let cryptedsecret = encrypt(secret.base32, process.env.SECRET_ENCRYPTION_KEY)
 
     let connection
     try {
@@ -32,11 +32,11 @@ const Request2FA = async (req, res) => {
 
         if (request == null || request["2FA"] == null) {
             await connection.rollback()
-            return res.status(400).json("User not found")
+            return res.status(400).json({message: "User not found"})
         }
         if (request["2FA"] == true) {
             await connection.rollback()
-            return res.status(400).json("2FA already enabled")
+            return res.status(400).json({message: "2FA already enabled"})
         }
 
         await connection.query(`
@@ -48,7 +48,7 @@ const Request2FA = async (req, res) => {
         QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
             if (err || data_url == null) {
                 connection.rollback()
-                return res.status(400).json("Error generating QR code" )
+                return res.status(400).json({message: "Error generating QR code"})
             }
 
             connection.commit()
@@ -59,7 +59,7 @@ const Request2FA = async (req, res) => {
         })
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     } finally {
         if (connection) connection.release()
     }

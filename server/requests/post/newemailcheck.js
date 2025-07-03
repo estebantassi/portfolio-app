@@ -6,55 +6,60 @@ const { GetTokenData } = require('../get/gettokendata')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../config/mailsender').transporter
+const { encrypt, decrypt, hash } = require('../../tools/tools')
 
 const NewEmailCheck = async (req, res) => {
 
-    if (req.body == null || req.body.token == null) return res.status(400).json("Missing token")
+    if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
 
     const data = await GetTokenData(req, req.body.token, "newemailcheck")
 
-    if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json("Invalid link")
+    if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json({message: "Invalid link"})
 
     let connection
     try {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
+        const hashedemail = hash(data.newemail, process.env.EMAIL_HASH_KEY)
+
         const [[request]] = await connection.query(`
             SELECT id
             FROM users
-            WHERE email=?
-        `, [data.newemail])
+            WHERE email_hash=?
+        `, [hashedemail])
 
         if (request != null) {
             await connection.rollback()
-            return res.status(400).json("This email is already taken")
+            return res.status(400).json({message: "This email is already taken"})
         }
 
         const [[request2]] = await connection.query(`
-            SELECT email
+            SELECT email_encrypted
             FROM users
             WHERE id=?
             FOR UPDATE
         `, [data.id])
 
-        
-
-        if (request2 == null || request2.email == null) {
+        if (request2 == null || request2.email_encrypted == null) {
             await connection.rollback()
-            return res.status(400).json("Invalid token")
+            return res.status(400).json({message: "User not found"})
         }
 
-        if (request2.email != data.oldemail) {
+        const decryptedemail = decrypt(request2.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)
+
+        if (decryptedemail != data.oldemail) {
             await connection.rollback()
-            return res.status(400).json("Your email has been changed already")
+            return res.status(400).json({message: "Your email has been changed already"})
         }
+
+        const encryptedemail = encrypt(data.newemail, process.env.EMAIL_ENCRYPTION_KEY)
 
         await connection.query(`
             UPDATE users
-            SET email=?
+            SET email_encrypted=?, email_hash=?
             WHERE id=?
-            `, [data.newemail, data.id])
+            `, [encryptedemail, hashedemail, data.id])
 
         await connection.query(`
             DELETE FROM tokens
@@ -90,10 +95,10 @@ const NewEmailCheck = async (req, res) => {
         })
 
         await connection.commit()
-        return res.status(200).json("Email changed")
+        return res.status(200).json({message: "Email changed"})
     } catch (err) {
         if (connection) await connection.rollback()
-        return res.status(500).json("An error occured, please try again later")
+        return res.status(500).json({message: "An error occured, please try again later"})
     } finally {
         if (connection) connection.release()
     }

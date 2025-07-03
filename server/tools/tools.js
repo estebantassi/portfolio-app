@@ -13,7 +13,17 @@ function generatelogincode() {
 
 const ALGORITHM = 'aes-256-gcm';
 
-function encryptSecret(secret, keyvalue) {
+function hash(value, key)
+{
+  const output = crypto
+    .createHmac('sha256', key)
+    .update(value)
+    .digest('hex')
+
+  return output
+}
+
+function encrypt(secret, keyvalue) {
   const KEY = Buffer.from(keyvalue, 'hex')
 
   const iv = crypto.randomBytes(12)
@@ -29,7 +39,7 @@ function encryptSecret(secret, keyvalue) {
   return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`
 }
 
-function decryptSecret(encryptedString, keyvalue) {
+function decrypt(encryptedString, keyvalue) {
   const KEY = Buffer.from(keyvalue, 'hex')
 
   const [ivHex, tagHex, encryptedHex] = encryptedString.split(':')
@@ -48,4 +58,4 @@ function decryptSecret(encryptedString, keyvalue) {
   return decrypted.toString('utf8')
 }
 
-module.exports = { generatelogincode, decryptSecret, encryptSecret }
+module.exports = { generatelogincode, encrypt, decrypt, hash }

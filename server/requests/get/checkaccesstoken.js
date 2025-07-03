@@ -2,12 +2,12 @@ const { GetTokenData } = require('../get/gettokendata')
 
 const CheckAccessToken = async (req, res) => {
 
-    if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json("Missing token")
+    if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
 
     const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-    if (data == null) return res.status(400).json("Invalid token")
+    if (data == null) return res.status(400).json({message: "Invalid token"})
 
-    return res.status(200).json("Token is valid")
+    return res.status(200).json({message: "Token is valid"})
 }
 
 module.exports = { CheckAccessToken }
