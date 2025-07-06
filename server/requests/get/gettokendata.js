@@ -49,15 +49,17 @@ const GetTokenData = async (req, token, type) => {
             return null
         }
 
+       
+
         if (type == "refresh" || type == "access")
         {
-            const [[userreq]] = await connection.query(`
+            const [[userreq]] = await db.query(`
                 SELECT verified
                 FROM users
                 WHERE id=?
             `, [decode.id])
 
-            if (userreq == null || userreq.verified == 0) return null
+            if (userreq == null || userreq.verified == null || userreq.verified == 0) return null
 
             if (decode.ip == null || request.ip == null) return null
 

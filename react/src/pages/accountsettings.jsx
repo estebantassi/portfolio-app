@@ -4,6 +4,7 @@ import { AuthContext } from '../context/authcontext'
 import axios from '../api/axios'
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from "react-router"
+import { deriveKey, encryptDataKey } from "../tools/tools"
 
 function AccountSettings() {
 
@@ -75,7 +76,7 @@ function AccountSettings() {
       const data = request.data
       if (data.hasaccess == null || data.email == null || data["2FA"] == null) throw "Error"
 
-      if (request.hasaccess) {
+      if (data.hasaccess) {
         setPassword("")
         addToast(data?.message || "Success", "green")
         setEmail(data.email)
@@ -115,9 +116,24 @@ function AccountSettings() {
     e.preventDefault()
     startrequest()
 
+    const rawsalt = crypto.getRandomValues(new Uint8Array(16))
+    const salt = btoa(String.fromCharCode(...rawsalt))
+
+    const rawKey = Uint8Array.from(atob(user.key), c => c.charCodeAt(0));
+    const dataKey = await crypto.subtle.importKey(
+      "raw",
+      rawKey,
+      { name: "AES-GCM" },
+      true,
+      ["encrypt", "decrypt"]
+    )
+
+    const passwordKey = await deriveKey(newpassword, salt)
+    const privatekey = await encryptDataKey(dataKey, passwordKey)
+    
     try {
       const request = await axios.post('/auth/sensitivedata/requestpasswordchange', {
-        newpassword, newpasswordcheck
+        newpassword, newpasswordcheck, privatekey, salt
       }, {
         withCredentials: true,
         signal: controllerRef.current.signal

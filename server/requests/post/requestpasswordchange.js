@@ -12,7 +12,18 @@ const RequestPasswordChange = async (req, res) => {
 
     if (req.cookies == null || req.body == null) return res.status(400).json({message: "Wrong request"})
     if (req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
-    if (req.body.newpassword == null || req.body.newpasswordcheck == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+    if (req.body.newpassword == null || req.body.newpasswordcheck == null || req.body.salt == null || req.body.privatekey == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+
+    let salt
+    try {
+        salt = Buffer.from(req.body.salt, 'base64')
+    } catch (e) {
+        return res.status(400).json({message: "Error"})
+    }
+    if (salt.length !== 16) return res.status(400).json({message: "Error"}) 
+
+    const [iv, cipher] = req.body.privatekey.split(':')
+    if (!iv || !cipher || iv.length !== 16 || cipher.length < 44 || cipher.length > 88) return res.status(400).json({ message: "Error" })
 
     if (req.body.newpassword != req.body.newpasswordcheck) return res.status(400).json({message: "Passwords don't match"})
 
@@ -37,7 +48,13 @@ const RequestPasswordChange = async (req, res) => {
         if (match) return res.status(400).json({message: "You can't use the same password"})
 
         const verifyjti = uuidv4()
-        const verifytoken = jwt.sign({ newpassword: req.body.newpassword, id: data.id, jti: verifyjti }, process.env.PASSWORDEMAILCHECK_TOKEN_SECRET)
+        const verifytoken = jwt.sign({
+            newpassword: req.body.newpassword,
+            id: data.id,
+            jti: verifyjti,
+            salt: req.body.salt,
+            privatekey: req.body.privatekey
+        }, process.env.PASSWORDEMAILCHECK_TOKEN_SECRET)
                     
         const verificationDurationMs = process.env.PASSWORDEMAILCHECK_TOKEN_DURATION * 60 * 60 * 1000
         const verificationdate = new Date(Date.now() + verificationDurationMs)

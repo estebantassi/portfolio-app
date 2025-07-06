@@ -11,8 +11,6 @@ function generatelogincode() {
     return result;
 }
 
-const ALGORITHM = 'aes-256-gcm';
-
 function hash(value, key)
 {
   const output = crypto
@@ -22,6 +20,8 @@ function hash(value, key)
 
   return output
 }
+
+const ALGORITHM = 'aes-256-gcm'
 
 function encrypt(secret, keyvalue) {
   const KEY = Buffer.from(keyvalue, 'hex')

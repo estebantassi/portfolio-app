@@ -22,9 +22,9 @@ const VerifyEmail = async (req, res) => {
 
         await connection.query(`
             UPDATE users
-            SET verified=1
+            SET verified=1, tag=?
             WHERE id=?
-            `, [data.id])
+            `, [data.id, data.id])
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

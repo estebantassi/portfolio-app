@@ -14,7 +14,7 @@ const PasswordEmailCheck = async (req, res) => {
 
     const data = await GetTokenData(req, req.body.token, "passwordemailcheck")
 
-    if (data == null || data.newpassword == null) return res.status(400).json({message: "Invalid link"})
+    if (data == null || data.newpassword == null || data.salt == null || data.privatekey == null) return res.status(400).json({message: "Invalid link"})
 
     try {
         const [[request]] = await db.query(`
@@ -35,11 +35,9 @@ const PasswordEmailCheck = async (req, res) => {
         
         await db.query(`
             UPDATE users
-            SET password=?
+            SET password=?, messagekey_encrypted=?, messagesalt=?
             WHERE id=?
-            `, [cryptedpassword, data.id])
-
-        
+            `, [cryptedpassword, data.privatekey, data.salt, data.id])        
 
         await db.query(`
             DELETE FROM tokens

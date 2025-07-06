@@ -14,6 +14,9 @@ import Home from './pages/home.jsx'
 import Signup from './pages/signup.jsx'
 import Login from './pages/login.jsx'
 import Logout from './pages/logout.jsx'
+import Profile from './pages/profile.jsx'
+import Messages from './pages/messages.jsx'
+
 import VerifyEmail from './pages/verifyemail.jsx'
 import AccountSettings from './pages/accountsettings.jsx'
 import OldEmailCheck from './pages/oldemailcheck.jsx'
@@ -31,18 +34,20 @@ createRoot(document.getElementById('root')).render(
 
             <Route element={<Anyroute />}>
               <Route path="/home" element={<Home />} />
+              <Route path="/profile/:link" element={<Profile />} />
               <Route path="/oldemailcheck/:link" element={<OldEmailCheck />} />
               <Route path="/newemailcheck/:link" element={<NewEmailCheck />} />
               <Route path="/passwordemailcheck/:link" element={<PasswordEmailCheck />} />
+              <Route path="/verifyemail/:link" element={<VerifyEmail />} />
             </Route>
 
             <Route element={<Logoutroute />}>
               <Route path="/signup" element={<Signup />} />
-              <Route path="/verifyemail/:link" element={<VerifyEmail />} />
               <Route path="/login" element={<Login />} /> 
             </Route>
 
             <Route element={<Protectedroute />}>
+              <Route path="/messages/:link" element={<Messages />} />
               <Route path="/logout" element={<Logout />} />
               <Route path="/accountsettings" element={<AccountSettings />} />
             </Route>

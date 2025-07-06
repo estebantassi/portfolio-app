@@ -26,13 +26,14 @@ const LoginCode = async (req, res) => {
         }
 
         const [[requestuser]] = await connection.query(`
-            SELECT 2FA, username, email_encrypted
+            SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt
             FROM users
             WHERE id = ?
             FOR UPDATE
         `, [data.id])
         
-        if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email_encrypted == null)
+        if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email_encrypted == null || requestuser.tag == null
+            || requestuser.messagekey_encrypted == null || requestuser.messagesalt == null)
             return res.status(400).json({message: "User not found"})
 
         let requests
@@ -117,15 +118,21 @@ const LoginCode = async (req, res) => {
 
         const decryptedemail = decrypt(requestuser.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)
 
-        transporter.sendMail({
-            from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-            to: requestuser.username + ' <' + decryptedemail + '>',
-            subject: "New login on your account",
-            html: "<p>Hello ! Someone logged into your account ! If it's not you, there's an issue !</p>",
-        })
+        if(requestuser['2FA'] == 0)
+        {
+            transporter.sendMail({
+                from: '"Portfolio security system" <' + process.env.EMAIL + '>',
+                to: requestuser.username + ' <' + decryptedemail + '>',
+                subject: "New login on your account",
+                html: "<p>Hello ! Someone logged into your account ! If it's not you, there's an issue !</p>",
+            })
+        }
 
         await connection.commit()
-        return res.status(200).json({ message: "Successfully logged in", user: { username: requestuser.username, id: data.id } })
+        return res.status(200).json({
+            message: "Successfully logged in",
+            user: { username: requestuser.username, id: data.id, tag: requestuser.tag, encryptedkey: requestuser.messagekey_encrypted, salt: requestuser.messagesalt }
+        })
     } catch (err) {
         if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})

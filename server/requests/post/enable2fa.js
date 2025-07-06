@@ -35,7 +35,6 @@ const Enable2FA = async (req, res) => {
 
         let secret = decrypt(request["2FAsecret"], process.env.SECRET_ENCRYPTION_KEY)
 
-        console.log(req.body.code)
         const isVerified = speakeasy.totp.verify({
             secret: secret,
             encoding: 'base32',

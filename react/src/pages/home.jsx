@@ -11,6 +11,9 @@ function Home() {
   return (
     <>
       <h1>{ user ? user.username : "home"}</h1>
+      <button onClick={() => {
+        console.log(user.key)
+      }}></button>
     </>
   )
 }

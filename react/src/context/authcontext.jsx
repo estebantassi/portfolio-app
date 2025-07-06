@@ -3,6 +3,7 @@ import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import Cookies from 'js-cookie'
 import { useNavigate } from "react-router"
+import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64 } from "../tools/tools"
 
 export const AuthContext = createContext()
 
@@ -30,7 +31,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
-    const logincode = async (code) =>
+    const logincode = async (code, password) =>
     {
         try {
             const response = await axios.post('/logintoken/logincode', {
@@ -39,21 +40,47 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            setUser(response.data.user)
-            Cookies.set("user", JSON.stringify(response.data.user))
+            const passwordKey = await deriveKey(password, response.data.user.salt)
+            const key = await decryptDataKey(response.data.user.encryptedkey, passwordKey)
+
+            const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', key)
+            const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
+
+            const newuser = {
+                username: response.data.user.username,
+                id: response.data.user.id,
+                tag: response.data.user.tag,
+                key: keyBase64
+            }
+
+            setUser(newuser)
+            Cookies.set("user", JSON.stringify(newuser))
+
             checkauth()
             navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err)
         {
+            console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
     const signup = async (data) => {
         try {
+            const rawsalt = crypto.getRandomValues(new Uint8Array(16))
+            const salt = btoa(String.fromCharCode(...rawsalt))
+            const passwordKey = await deriveKey(data.password, salt)
+
+            const keypair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"])
+
+            const privatekey = await encryptDataKey(keypair.privateKey, passwordKey)
+
+            const publickey = await crypto.subtle.exportKey('raw', keypair.publicKey)
+            const publickeybase64 = arrayBufferToBase64(publickey)
+
             const response = await axios.post('/signup', {
-                ...data
+                ...data, salt, privatekey, publickey: publickeybase64
             })
 
             navigate("/login")
@@ -111,11 +138,7 @@ export const AuthProvider = ({ children }) => {
             await axios.get('/auth/checkaccesstoken', { withCredentials: true })
             return true
         } catch (err) {
-            if (err.response == null || err.response.data == null) return false
-            if (err.response.data == "Missing token" || err.response.data == "Invalid token") {
-                return updatetoken()
-            }
-            return false
+            updatetoken()
         }
     }
 

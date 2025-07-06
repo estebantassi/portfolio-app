@@ -53,7 +53,7 @@ function Login() {
 
     if (!isusing2FA && (code == "" || code.length > 5 || code.length < 5)) return addToast("Code must be 5 characters long", "red")
 
-    logincode(code)
+    logincode(code, data.password)
   }
 
   return (
