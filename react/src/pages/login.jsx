@@ -36,7 +36,6 @@ function Login() {
     }, 3000)
 
     for (const [key, value] of Object.entries(data)) if (value == "") return addToast("Please fill in all the fields", "red")
-
       login(data).then((data) => {
         if (data == 2) setIsusing2FA(true)
         if(data != 0) setShowLoginCode(true)

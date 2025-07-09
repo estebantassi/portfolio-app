@@ -124,6 +124,34 @@ function base64ToArrayBuffer(base64) {
   return bytes.buffer
 }
 
+function validatehex(value) {
+    return typeof value === 'string' &&
+         /^[0-9a-fA-F]+$/.test(value) &&
+         value.length % 2 === 0 &&
+         value.length >= 64 && value.length <= 128
+}
+
+function validatecode(value) {
+  return typeof value === 'string' && /^[0-9]{6}$/.test(value)
+}
+
+function validateemail(email) {
+    const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+    if (typeof email !== "string" || !emailRegexp.test(email)) return json({ valid: false, message: "Invalid email format" })
+
+    if (email.length < process.env.MIN_EMAIL_LENGTH) return json({ valid: false, message: "Email is too short" })
+    if (email.length > process.env.MAX_EMAIL_LENGTH) return json({ valid: false, message: "Email is too long" })
+
+    return json({ valid: true })
+}
+
+function validatetoken(token) {
+  return typeof token === "string"
+    || token.length > 9
+    || token.length < 5001
+    || token.split(".").length === 3
+}
+
 export {
     deriveKey,
     encryptDataKey,
@@ -131,5 +159,9 @@ export {
     arrayBufferToBase64,
     base64ToArrayBuffer,
     encryptMessage,
-    decryptMessage
+    decryptMessage,
+    validatehex,
+    validatecode,
+    validateemail,
+    validatetoken
 }

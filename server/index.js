@@ -19,11 +19,16 @@ app.use(bodyParser.json({ limit: '10mb' }))
 
 app.post('/signup', require('./requests/post/signup').Signup)
 app.post('/verifyemail', require('./requests/post/verifyemail').VerifyEmail)
-app.post('/login', require('./requests/post/login').Login)
-app.post('/logintoken/logincode', require('./requests/post/logincode').LoginCode)
+app.post('/loginstart', require('./requests/post/login/loginstart').LoginStart)
+app.post('/logintoken/login', require('./requests/post/login/login').Login)
+app.post('/logintoken/logincode', require('./requests/post/login/logincode').LoginCode)
 app.post('/oldemailcheck', require('./requests/post/oldemailcheck').OldEmailCheck)
 app.post('/newemailcheck', require('./requests/post/newemailcheck').NewEmailCheck)
 app.post('/passwordemailcheck', require('./requests/post/passwordemailcheck').PasswordEmailCheck)
+
+app.post('/auth/accountsettings/checkstart', require('./requests/post/account settings/checkstart').CheckStart)
+app.post('/auth/sensitivedata/accountsettings/check', require('./requests/post/account settings/check').Check)
+app.post('/auth/sensitivedata/accountsettings/check2fa', require('./requests/post/account settings/check2fa').Check2FA)
 
 app.get('/getuserprofile', require('./requests/get/getuserprofile').GetUserProfile)
 app.get('/auth/checkaccesstoken', require('./requests/get/checkaccesstoken').CheckAccessToken)

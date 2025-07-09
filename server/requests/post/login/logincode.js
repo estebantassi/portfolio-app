@@ -1,30 +1,32 @@
-const db = require('../../config/database')
+const db = require('../../../config/database')
 const bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
-const transporter = require('../../config/mailsender').transporter
-const { getClientIp, getGeoFromIp } = require('../../config/geo')
-const { GetTokenData } = require('../get/gettokendata')
-const { Check2FAcode } = require('../get/check2facode')
+const transporter = require('../../../config/mailsender').transporter
+const { getClientIp, getGeoFromIp } = require('../../../config/geo')
+const { GetTokenData } = require('../../get/gettokendata')
+const { Check2FAcode } = require('../../get/check2facode')
 const { v4: uuidv4 } = require('uuid')
-const { encrypt, decrypt } = require('../../tools/tools')
+const { encrypt, decrypt, validatetoken, validatecode } = require('../../../tools/tools')
+const { CheckUserExpirations } = require("../../remove/checkuserexpirations")
 
 const LoginCode = async (req, res) => {
-
-    if (req.body == null || req.cookies == null || req.body.code == null || req.cookies.logintoken == null)
-        return res.status(400).json({message: "Please fill out all the necessary fields"})
-
     let connection
     try {
-        connection = await db.getConnection()
-        await connection.beginTransaction()
+        if (req.cookies == null || req.cookies.logintoken == null) return res.status(400).json({message: "Missing token"})
+        if (req.body == null || req.body.code == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+
+        const logintoken = req.cookies.logintoken
+        const code = req.body.code
+
+        if (!validatecode(code)) return res.status(400).json({message: "Invalid code format"})
+        if (!validatetoken(logintoken)) return res.status(400).json({ message: "Invalid token format" })
 
         const data = await GetTokenData(req, req.cookies.logintoken, "logintoken")
-        if (data == null || data.jti == null || data.id == null) {
-            connection.rollback()
-            return res.status(400).json({message: "Invalid token"})
-        }
+        if (data == null || data.step == null || data.step != 1) return res.status(400).json({message: "Invalid token"})
 
+        connection = await db.getConnection()
+        await connection.beginTransaction()
         const [[requestuser]] = await connection.query(`
             SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt
             FROM users
@@ -43,7 +45,7 @@ const LoginCode = async (req, res) => {
             [requests] = await connection.query(`
                 SELECT expires_at, id
                 FROM tokens
-                WHERE userid = ? AND value=? AND type=?
+                WHERE userid=? AND value=? AND type=?
             `, [data.id, req.body.code, 'logincode'])
 
             request = requests[0]
@@ -128,12 +130,15 @@ const LoginCode = async (req, res) => {
             })
         }
 
+        CheckUserExpirations(data.id)
+
         await connection.commit()
         return res.status(200).json({
             message: "Successfully logged in",
             user: { username: requestuser.username, id: data.id, tag: requestuser.tag, encryptedkey: requestuser.messagekey_encrypted, salt: requestuser.messagesalt }
         })
     } catch (err) {
+        console.log(err)
         if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
     } finally {

@@ -5,6 +5,7 @@ import axios from '../api/axios'
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from "react-router"
 import { deriveKey, encryptDataKey } from "../tools/tools"
+import srp from "secure-remote-password/client"
 
 function AccountSettings() {
 
@@ -64,28 +65,59 @@ function AccountSettings() {
     startrequest()
 
     try {
-      const request = await axios.post('/auth/getsensitivedata', {
-        password,
-        code: accesscode2FA
+      if (showaccesscode2FA)
+      {
+        const response = await axios.post('/auth/sensitivedata/accountsettings/check2fa', {
+          code: accesscode2FA,
+        }, {
+          withCredentials: true,
+          signal: controllerRef.current.signal
+        })
+
+        if (response == null || response.data == null || response.data.user == null) throw "Error"
+
+        addToast(response?.data?.message || "Success", "green")
+        setEmail(response.data.user.email)
+        setHas2FA(true)
+        setIsauth(true)
+        return
+      }
+
+      const firstResponse = await axios.post('/auth/accountsettings/checkstart', {}, {
+        withCredentials: true,
+        signal: controllerRef.current.signal
+      })
+
+      if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemereal == null || firstResponse.data.email == null) throw "Error"
+      const srpSalt = firstResponse.data.srpSalt
+      const srpServerEphemereal = firstResponse.data.srpServerEphemereal
+      const email = firstResponse.data.email
+
+      const srpClientEphemeral = srp.generateEphemeral()
+      const srpPrivateKey = srp.derivePrivateKey(srpSalt, email, password)
+      const srpClientSession = srp.deriveSession(srpClientEphemeral.secret, srpServerEphemereal, srpSalt, email, srpPrivateKey)
+
+      const response = await axios.post('/auth/sensitivedata/accountsettings/check', {
+        srpProof: srpClientSession.proof, srpClientEphemereal: srpClientEphemeral.public
       }, {
         withCredentials: true,
         signal: controllerRef.current.signal
       })
 
-      if (request == null || request.data == null) throw "Error"
-      const data = request.data
-      if (data.hasaccess == null || data.email == null || data["2FA"] == null) throw "Error"
+      if (response == null || response.data == null || response.data["2FA"] == null || response.data.srpProof == null) throw "Error"
 
-      if (data.hasaccess) {
-        setPassword("")
-        addToast(data?.message || "Success", "green")
-        setEmail(data.email)
-        setHas2FA(data["2FA"])
+      try { srp.verifySession(srpClientEphemeral.public, srpClientSession, response.data.srpProof) } catch { throw "Error" }
+
+      addToast(response?.data?.message || "Success", "green")
+      setPassword("")
+      if (response.data["2FA"] == 0) {
+        if (response.data.user == null) throw "Error"
+        setEmail(response.data.user.email)
+        setHas2FA(response.data["2FA"])
         setIsauth(true)
       } else {
         setShowaccesscode2FA(true)
       }
-
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
@@ -130,7 +162,7 @@ function AccountSettings() {
 
     const passwordKey = await deriveKey(newpassword, salt)
     const privatekey = await encryptDataKey(dataKey, passwordKey)
-    
+
     try {
       const request = await axios.post('/auth/sensitivedata/requestpasswordchange', {
         newpassword, newpasswordcheck, privatekey, salt

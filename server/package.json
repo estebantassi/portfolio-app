@@ -17,6 +17,7 @@
     "nodemon": "^3.1.10",
     "qrcode": "^1.5.4",
     "redis": "^5.5.6",
+    "secure-remote-password": "^0.3.1",
     "speakeasy": "^2.0.0",
     "uuid": "^11.1.0"
   }

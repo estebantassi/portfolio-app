@@ -1,0 +1,103 @@
+const db = require('../../../config/database')
+const bcrypt = require('bcrypt')
+var jwt = require('jsonwebtoken')
+require('dotenv').config()
+const transporter = require('../../../config/mailsender').transporter
+const { generatelogincode } = require("../../../tools/tools")
+const { v4: uuidv4 } = require('uuid')
+const { encrypt, decrypt, hash, validatetoken, validateemail, validatehex } = require('../../../tools/tools')
+const srp = require('secure-remote-password/server')
+const { getCachedValue, setCachedValue } = require('../../../config/redis')
+const { GetTokenData } = require('../../get/gettokendata')
+
+const Check = async (req, res) => {
+    let connection
+    try {
+        if (req.cookies == null || req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
+        if (req.body == null || req.body.srpProof == null || req.body.srpClientEphemereal == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+
+        const accesstoken = req.cookies.accesstoken
+        const oldsensitivedatatoken = req.cookies.sensitivedatatoken
+        const srpProof = req.body.srpProof
+        const srpClientEphemereal = req.body.srpClientEphemereal
+
+        if (!validatehex(srpProof)) return res.status(400).json({ message: "Invalid proof format" })
+        if (!validatehex(srpClientEphemereal)) return res.status(400).json({ message: "Invalid ephemereal format" })
+        if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })
+        if (!validatetoken(oldsensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
+
+        const data = await GetTokenData(req, accesstoken, "access")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
+        if (data2 == null || data2.step == null || data2.step != 0) return res.status(400).json({message: "Invalid token"})
+
+        connection = await db.getConnection()
+        await connection.beginTransaction()
+        const [[request]] = await connection.query(`
+            SELECT id, 2FA, srpsalt, srpverifier, email_hash, email_encrypted
+            FROM users
+            WHERE id=?
+            FOR UPDATE
+        `, [data.id])
+
+        if (request == null || request.id == null || request['2FA'] == null || request.srpsalt == null || request.srpverifier == null || request.email_hash == null || request.email_encrypted == null) {
+            await connection.rollback()
+            return res.status(400).json({message: "User not found"})
+        }
+        const srpSalt = request.srpsalt
+        const srpVerifier = request.srpverifier
+        const hashedemail = request.email_hash
+        const encryptedemail = request.email_encrypted
+        const decryptedemail = decrypt(encryptedemail, process.env.EMAIL_ENCRYPTION_KEY)
+
+        const srpSecretEphemereal = await getCachedValue(`accountsettings/ephemereal/${hashedemail}/${data2.jti}`)
+        let srpServerSession
+        try {
+            srpServerSession = srp.deriveSession(srpSecretEphemereal, srpClientEphemereal, srpSalt, decryptedemail, srpVerifier, srpProof)
+        } catch {
+            await connection.rollback()
+            return res.status(400).json({message: "Wrong password"})
+        }
+        if (!srpServerSession || !srpServerSession.proof) {
+            await connection.rollback()
+            return res.status(400).json({message: "Wrong password"})
+        }
+
+        const sensitivedataDurationMs = Number(process.env.SENSITIVEDATA_TOKEN_DURATION) * 60 * 60 * 1000
+        const sensitivedatadate = new Date(Date.now() + sensitivedataDurationMs)
+        const sensitivedatatokenjti = uuidv4()
+        var sensitivedatatoken = jwt.sign({ id: data.id, jti: sensitivedatatokenjti, step: 1 }, process.env.SENSITIVEDATA_TOKEN_SECRET)
+        res.cookie("sensitivedatatoken", sensitivedatatoken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict',
+            path: "/auth/sensitivedata",
+            maxAge: sensitivedataDurationMs
+        })
+
+        await connection.query(`
+            DELETE FROM tokens
+            WHERE value=? AND userid=? AND type=?
+        `, [data2.jti, data.id, "sensitivedata"])
+
+        await connection.query(`
+            INSERT INTO tokens (userid, type, value, expires_at)
+            VALUES (?, ?, ?, ?)
+        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
+
+        let user = {}
+        if (request["2FA"] == 0) { user.email = decryptedemail }
+
+        await connection.commit()
+        return res.status(200).json({ srpProof: srpServerSession.proof, user, message: request['2FA'] ? "Enter your 2FA Authenticator Code" : "Access granted", "2FA": request['2FA'] })
+    } catch (err) {
+        console.log(err)
+        if (connection) await connection.rollback()
+        return res.status(500).json({message: "An error occured, please try again later"})
+    } finally {
+        if (connection) connection.release()
+    }
+
+}
+
+module.exports = { Check }

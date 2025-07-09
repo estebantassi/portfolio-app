@@ -4,6 +4,7 @@ import axios from '../api/axios'
 import Cookies from 'js-cookie'
 import { useNavigate } from "react-router"
 import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64 } from "../tools/tools"
+import srp from "secure-remote-password/client"
 
 export const AuthContext = createContext()
 
@@ -16,11 +17,29 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (data) => {
         try {
-            const response = await axios.post('/login', {
-                ...data
+            const firstResponse = await axios.post('/loginstart',
+                {
+                    email: data.email
+                }, {
+                withCredentials: true
+            })
+
+            if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemereal == null) throw "Error"
+            const srpSalt = firstResponse.data.srpSalt
+            const srpServerEphemereal = firstResponse.data.srpServerEphemereal
+
+            const srpClientEphemeral = srp.generateEphemeral()
+            const srpPrivateKey = srp.derivePrivateKey(srpSalt, data.email, data.password)
+            const srpClientSession = srp.deriveSession(srpClientEphemeral.secret, srpServerEphemereal, srpSalt, data.email, srpPrivateKey)
+
+            const response = await axios.post('/logintoken/login', {
+                email: data.email, srpProof: srpClientSession.proof, srpClientEphemereal: srpClientEphemeral.public
             }, {
                 withCredentials: true
             })
+            if (response == null || response.data == null || response.data.srpProof == null) throw "Error"
+
+            try { srp.verifySession(srpClientEphemeral.public, srpClientSession, response.data.srpProof) } catch { throw "Error" }
 
             addToast(response?.data?.message || "Success", "green")
             if (response.data["2FA"]) return 2
@@ -31,8 +50,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
-    const logincode = async (code, password) =>
-    {
+    const logincode = async (code, password) => {
         try {
             const response = await axios.post('/logintoken/logincode', {
                 code
@@ -59,8 +77,7 @@ export const AuthProvider = ({ children }) => {
             checkauth()
             navigate("/home")
             addToast(response?.data?.message || "Success", "green")
-        } catch (err)
-        {
+        } catch (err) {
             console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
@@ -79,8 +96,12 @@ export const AuthProvider = ({ children }) => {
             const publickey = await crypto.subtle.exportKey('raw', keypair.publicKey)
             const publickeybase64 = arrayBufferToBase64(publickey)
 
+            const srpSalt = srp.generateSalt()
+            const srpPrivatekey = srp.derivePrivateKey(srpSalt, data.email, data.password)
+            const srpVerifier = srp.deriveVerifier(srpPrivatekey)
+
             const response = await axios.post('/signup', {
-                ...data, salt, privatekey, publickey: publickeybase64
+                ...data, salt, privatekey, publickey: publickeybase64, srpSalt, srpVerifier
             })
 
             navigate("/login")
