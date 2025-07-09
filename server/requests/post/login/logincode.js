@@ -5,7 +5,7 @@ require('dotenv').config()
 const transporter = require('../../../config/mailsender').transporter
 const { getClientIp, getGeoFromIp } = require('../../../config/geo')
 const { GetTokenData } = require('../../get/gettokendata')
-const { Check2FAcode } = require('../../get/check2facode')
+const { Check2FAcode } = require('../../post/2FA/check2facode')
 const { v4: uuidv4 } = require('uuid')
 const { encrypt, decrypt, validatetoken, validatecode } = require('../../../tools/tools')
 const { CheckUserExpirations } = require("../../remove/checkuserexpirations")
@@ -28,14 +28,14 @@ const LoginCode = async (req, res) => {
         connection = await db.getConnection()
         await connection.beginTransaction()
         const [[requestuser]] = await connection.query(`
-            SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt
+            SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt, 2FAsecret
             FROM users
             WHERE id = ?
             FOR UPDATE
         `, [data.id])
         
         if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email_encrypted == null || requestuser.tag == null
-            || requestuser.messagekey_encrypted == null || requestuser.messagesalt == null)
+            || requestuser.messagekey_encrypted == null || requestuser.messagesalt == null || requestuser['2FAsecret'] == null)
             return res.status(400).json({message: "User not found"})
 
         let requests
@@ -135,7 +135,15 @@ const LoginCode = async (req, res) => {
         await connection.commit()
         return res.status(200).json({
             message: "Successfully logged in",
-            user: { username: requestuser.username, id: data.id, tag: requestuser.tag, encryptedkey: requestuser.messagekey_encrypted, salt: requestuser.messagesalt }
+            user: {
+                username: requestuser.username,
+                id: data.id,
+                tag: requestuser.tag,
+                encryptedkey: requestuser.messagekey_encrypted,
+                salt: requestuser.messagesalt
+            },
+            encrypted2FAsecret: requestuser['2FAsecret'],
+            has2FA: requestuser['2FA']
         })
     } catch (err) {
         console.log(err)

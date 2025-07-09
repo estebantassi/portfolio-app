@@ -4,7 +4,7 @@ import { AuthContext } from '../context/authcontext'
 import axios from '../api/axios'
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from "react-router"
-import { deriveKey, encryptDataKey } from "../tools/tools"
+import { decryptDataKey, deriveKey, encryptDataKey, arrayBufferToBase64, base64ToArrayBuffer } from "../tools/tools"
 import srp from "secure-remote-password/client"
 
 function AccountSettings() {
@@ -14,7 +14,7 @@ function AccountSettings() {
   const timeoutRef = useRef(null)
 
   const { addToast } = useContext(ToastContext)
-  const { user } = useContext(AuthContext)
+  const { user, setUser } = useContext(AuthContext)
   const [isauth, setIsauth] = useState(false)
   const [password, setPassword] = useState("")
   const [showaccesscode2FA, setShowaccesscode2FA] = useState(false)
@@ -33,6 +33,7 @@ function AccountSettings() {
   const [qrcode, setQrcode] = useState("")
   const [isqrcodescanned, setIsqrcodescanned] = useState(false)
   const [code2FA, setCode2FA] = useState("")
+  const [encrypted2FAsecret, setEncrypted2FAsecret] = useState("")
 
   useEffect(() => {
     startrequest()
@@ -109,7 +110,6 @@ function AccountSettings() {
       try { srp.verifySession(srpClientEphemeral.public, srpClientSession, response.data.srpProof) } catch { throw "Error" }
 
       addToast(response?.data?.message || "Success", "green")
-      setPassword("")
       if (response.data["2FA"] == 0) {
         if (response.data.user == null) throw "Error"
         setEmail(response.data.user.email)
@@ -146,6 +146,7 @@ function AccountSettings() {
 
   const requestnewpassword = async (e) => {
     e.preventDefault()
+    return
     startrequest()
 
     const rawsalt = crypto.getRandomValues(new Uint8Array(16))
@@ -160,7 +161,7 @@ function AccountSettings() {
       ["encrypt", "decrypt"]
     )
 
-    const passwordKey = await deriveKey(newpassword, salt)
+    const passwordKey = await deriveKey(newpassword, "", salt)
     const privatekey = await encryptDataKey(dataKey, passwordKey)
 
     try {
@@ -189,8 +190,9 @@ function AccountSettings() {
         withCredentials: true,
         signal: controllerRef.current.signal
       })
-      if (request == null || request.data == null || request.data.data == null) throw "Error"
-      setQrcode(request.data.data)
+      if (request == null || request.data == null || request.data.qrcode == null) throw "Error"
+      setQrcode(request.data.qrcode)
+      setEncrypted2FAsecret(request.data.encrypted2FAsecret)
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
@@ -202,18 +204,45 @@ function AccountSettings() {
     e.preventDefault()
     startrequest()
 
+    const rawsalt = crypto.getRandomValues(new Uint8Array(16))
+    const salt = btoa(String.fromCharCode(...rawsalt))
+
+    const rawKey = base64ToArrayBuffer(user.key)
+    const dataKey = await crypto.subtle.importKey(
+      'pkcs8',
+      rawKey,
+      {
+        name: 'ECDH',
+        namedCurve: 'P-256'
+      },
+      true,
+      ['deriveKey', 'deriveBits']
+    )
+
+    const passwordKey = await deriveKey(password, encrypted2FAsecret, salt)
+    const privatekey = await encryptDataKey(dataKey, passwordKey)
+
+    const decryptedkey = await decryptDataKey(privatekey, passwordKey)
+    const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', decryptedkey)
+    const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
+    
     try {
       const request = await axios.post('/auth/sensitivedata/enable2FA', {
-        code: code2FA
+        code: code2FA,
+        salt,
+        privatekey
       }, {
         withCredentials: true,
         signal: controllerRef.current.signal
       })
 
+      setUser(prev => ({ ...prev, key: keyBase64 }))
+
       setCode2FA("")
       setHas2FA(true)
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
+      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
@@ -223,16 +252,42 @@ function AccountSettings() {
     startrequest()
 
     try {
-      const request = await axios.post('/auth/sensitivedata/disable2fa', {
+      const rawsalt = crypto.getRandomValues(new Uint8Array(16))
+      const salt = btoa(String.fromCharCode(...rawsalt))
 
+      const rawKey = base64ToArrayBuffer(user.key)
+      const dataKey = await crypto.subtle.importKey(
+        'pkcs8',
+        rawKey,
+        {
+          name: 'ECDH',
+          namedCurve: 'P-256'
+        },
+        true,
+        ['deriveKey', 'deriveBits']
+      )
+
+      const passwordKey = await deriveKey(newpassword, "", salt)
+      const privatekey = await encryptDataKey(dataKey, passwordKey)
+
+      const decryptedkey = await decryptDataKey(privatekey, passwordKey)
+      const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', decryptedkey)
+      const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
+
+      const request = await axios.post('/auth/sensitivedata/disable2fa', {
+        salt,
+        privatekey
       }, {
         withCredentials: true,
         signal: controllerRef.current.signal
       })
 
+      setUser(prev => ({ ...prev, key: keyBase64 }))
+
       setHas2FA(false)
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
+      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
@@ -279,6 +334,7 @@ function AccountSettings() {
 
       {qrcode && !has2FA ? <>
         <form onSubmit={(e) => {
+          e.preventDefault()
           setIsqrcodescanned(true)
           setQrcode(null)
         }}>

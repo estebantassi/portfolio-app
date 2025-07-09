@@ -1,10 +1,13 @@
-async function deriveKey(password, base64Salt) {
+async function deriveKey(password, encrypted2FAsecret, base64Salt) {
   const salt = Uint8Array.from(atob(base64Salt), c => c.charCodeAt(0))
   const encoder = new TextEncoder()
 
+  const secretvalue = password + "" + encrypted2FAsecret
+  console.log(secretvalue)
+
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(password),
+    encoder.encode(secretvalue),
     'PBKDF2',
     false,
     ['deriveKey']
@@ -44,6 +47,7 @@ async function encryptDataKey(dataKey, passwordKey) {
 }
 
 async function decryptDataKey(encryptedDataKey, passwordKey) {
+  
   const [ivBase64, cipherBase64] = encryptedDataKey.split(':')
   if (!ivBase64 || !cipherBase64) {
     throw new Error('Invalid encryptedDataKey format')
@@ -104,17 +108,13 @@ async function decryptMessage(secretKey, encryptedString) {
 }
 
 function arrayBufferToBase64(buffer) {
-  // Convert buffer to Uint8Array
   const bytes = new Uint8Array(buffer)
-  // Convert bytes to string
   let binary = ''
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i])
   }
-  // Convert binary string to base64
   return btoa(binary)
 }
-
 function base64ToArrayBuffer(base64) {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
@@ -147,9 +147,9 @@ function validateemail(email) {
 
 function validatetoken(token) {
   return typeof token === "string"
-    || token.length > 9
-    || token.length < 5001
-    || token.split(".").length === 3
+    && token.length > 9
+    && token.length < 5001
+    && token.split(".").length === 3
 }
 
 export {

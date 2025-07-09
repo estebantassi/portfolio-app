@@ -58,11 +58,16 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            const passwordKey = await deriveKey(password, response.data.user.salt)
+            let encrypted2FAsecret = ""
+            if (response.data.has2FA == 1) encrypted2FAsecret = response.data.encrypted2FAsecret
+
+            const passwordKey = await deriveKey(password, encrypted2FAsecret, response.data.user.salt)
             const key = await decryptDataKey(response.data.user.encryptedkey, passwordKey)
 
             const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', key)
             const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
+
+            console.log("Key from 2FA : " + encrypted2FAsecret)
 
             const newuser = {
                 username: response.data.user.username,
@@ -87,10 +92,9 @@ export const AuthProvider = ({ children }) => {
         try {
             const rawsalt = crypto.getRandomValues(new Uint8Array(16))
             const salt = btoa(String.fromCharCode(...rawsalt))
-            const passwordKey = await deriveKey(data.password, salt)
+            const passwordKey = await deriveKey(data.password, "", salt)
 
             const keypair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"])
-
             const privatekey = await encryptDataKey(keypair.privateKey, passwordKey)
 
             const publickey = await crypto.subtle.exportKey('raw', keypair.publicKey)
@@ -101,7 +105,7 @@ export const AuthProvider = ({ children }) => {
             const srpVerifier = srp.deriveVerifier(srpPrivatekey)
 
             const response = await axios.post('/signup', {
-                ...data, salt, privatekey, publickey: publickeybase64, srpSalt, srpVerifier
+                username: data.username, email: data.email, emailcheck: data.emailcheck, salt, privatekey, publickey: publickeybase64, srpSalt, srpVerifier
             })
 
             navigate("/login")
@@ -175,6 +179,7 @@ export const AuthProvider = ({ children }) => {
 
     let contextData = {
         user,
+        setUser,
         logout,
         login,
         signup,

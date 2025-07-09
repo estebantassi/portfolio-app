@@ -1,25 +1,30 @@
 require('dotenv').config()
-const db = require('../../config/database')
-const { GetTokenData } = require('../get/gettokendata')
+const db = require('../../../config/database')
+const { GetTokenData } = require('../../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encrypt, decrypt } = require('../../tools/tools')
+const { encrypt, decrypt, validatetoken } = require('../../../tools/tools')
 
 const Request2FA = async (req, res) => {
 
-    if (req.cookies == null) return res.status(400).json({message: "Wrong request"})
-    if (req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
-
-    const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-    if (data == null) return res.status(400).json({message: "Invalid token"})
-    const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
-    if (data2 == null) return res.status(400).json({message: "Invalid token"})
-
-    const secret = speakeasy.generateSecret({ name: 'Portfolio' })
-    let cryptedsecret = encrypt(secret.base32, process.env.SECRET_ENCRYPTION_KEY)
-
     let connection
     try {
+        if (req.cookies == null || req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
+
+        const accesstoken = req.cookies.accesstoken
+        const sensitivedatatoken = req.cookies.sensitivedatatoken
+
+        if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })
+        if (!validatetoken(sensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
+
+        const data = await GetTokenData(req, req.cookies.accesstoken, "access")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
+        if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
+
+        const secret = speakeasy.generateSecret({ name: 'Portfolio' })
+        let cryptedsecret = encrypt(secret.base32, process.env.SECRET_ENCRYPTION_KEY)
+    
         connection = await db.getConnection()
         await connection.beginTransaction()
 
@@ -54,7 +59,8 @@ const Request2FA = async (req, res) => {
             connection.commit()
             return res.status(200).json({
                 message: "Please scan the QR code on your authenticator app",
-                data: data_url
+                qrcode: data_url,
+                encrypted2FAsecret: cryptedsecret
             })
         })
     } catch (err) {

@@ -50,7 +50,7 @@ function Login() {
       setIsbuttondisabled(false)
     }, 3000)
 
-    if (!isusing2FA && (code == "" || code.length > 6 || code.length < 6)) return addToast("Code must be 6 characters long", "red")
+    if (code == "" || code.length > 6 || code.length < 6) return addToast("Code must be 6 characters long", "red")
 
     logincode(code, data.password)
   }

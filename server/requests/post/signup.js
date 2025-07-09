@@ -8,8 +8,7 @@ const { encrypt, decrypt, hash, validateemail } = require('../../tools/tools')
 
 const Signup = async (req, res) => {
 
-    if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.password == null
-        || req.body.passwordcheck == null || req.body.salt == null || req.body.privatekey == null || req.body.publickey == null || req.body.srpSalt == null || req.body.srpVerifier == null)
+    if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.salt == null || req.body.privatekey == null || req.body.publickey == null || req.body.srpSalt == null || req.body.srpVerifier == null)
         return res.status(400).json({ message: "Please fill out all the necessary fields" })
 
     let salt
@@ -36,23 +35,15 @@ const Signup = async (req, res) => {
     const username = req.body.username
     const email = req.body.email
     const emailcheck = req.body.emailcheck
-    const password = req.body.password
-    const passwordcheck = req.body.passwordcheck
 
-    if (password != passwordcheck) return res.status(400).json({ message: "Passwords don't match" })
     if (email != emailcheck) return res.status(400).json({ message: "Emails don't match" })
 
     if (username.length > process.env.MAX_USERNAME_LENGTH) return res.status(400).json({ message: "Username is too long" })
     if (username.length < process.env.MIN_USERNAME_LENGTH) return res.status(400).json({ message: "Username is too short" })
 
-    if (password.length > process.env.MAX_PASSWORD_LENGTH) return res.status(400).json({ message: "Password is too long" })
-    if (password.length < process.env.MIN_PASSWORD_LENGTH) return res.status(400).json({ message: "Password is too short" })
-
     const emailtest = validateemail(email)
     if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
 
-    const passwordsalt = await bcrypt.genSalt()
-    const cryptedpassword = await bcrypt.hash(password, passwordsalt)
     const encryptedemail = encrypt(email, process.env.EMAIL_ENCRYPTION_KEY)
     const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
 
@@ -63,9 +54,9 @@ const Signup = async (req, res) => {
 
         const date = new Date()
         const [request] = await connection.query(`
-            INSERT INTO users (username, email_hash, email_encrypted, password, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [username, hashedemail, encryptedemail, cryptedpassword, date, req.body.privatekey, req.body.salt, req.body.publickey, req.body.srpSalt, req.body.srpVerifier])
+            INSERT INTO users (username, email_hash, email_encrypted, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [username, hashedemail, encryptedemail, date, req.body.privatekey, req.body.salt, req.body.publickey, req.body.srpSalt, req.body.srpVerifier])
 
         if (request == null || request.insertId == null) {
             await connection.rollback()

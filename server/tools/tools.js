@@ -86,4 +86,39 @@ function validatetoken(token) {
     && token.split(".").length === 3
 }
 
-module.exports = { generatelogincode, encrypt, decrypt, hash, validateemail, validatetoken, validatehex, validatecode }
+function validatesalt(salt) {
+  if (typeof salt !== 'string') return false
+  try { return Buffer.from(salt, 'base64').length === 16 } catch { return false }
+}
+
+function validatekey(key) {
+  try {
+    if (typeof key !== 'string') return false
+
+    const [ivB64, cipherB64] = key.split(':')
+    if (!ivB64 || !cipherB64) return false
+
+    const iv = Buffer.from(ivB64, 'base64')
+    const cipher = Buffer.from(cipherB64, 'base64')
+
+    if (iv.length !== 12) return false
+    if (cipher.length === 0) return false
+  } catch {
+      return false
+  }
+
+  return true
+}
+
+module.exports = {
+  generatelogincode,
+  encrypt,
+  decrypt,
+  hash,
+  validateemail,
+  validatetoken,
+  validatehex,
+  validatecode,
+  validatesalt,
+  validatekey
+}

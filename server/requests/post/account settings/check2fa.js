@@ -9,7 +9,7 @@ const { encrypt, decrypt, hash, validatetoken, validatecode, validatehex } = req
 const srp = require('secure-remote-password/server')
 const { getCachedValue, setCachedValue } = require('../../../config/redis')
 const { GetTokenData } = require('../../get/gettokendata')
-const { Check2FAcode } = require('../../get/check2facode')
+const { Check2FAcode } = require('../../post/2FA/check2facode')
 
 const Check2FA = async (req, res) => {
     try {
@@ -20,7 +20,6 @@ const Check2FA = async (req, res) => {
         const oldsensitivedatatoken = req.cookies.sensitivedatatoken
         const code = req.body.code
 
-        console.log(code)
         if (!validatecode(code)) return res.status(400).json({ message: "Invalid code format" })
         if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })
         if (!validatetoken(oldsensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
