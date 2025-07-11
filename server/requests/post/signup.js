@@ -4,37 +4,27 @@ require('dotenv').config()
 var jwt = require('jsonwebtoken')
 const transporter = require('../../config/mailsender').transporter
 const { v4: uuidv4 } = require('uuid')
-const { encrypt, decrypt, hash, validateemail } = require('../../tools/tools')
+const { encrypt, decrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier } = require('../../tools/tools')
 
 const Signup = async (req, res) => {
 
     if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.salt == null || req.body.privatekey == null || req.body.publickey == null || req.body.srpSalt == null || req.body.srpVerifier == null)
-        return res.status(400).json({ message: "Please fill out all the necessary fields" })
+        return res.status(400).json({ message: "Missing data" })
 
-    let salt
-    try { salt = Buffer.from(req.body.salt, 'base64') } catch { return res.status(400).json({ message: "Error" }) }
-    if (salt.length !== 16) return res.status(400).json({ message: "Error" })
-
-    try {
-        const pubBuf = Buffer.from(req.body.publickey, 'base64')
-        if (pubBuf.length !== 65) throw 'Error'
-        if (pubBuf[0] !== 0x04) throw 'Error'
-    } catch { return res.status(400).json({ message: "Error" }) }
-
-    try {
-        const [ivB64, cipherB64] = req.body.privatekey.split(':')
-        if (!ivB64 || !cipherB64) throw 'Error'
-
-        const iv = Buffer.from(ivB64, 'base64')
-        const cipher = Buffer.from(cipherB64, 'base64')
-
-        if (iv.length !== 12) throw 'Error'
-        if (cipher.length === 0) throw 'Error'
-    } catch { return res.status(400).json({ message: "Error" }) }
-
+    const salt = req.body.salt
+    const publickey = req.body.publickey
+    const privatekey = req.body.privatekey
+    const srpsalt = req.body.srpSalt
+    const srpverifier = req.body.srpVerifier
     const username = req.body.username
     const email = req.body.email
     const emailcheck = req.body.emailcheck
+
+    if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
+    if (!validatepublickey(publickey)) return res.status(400).json({ message: "Invalid key format" })
+    if (!validateprivatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
+    if (!validatesrpsalt(srpsalt)) return res.status(400).json({ message: "Invalid salt format" })
+    if (!validatesrpverifier(srpverifier)) return res.status(400).json({ message: "Invalid verifier format" })
 
     if (email != emailcheck) return res.status(400).json({ message: "Emails don't match" })
 

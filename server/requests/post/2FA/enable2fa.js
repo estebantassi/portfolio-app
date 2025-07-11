@@ -3,7 +3,7 @@ const db = require('../../../config/database')
 const { GetTokenData } = require('../../get/gettokendata')
 const transporter = require('../../../config/mailsender').transporter
 const speakeasy = require('speakeasy')
-const { decrypt, encrypt, validatetoken, validatecode, validatesalt, validatekey } = require('../../../tools/tools')
+const { decrypt, encrypt, validatetoken, validatecode, validatesalt, validateprivatekey } = require('../../../tools/tools')
 var jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid')
 
@@ -20,7 +20,7 @@ const Enable2FA = async (req, res) => {
         const accesstoken = req.cookies.accesstoken
         const oldsensitivedatatoken = req.cookies.sensitivedatatoken
 
-        if (!validatekey(privatekey))  return res.status(400).json({ message: "Invalid key format" })
+        if (!validateprivatekey(privatekey))  return res.status(400).json({ message: "Invalid key format" })
         if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
         if (!validatecode(code)) return res.status(400).json({ message: "Invalid code format" })
         if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })

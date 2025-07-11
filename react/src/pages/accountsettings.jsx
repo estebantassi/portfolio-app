@@ -75,9 +75,10 @@ function AccountSettings() {
           signal: controllerRef.current.signal
         })
 
-        if (response == null || response.data == null || response.data.user == null) throw "Error"
+        if (response == null || response.data == null || response.data.user == null || response.data.encrypted2FAsecret == null) throw "Error"
 
         addToast(response?.data?.message || "Success", "green")
+        setEncrypted2FAsecret(response.data.encrypted2FAsecret)
         setEmail(response.data.user.email)
         setHas2FA(true)
         setIsauth(true)
@@ -146,27 +147,37 @@ function AccountSettings() {
 
   const requestnewpassword = async (e) => {
     e.preventDefault()
-    return
     startrequest()
 
-    const rawsalt = crypto.getRandomValues(new Uint8Array(16))
-    const salt = btoa(String.fromCharCode(...rawsalt))
-
-    const rawKey = Uint8Array.from(atob(user.key), c => c.charCodeAt(0));
-    const dataKey = await crypto.subtle.importKey(
-      "raw",
-      rawKey,
-      { name: "AES-GCM" },
-      true,
-      ["encrypt", "decrypt"]
-    )
-
-    const passwordKey = await deriveKey(newpassword, "", salt)
-    const privatekey = await encryptDataKey(dataKey, passwordKey)
-
     try {
-      const request = await axios.post('/auth/sensitivedata/requestpasswordchange', {
-        newpassword, newpasswordcheck, privatekey, salt
+      const rawsalt = crypto.getRandomValues(new Uint8Array(16))
+      const salt = btoa(String.fromCharCode(...rawsalt))
+
+      const rawKey = base64ToArrayBuffer(user.key)
+      const dataKey = await crypto.subtle.importKey(
+        'pkcs8',
+        rawKey,
+        {
+          name: 'ECDH',
+          namedCurve: 'P-256'
+        },
+        true,
+        ['deriveKey', 'deriveBits']
+      )
+
+      const passwordKey = await deriveKey(newpassword, encrypted2FAsecret, salt)
+      const privatekey = await encryptDataKey(dataKey, passwordKey)
+    
+      const decryptedkey = await decryptDataKey(privatekey, passwordKey)
+      const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', decryptedkey)
+      const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
+
+      const srpSalt = srp.generateSalt()
+      const srpPrivatekey = srp.derivePrivateKey(srpSalt, email, newpassword)
+      const srpVerifier = srp.deriveVerifier(srpPrivatekey)
+
+      const request = await axios.post('/auth/sensitivedata/accountsettings/requestpasswordchange', {
+        privatekey, salt, srpSalt, srpVerifier
       }, {
         withCredentials: true,
         signal: controllerRef.current.signal
@@ -174,6 +185,7 @@ function AccountSettings() {
 
       setNewpassword("")
       setNewpasswordcheck("")
+      setUser(prev => ({ ...prev, key: keyBase64 }))
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
@@ -192,7 +204,6 @@ function AccountSettings() {
       })
       if (request == null || request.data == null || request.data.qrcode == null) throw "Error"
       setQrcode(request.data.qrcode)
-      setEncrypted2FAsecret(request.data.encrypted2FAsecret)
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
@@ -225,7 +236,7 @@ function AccountSettings() {
     const decryptedkey = await decryptDataKey(privatekey, passwordKey)
     const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', decryptedkey)
     const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
-    
+
     try {
       const request = await axios.post('/auth/sensitivedata/enable2FA', {
         code: code2FA,
@@ -242,7 +253,6 @@ function AccountSettings() {
       setHas2FA(true)
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
@@ -267,7 +277,7 @@ function AccountSettings() {
         ['deriveKey', 'deriveBits']
       )
 
-      const passwordKey = await deriveKey(newpassword, "", salt)
+      const passwordKey = await deriveKey(password, "", salt)
       const privatekey = await encryptDataKey(dataKey, passwordKey)
 
       const decryptedkey = await decryptDataKey(privatekey, passwordKey)
@@ -287,7 +297,6 @@ function AccountSettings() {
       setHas2FA(false)
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }

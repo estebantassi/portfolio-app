@@ -17,7 +17,7 @@ function PasswordEmailCheck() {
 
     const verify = async () => {
         try {
-            const response = await axios.post('/passwordemailcheck', {
+            const response = await axios.post('/confirmpasswordchange', {
                 token: link
             })
 

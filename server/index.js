@@ -24,7 +24,7 @@ app.post('/logintoken/login', require('./requests/post/login/login').Login)
 app.post('/logintoken/logincode', require('./requests/post/login/logincode').LoginCode)
 app.post('/oldemailcheck', require('./requests/post/oldemailcheck').OldEmailCheck)
 app.post('/newemailcheck', require('./requests/post/newemailcheck').NewEmailCheck)
-app.post('/passwordemailcheck', require('./requests/post/passwordemailcheck').PasswordEmailCheck)
+
 
 app.post('/auth/accountsettings/checkstart', require('./requests/post/account settings/checkstart').CheckStart)
 app.post('/auth/sensitivedata/accountsettings/check', require('./requests/post/account settings/check').Check)
@@ -33,10 +33,14 @@ app.post('/auth/sensitivedata/accountsettings/check2fa', require('./requests/pos
 app.get('/getuserprofile', require('./requests/get/getuserprofile').GetUserProfile)
 app.get('/auth/checkaccesstoken', require('./requests/get/checkaccesstoken').CheckAccessToken)
 app.post('/auth/sensitivedata/requestemailchange', require('./requests/post/requestemailchange').RequestEmailChange)
-app.post('/auth/sensitivedata/requestpasswordchange', require('./requests/post/requestpasswordchange').RequestPasswordChange)
+
+app.post('/confirmpasswordchange', require('./requests/post/account settings/confirmpasswordchange').ConfirmPasswordChange)
+app.post('/auth/sensitivedata/accountsettings/requestpasswordchange', require('./requests/post/account settings/requestpasswordchange').RequestPasswordChange)
+
 app.post('/auth/sensitivedata/request2fa', require('./requests/post/2FA/request2fa').Request2FA)
 app.post('/auth/sensitivedata/enable2fa', require('./requests/post/2FA/enable2fa').Enable2FA)
 app.post('/auth/sensitivedata/disable2fa', require('./requests/post/2FA/disable2fa').Disable2FA)
+
 app.post('/auth/sendmessage', require ("./requests/post/sendmessage").SendMessage)
 app.post('/auth/getmessages', require ("./requests/post/getmessages").GetMessages)
 

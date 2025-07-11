@@ -65,6 +65,18 @@ function validatehex(value) {
          value.length >= 64 && value.length <= 512
 }
 
+function validatesrpsalt(salt) {
+  return typeof salt === 'string' &&
+         /^[0-9a-fA-F]+$/.test(salt) &&
+         salt.length >= 32 && salt.length <= 64
+}
+
+function validatesrpverifier(verifier) {
+  return typeof verifier === 'string' &&
+         /^[0-9a-fA-F]+$/.test(verifier) &&
+         verifier.length === 512
+}
+
 function validatecode(value) {
   return typeof value === 'string' && /^[A-Za-z0-9]{6}$/.test(value)
 }
@@ -91,7 +103,7 @@ function validatesalt(salt) {
   try { return Buffer.from(salt, 'base64').length === 16 } catch { return false }
 }
 
-function validatekey(key) {
+function validateprivatekey(key) {
   try {
     if (typeof key !== 'string') return false
 
@@ -110,6 +122,16 @@ function validatekey(key) {
   return true
 }
 
+function validatepublickey(key) {
+  try {
+    const pubBuf = Buffer.from(key, 'base64')
+    if (pubBuf.length !== 65) return false
+    if (pubBuf[0] !== 0x04) return false
+  } catch { return false }
+
+  return true
+}
+
 module.exports = {
   generatelogincode,
   encrypt,
@@ -120,5 +142,8 @@ module.exports = {
   validatehex,
   validatecode,
   validatesalt,
-  validatekey
+  validateprivatekey,
+  validatepublickey,
+  validatesrpsalt,
+  validatesrpverifier
 }

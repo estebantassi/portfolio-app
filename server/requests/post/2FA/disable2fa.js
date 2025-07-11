@@ -1,6 +1,6 @@
 require('dotenv').config()
 const db = require('../../../config/database')
-const { validatetoken, validatesalt, validatekey } = require('../../../tools/tools')
+const { validatetoken, validatesalt, validateprivatekey } = require('../../../tools/tools')
 const { GetTokenData } = require('../../get/gettokendata')
 const transporter = require('../../../config/mailsender').transporter
 const speakeasy = require('speakeasy')
@@ -16,7 +16,7 @@ const Disable2FA = async (req, res) => {
         const accesstoken = req.cookies.accesstoken
         const sensitivedatatoken = req.cookies.sensitivedatatoken
 
-        if (!validatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
+        if (!validateprivatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
         if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
         if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })
         if (!validatetoken(sensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })

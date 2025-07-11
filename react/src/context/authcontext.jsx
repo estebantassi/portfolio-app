@@ -67,8 +67,6 @@ export const AuthProvider = ({ children }) => {
             const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', key)
             const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
 
-            console.log("Key from 2FA : " + encrypted2FAsecret)
-
             const newuser = {
                 username: response.data.user.username,
                 id: response.data.user.id,
@@ -83,7 +81,6 @@ export const AuthProvider = ({ children }) => {
             navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }

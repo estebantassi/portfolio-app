@@ -33,12 +33,12 @@ const Check2FA = async (req, res) => {
         if (!is2FAvalid) return res.status(400).json({message: "Invalid code"})
 
         const [[request]] = await db.query(`
-            SELECT email_encrypted
+            SELECT email_encrypted, 2FAsecret
             FROM users
             WHERE id=?
         `, [data.id])
 
-        if (request == null || request.email_encrypted == null) return res.status(400).json({message: "User not found"})
+        if (request == null || request.email_encrypted == null || request["2FAsecret"] == null) return res.status(400).json({message: "User not found"})
         const encryptedemail = request.email_encrypted
         const decryptedemail = decrypt(encryptedemail, process.env.EMAIL_ENCRYPTION_KEY)
 
@@ -67,7 +67,7 @@ const Check2FA = async (req, res) => {
         let user = {}
         user.email = decryptedemail
 
-        return res.status(200).json({ user, message: "Access granted" })
+        return res.status(200).json({ user, message: "Access granted", encrypted2FAsecret: request["2FAsecret"] })
     } catch (err) {
         return res.status(500).json({message: "An error occured, please try again later"})
     }
