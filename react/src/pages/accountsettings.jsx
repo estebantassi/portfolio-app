@@ -10,17 +10,13 @@ import srp from "secure-remote-password/client"
 function AccountSettings() {
 
   const navigate = useNavigate()
-  const controllerRef = useRef(null)
-  const timeoutRef = useRef(null)
 
   const { addToast } = useContext(ToastContext)
-  const { user, setUser } = useContext(AuthContext)
+  const { user, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled } = useContext(AuthContext)
   const [isauth, setIsauth] = useState(false)
   const [password, setPassword] = useState("")
   const [showaccesscode2FA, setShowaccesscode2FA] = useState(false)
   const [accesscode2FA, setAccesscode2FA] = useState("")
-
-  const [isbuttondisabled, setIsbuttondisabled] = useState(true)
 
   const [has2FA, setHas2FA] = useState(false)
   const [email, setEmail] = useState('')
@@ -36,34 +32,18 @@ function AccountSettings() {
   const [encrypted2FAsecret, setEncrypted2FAsecret] = useState("")
 
   useEffect(() => {
-    startrequest()
-
     const leavepagetimeout = setTimeout(() => {
       navigate('/home')
     }, 10 * 60 * 1000)
 
     return () => {
       clearTimeout(leavepagetimeout)
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      if (controllerRef.current) controllerRef.current.abort()
     }
   }, [])
 
-  const startrequest = () => {
-    setIsbuttondisabled(true)
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-
-    if (controllerRef.current) controllerRef.current.abort()
-    controllerRef.current = new AbortController()
-
-    timeoutRef.current = setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
-  }
-
   const accesssettings = async (e) => {
     e.preventDefault()
-    startrequest()
+    startnetworkrequest()
 
     try {
       if (showaccesscode2FA)
@@ -72,7 +52,7 @@ function AccountSettings() {
           code: accesscode2FA,
         }, {
           withCredentials: true,
-          signal: controllerRef.current.signal
+          signal: networkControllerRef.current.signal
         })
 
         if (response == null || response.data == null || response.data.user == null || response.data.encrypted2FAsecret == null) throw "Error"
@@ -87,7 +67,7 @@ function AccountSettings() {
 
       const firstResponse = await axios.post('/auth/accountsettings/checkstart', {}, {
         withCredentials: true,
-        signal: controllerRef.current.signal
+        signal: networkControllerRef.current.signal
       })
 
       if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemeral == null || firstResponse.data.email == null) throw "Error"
@@ -103,7 +83,7 @@ function AccountSettings() {
         srpProof: srpClientSession.proof, srpClientEphemeral: srpClientEphemeral.public
       }, {
         withCredentials: true,
-        signal: controllerRef.current.signal
+        signal: networkControllerRef.current.signal
       })
 
       if (response == null || response.data == null || response.data["2FA"] == null || response.data.srpProof == null) throw "Error"
@@ -126,14 +106,14 @@ function AccountSettings() {
 
   const requestnewemail = async (e) => {
     e.preventDefault()
-    startrequest()
+    startnetworkrequest()
 
     try {
       const request = await axios.post('/auth/sensitivedata/requestemailchange', {
         newemail, newemailcheck
       }, {
         withCredentials: true,
-        signal: controllerRef.current.signal
+        signal: networkControllerRef.current.signal
       })
 
       setNewemail("")
@@ -147,7 +127,7 @@ function AccountSettings() {
 
   const requestnewpassword = async (e) => {
     e.preventDefault()
-    startrequest()
+    startnetworkrequest()
 
     try {
       const rawsalt = crypto.getRandomValues(new Uint8Array(16))
@@ -180,7 +160,7 @@ function AccountSettings() {
         privatekey, salt, srpSalt, srpVerifier
       }, {
         withCredentials: true,
-        signal: controllerRef.current.signal
+        signal: networkControllerRef.current.signal
       })
 
       setNewpassword("")
@@ -195,12 +175,12 @@ function AccountSettings() {
 
   const request2fa = async (e) => {
     e.preventDefault()
-    startrequest()
+    startnetworkrequest()
 
     try {
       const request = await axios.post('/auth/sensitivedata/request2fa', {}, {
         withCredentials: true,
-        signal: controllerRef.current.signal
+        signal: networkControllerRef.current.signal
       })
       if (request == null || request.data == null || request.data.qrcode == null) throw "Error"
       setQrcode(request.data.qrcode)
@@ -213,7 +193,7 @@ function AccountSettings() {
 
   const check2FAcode = async (e) => {
     e.preventDefault()
-    startrequest()
+    startnetworkrequest()
 
     const rawsalt = crypto.getRandomValues(new Uint8Array(16))
     const salt = btoa(String.fromCharCode(...rawsalt))
@@ -244,7 +224,7 @@ function AccountSettings() {
         privatekey
       }, {
         withCredentials: true,
-        signal: controllerRef.current.signal
+        signal: networkControllerRef.current.signal
       })
 
       setUser(prev => ({ ...prev, key: keyBase64 }))
@@ -259,7 +239,7 @@ function AccountSettings() {
 
   const disable2FA = async (e) => {
     e.preventDefault()
-    startrequest()
+    startnetworkrequest()
 
     try {
       const rawsalt = crypto.getRandomValues(new Uint8Array(16))
@@ -289,7 +269,7 @@ function AccountSettings() {
         privatekey
       }, {
         withCredentials: true,
-        signal: controllerRef.current.signal
+        signal: networkControllerRef.current.signal
       })
 
       setUser(prev => ({ ...prev, key: keyBase64 }))
@@ -312,7 +292,7 @@ function AccountSettings() {
         <input value={newemail} onChange={(e) => setNewemail(e.target.value)} />
         <input value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} />
 
-        <button disabled={isbuttondisabled}>Change email</button>
+        <button disabled={isNetworkButtonDisabled}>Change email</button>
       </form>
 
       <form onSubmit={(e) => requestnewpassword(e)}>
@@ -320,21 +300,21 @@ function AccountSettings() {
         <input value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
         <input value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)} />
 
-        <button disabled={isbuttondisabled}>Change password</button>
+        <button disabled={isNetworkButtonDisabled}>Change password</button>
       </form>
 
       {has2FA ? <>
         <h1>2FA Enabled</h1>
 
         <form onSubmit={(e) => disable2FA(e)}>
-          <button>Disable 2FA</button>
+          <button disabled={isNetworkButtonDisabled}>Disable 2FA</button>
         </form>
       </> : <></>}
 
       {!qrcode && !isqrcodescanned && !has2FA ? <>
 
         <form onSubmit={(e) => request2fa(e)}>
-          <button disabled={isbuttondisabled}>Enable 2FA</button>
+          <button disabled={isNetworkButtonDisabled}>Enable 2FA</button>
         </form>
 
       </> : <>
@@ -360,7 +340,7 @@ function AccountSettings() {
       {isqrcodescanned && !has2FA ? <>
         <form onSubmit={(e) => check2FAcode(e)}>
           <input value={code2FA} onChange={(e) => setCode2FA(e.target.value)} />
-          <button>Enable 2FA</button>
+          <button disabled={isNetworkButtonDisabled}>Enable 2FA</button>
         </form>
       </> : <></>}
 
@@ -381,7 +361,7 @@ function AccountSettings() {
               </>
           }
 
-          <button disabled={isbuttondisabled}>Verify password</button>
+          <button disabled={isNetworkButtonDisabled}>Verify password</button>
         </form>
       </>
   )

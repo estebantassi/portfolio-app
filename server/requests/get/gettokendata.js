@@ -7,20 +7,20 @@ const { validateuuid } = require('../../tools/tools')
 
 
 const GetTokenData = async (req, token, type) => {
-    const secretMap = {
-        access: process.env.ACCESS_TOKEN_SECRET,
-        refresh: process.env.REFRESH_TOKEN_SECRET,
-        logintoken: process.env.TEMP_TOKEN_SECRET,
-        signup: process.env.VERIFYEMAIL_TOKEN_SECRET,
-        sensitivedata: process.env.SENSITIVEDATA_TOKEN_SECRET,
-        oldemailcheck: process.env.OLDEMAILCHECK_TOKEN_SECRET,
-        newemailcheck: process.env.NEWEMAILCHECK_TOKEN_SECRET,
-        passwordemailcheck: process.env.PASSWORDEMAILCHECK_TOKEN_SECRET,
-    }
-    const secret = secretMap[type]
-    if (secret == null) return null
-
     try {
+        const secretMap = {
+            access: process.env.ACCESS_TOKEN_SECRET,
+            refresh: process.env.REFRESH_TOKEN_SECRET,
+            logintoken: process.env.TEMP_TOKEN_SECRET,
+            signup: process.env.VERIFYEMAIL_TOKEN_SECRET,
+            sensitivedata: process.env.SENSITIVEDATA_TOKEN_SECRET,
+            oldemailcheck: process.env.OLDEMAILCHECK_TOKEN_SECRET,
+            newemailcheck: process.env.NEWEMAILCHECK_TOKEN_SECRET,
+            passwordemailcheck: process.env.PASSWORDEMAILCHECK_TOKEN_SECRET,
+        }
+        const secret = secretMap[type]
+        if (secret == null) return null
+    
         const decode = jwt.verify(token, secret)
         if (decode == null || decode.jti == null || decode.id == null) return null
         if (isNaN(decode.id) || !validateuuid(decode.jti)) return null

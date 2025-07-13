@@ -9,7 +9,7 @@ import { base64ToArrayBuffer, encryptMessage, decryptMessage } from '../tools/to
 
 function Messages() {
 
-    const { user } = useContext(AuthContext)
+    const { user, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()
@@ -17,6 +17,9 @@ function Messages() {
     const [messagetext, setMessagetext] = useState("")
     const [messages, setMessages] = useState([])
     const [secret, setSecret] = useState()
+
+    const [offset, setOffset] = useState(0)
+    const [date, setDate] = useState(new Date())
 
     useEffect(() => {
 
@@ -94,6 +97,8 @@ function Messages() {
             setUserdata(response.data)
 
             localStorage.setItem(link, JSON.stringify(response.data))
+
+            getmessages()
         } catch (err) {
             navigate("/home")
             addToast(err.response?.data?.message || "An error occurred", "red")
@@ -102,27 +107,34 @@ function Messages() {
 
     const sendmessage = async (e) => {
         e.preventDefault()
+        startnetworkrequest()
 
         try {
             const text = await encryptMessage(secret, messagetext)
 
-            await axios.post('/auth/sendmessage', {
+            const message = await axios.post('/auth/sendmessage', {
                 text,
                 receiverid: link
             }, {
-                withCredentials: true
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
             })
 
-            setMessages([...messages, messagetext])
+            if (message.data == null || message.data.messagedata == null) throw 'Error'
+            message.data.messagedata.text = messagetext
+
+            setMessages(prev => [message.data.messagedata, ...prev])
+            addToast("MESSAGE SENT", "green")
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
     const getmessages = async () => {
+
         try {
             const response = await axios.post('/auth/getmessages', {
-                receiverid: link
+                receiverid: link, offset, date
             }, {
                 withCredentials: true
             })
@@ -140,7 +152,8 @@ function Messages() {
             })
             )
 
-            setMessages(decryptedMessages)
+            setOffset(prev => prev + 2)
+            setMessages(prev => [...prev, ...decryptedMessages])
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }

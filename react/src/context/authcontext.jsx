@@ -14,6 +14,22 @@ export const AuthProvider = ({ children }) => {
     const { addToast } = useContext(ToastContext)
     const [user, setUser] = useState(Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null)
     const timeoutRef = useRef(null)
+    
+    const [isNetworkButtonDisabled, setIsNetworkButtonDisabled] = useState(true)
+    const networkTimeoutRef = useRef(null)
+    const networkControllerRef = useRef(null)
+
+    const startnetworkrequest = () => {
+        setIsNetworkButtonDisabled(true)
+        if (networkTimeoutRef.current) clearTimeout(networkTimeoutRef.current)
+
+        if (networkControllerRef.current) networkControllerRef.current.abort()
+        networkControllerRef.current = new AbortController()
+
+        networkTimeoutRef.current = setTimeout(() => {
+        setIsNetworkButtonDisabled(false)
+        }, 3000)
+    }
 
     const login = async (data) => {
         try {
@@ -129,6 +145,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     useEffect(() => {
+        return () => {
+            if (networkTimeoutRef.current) clearTimeout(networkTimeoutRef.current)
+            if (networkControllerRef.current) networkControllerRef.current.abort()
+        }
+    }, [])
+
+    useEffect(() => {
         checkauth()
 
         return () => {
@@ -180,7 +203,10 @@ export const AuthProvider = ({ children }) => {
         logout,
         login,
         signup,
-        logincode
+        logincode,
+        startnetworkrequest,
+        networkControllerRef,
+        isNetworkButtonDisabled
     }
 
     return (

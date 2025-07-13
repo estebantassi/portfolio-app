@@ -5,15 +5,16 @@ const { validatetoken } = require('../../tools/tools')
 
 const Logout = async (req, res) => {
 
-    if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json({message: "Already logged out"})
-    
-    const refreshtoken = req.cookies.refreshtoken
-    if (!validatetoken(refreshtoken)) return res.status(400).json({message: "Invalid token format"})
-
-    res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
-    res.clearCookie("accesstoken", { path: "/auth" })
-
     try {
+        if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json({message: "Already logged out"})
+        
+        const refreshtoken = req.cookies.refreshtoken
+        if (!validatetoken(refreshtoken)) return res.status(400).json({message: "Invalid token format"})
+
+        res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
+        res.clearCookie("accesstoken", { path: "/auth" })
+
+    
         const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
         if (data == null) return res.status(400).json({message: "Invalid token"})
 

@@ -1,5 +1,5 @@
 const db = require('../../config/database')
-const { validatetoken } = require('../../tools/tools')
+const { validatetoken, validateemail } = require('../../tools/tools')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { GetTokenData } = require('../get/gettokendata')

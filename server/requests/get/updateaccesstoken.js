@@ -8,17 +8,18 @@ const { CheckUserExpirations } = require("../remove/checkuserexpirations")
 const { validatetoken } = require('../../tools/tools')
 
 const UpdateAccessToken = async (req, res) => {
-    if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json({message: "Missing token"})
-
-    const refreshtoken = req.cookies.refreshtoken
-
-    if (!validatetoken(refreshtoken)) return res.status(400).json({message: "Invalid token format"})
-
-    const data = await GetTokenData(req, refreshtoken, "refresh")
-    if (data == null || data.accesstokenid == null || isNaN(data.accesstokenid)) return res.status(400).json({message: "Invalid token"})
-
     let connection
     try {
+        if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json({message: "Missing token"})
+
+        const refreshtoken = req.cookies.refreshtoken
+
+        if (!validatetoken(refreshtoken)) return res.status(400).json({message: "Invalid token format"})
+
+        const data = await GetTokenData(req, refreshtoken, "refresh")
+        if (data == null || data.accesstokenid == null || isNaN(data.accesstokenid)) return res.status(400).json({message: "Invalid token"})
+
+
         connection = await db.getConnection()
         await connection.beginTransaction()
 

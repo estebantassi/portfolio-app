@@ -3,7 +3,7 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encrypt, decrypt, validateid } = require('../../tools/tools')
+const { encrypt, decrypt, validateid, validatetoken } = require('../../tools/tools')
 
 const SendMessage = async (req, res) => {
     try {
@@ -28,13 +28,24 @@ const SendMessage = async (req, res) => {
 
         if (request == null) return res.status(400).json({message: "User not found"})
 
-        await db.query(`
+        const date = new Date()
+        const [message] = await db.query(`
             INSERT INTO messages (text, receiverid, senderid, date)
             VALUES (?, ?, ?, ?)
-        `, [text, receiverid, data.id, new Date()])
+        `, [text, receiverid, data.id, date])
 
-        return res.status(200).json({message: "Message sent"})
+        if (message == null || message.insertId == null) return res.status(400).json({message: "Message not sent"})
+
+        const messagedata = {
+            receiverid,
+            id: message.insertId,
+            date,
+            senderid: data.id
+        }
+
+        return res.status(200).json({message: "Message sent", messagedata })
     } catch (err) {
+        console.log(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

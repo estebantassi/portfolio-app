@@ -6,13 +6,12 @@ import axios from '../api/axios'
 function Login() {
 
   const { addToast } = useContext(ToastContext)
-  const { login, logincode } = useContext(AuthContext)
+  const { login, logincode, startnetworkrequest, isNetworkButtonDisabled } = useContext(AuthContext)
 
   const [data, setData] = useState({
     email: "",
     password: ""
   })
-  const [isbuttondisabled, setIsbuttondisabled] = useState(true)
 
   const [showLoginCode, setShowLoginCode] = useState(false)
   const [code, setCode] = useState("")
@@ -20,35 +19,23 @@ function Login() {
 
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
-
-    return () => clearTimeout(timeout)
+    startnetworkrequest()
   }, [])
 
   const loginform = async (e) => {
     e.preventDefault()
-
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startnetworkrequest()
 
     for (const [key, value] of Object.entries(data)) if (value == "") return addToast("Please fill in all the fields", "red")
-      login(data).then((data) => {
-        if (data == 2) setIsusing2FA(true)
-        if(data != 0) setShowLoginCode(true)
-      })
+    login(data).then((data) => {
+      if (data == 2) setIsusing2FA(true)
+      if(data != 0) setShowLoginCode(true)
+    })
   }
 
-    const codeform = async (e) => {
+  const codeform = async (e) => {
     e.preventDefault()
-
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    startnetworkrequest()
 
     if (code == "" || code.length > 6 || code.length < 6) return addToast("Code must be 6 characters long", "red")
 
@@ -66,7 +53,7 @@ function Login() {
         <label>{isusing2FA ? "Authenticator App Code" : "Email Code" }</label>
         <input value={code} onChange={(e) => setCode(e.target.value)}/>
 
-        <button disabled={isbuttondisabled}>Verify code</button>
+        <button disabled={isNetworkButtonDisabled}>Verify code</button>
       </form>
   </>
   :
@@ -78,7 +65,7 @@ function Login() {
         <label>Password</label>
         <input value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
 
-        <button disabled={isbuttondisabled}>SIGNUP</button>
+        <button disabled={isNetworkButtonDisabled}>SIGNUP</button>
       </form>
       </>
       }

@@ -3,39 +3,43 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encrypt, decrypt, validateid } = require('../../tools/tools')
+const { encrypt, decrypt, validateid, validatetoken } = require('../../tools/tools')
 
 const GetMessages = async (req, res) => {
-    if (req.cookies == null) return res.status(400).json({message: "Wrong request"})
-    if (req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
-
-    const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-    if (data == null) return res.status(400).json({message: "Invalid token"})
-
-    if (req.body == null || req.body.receiverid == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
-    
-    const receiverid = req.body.receiverid
-    if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
-
     try {
-        const [sent] = await db.query(`
+        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
+        if (req.body == null || req.body.receiverid == null || req.body.offset == null || req.body.date == null) return res.status(400).json({message: "Missing data"})
+        
+        const offset = req.body.offset
+        const receiverid = req.body.receiverid
+        const date = new Date(req.body.date)
+        const accesstoken = req.cookies.accesstoken
+        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
+        if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
+        if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
+        if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
+
+        const data = await GetTokenData(req, accesstoken, "access")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
+    
+        const [request] = await db.query(`
             SELECT *
             FROM messages
-            WHERE senderid=? and receiverid=?
-            ORDER BY date
-        `, [data.id, receiverid])
+            WHERE (
+                (senderid = ? AND receiverid = ?)
+                OR
+                (senderid = ? AND receiverid = ?)
+            ) AND date <= ?
+            ORDER BY date DESC
+            LIMIT 2
+            OFFSET ?
+        `, [data.id, receiverid, receiverid, data.id, date, offset])
 
-        const [received] = await db.query(`
-            SELECT *
-            FROM messages
-            WHERE senderid=? and receiverid=?
-            ORDER BY date
-        `, [receiverid, data.id])
+        if (request == null || request.length == 0) return res.status(400).json({message: "No more messages"})
 
-        const mergedMessages = sent.concat(received).sort((a, b) => new Date(a.date) - new Date(b.date))
-
-        return res.status(200).json({message: "Message sent", data: mergedMessages})
+        return res.status(200).json({message: "Message sent", data: request})
     } catch (err) {
+        console.log(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

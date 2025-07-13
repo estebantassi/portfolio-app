@@ -4,12 +4,13 @@ const { GetImage } = require("../../tools/getimage")
 
 const GetUserProfile = async (req, res) => {
 
-    if (req.query == null || req.query.id == null) return res.status(400).json({message: "Missing data"})
-    
-    const id = req.query.id
-    if (isNaN(id)) return res.status(400).json({message: "Invalid id format"})
-
     try {
+        if (req.query == null || req.query.id == null) return res.status(400).json({message: "Missing data"})
+        
+        const id = req.query.id
+        if (isNaN(id)) return res.status(400).json({message: "Invalid id format"})
+
+    
         const [[request]] = await db.query(`
             SELECT username, avatar, banner, tag, messagekey_public
             FROM users
