@@ -38,17 +38,17 @@ const LoginCode = async (req, res) => {
             || requestuser.messagekey_encrypted == null || requestuser.messagesalt == null || requestuser['2FAsecret'] == null)
             return res.status(400).json({message: "User not found"})
 
-        let requests
+
         let request
         if (requestuser['2FA'] == 0)
         {
-            [requests] = await connection.query(`
+            [[request]] = await connection.query(`
                 SELECT expires_at, id
                 FROM tokens
                 WHERE userid=? AND value=? AND type=?
+                LIMIT 1
             `, [data.id, req.body.code, 'logincode'])
 
-            request = requests[0]
             if (request == null || request.id == null || request.expires_at == null) {
                 connection.rollback()
                 return res.status(400).json({message: "Invalid code"})

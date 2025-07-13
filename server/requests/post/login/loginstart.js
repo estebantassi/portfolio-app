@@ -13,6 +13,7 @@ const { getCachedValue, setCachedValue } = require('../../../config/redis')
 const LoginStart = async (req, res) => {
     try {
         if (req.body == null || req.body.email == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+
         const email = req.body.email
         const emailtest = validateemail(email)
         if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
@@ -42,14 +43,14 @@ const LoginStart = async (req, res) => {
         })
 
         const srpServerEphemeral = srp.generateEphemeral(srpVerifier)
-        await setCachedValue(`login/ephemereal/${hashedemail}/${temptokenjti}`, 60 * 5, srpServerEphemeral.secret)
+        await setCachedValue(`login/ephemeral/${hashedemail}/${temptokenjti}`, 60 * 5, srpServerEphemeral.secret)
 
         await db.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
         `, [request.id, 'logintoken', temptokenjti, date])
 
-        return res.status(200).json({ srpSalt, srpServerEphemereal: srpServerEphemeral.public })
+        return res.status(200).json({ srpSalt, srpServerEphemeral: srpServerEphemeral.public })
     } catch (err) {
         return res.status(500).json({message: "An error occured, please try again later"})
     }

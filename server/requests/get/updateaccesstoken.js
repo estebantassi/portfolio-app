@@ -5,28 +5,32 @@ require('dotenv').config()
 const { GetTokenData } = require("../get/gettokendata")
 const { v4: uuidv4 } = require('uuid')
 const { CheckUserExpirations } = require("../remove/checkuserexpirations")
+const { validatetoken } = require('../../tools/tools')
 
 const UpdateAccessToken = async (req, res) => {
-    if (!req.cookies || !req.cookies.refreshtoken) return res.status(400).json({message: "Missing token"})
+    if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json({message: "Missing token"})
 
-    const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
-    if (!data || !data.accesstokenid) return res.status(400).json({message: "Invalid token"})
+    const refreshtoken = req.cookies.refreshtoken
+
+    if (!validatetoken(refreshtoken)) return res.status(400).json({message: "Invalid token format"})
+
+    const data = await GetTokenData(req, refreshtoken, "refresh")
+    if (data == null || data.accesstokenid == null || isNaN(data.accesstokenid)) return res.status(400).json({message: "Invalid token"})
 
     let connection
     try {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
-        const [requests] = await connection.query(`
-            SELECT value, id, expires_at
+        const [[request]] = await connection.query(`
+            SELECT value, expires_at
             FROM tokens
             WHERE value=? AND type=? AND userid=?
+            LIMIT 1
             FOR UPDATE
         `, [data.jti, 'refresh', data.id])
 
-        const request = requests[0]
-
-        if (!request || !request.expires_at || !request.id) {
+        if (request == null || request.expires_at == null) {
             await connection.rollback()
             return res.status(400).json({message: "Token revoked"})
         }
@@ -40,7 +44,7 @@ const UpdateAccessToken = async (req, res) => {
         const accessDurationMs = Number(process.env.ACCESS_TOKEN_DURATION) * 60 * 60 * 1000
         const accessdate = new Date(Date.now() + accessDurationMs)
         const accesstokenjti = uuidv4()
-        var accesstoken = jwt.sign({ id: data.id, ip: data.ip, jti: accesstokenjti }, process.env.ACCESS_TOKEN_SECRET)
+        const accesstoken = jwt.sign({ id: data.id, ip: data.ip, jti: accesstokenjti }, process.env.ACCESS_TOKEN_SECRET)
         res.cookie("accesstoken", accesstoken, {
             httpOnly: true,
             secure: true,
@@ -61,7 +65,7 @@ const UpdateAccessToken = async (req, res) => {
             VALUES (?, ?, ?, ?, ?)
         `, [data.id, 'access', accesstokenjti, accessdate, cryptedip])
 
-        if (!tokenrequest || !tokenrequest.insertId)
+        if (tokenrequest == null || tokenrequest.insertId == null)
         {
             await connection.rollback()
             return res.status(400).json({message: "Error"})
@@ -70,8 +74,8 @@ const UpdateAccessToken = async (req, res) => {
         const refreshDurationMs = Number(process.env.REFRESH_TOKEN_DURATION) * 60 * 60 * 1000
         const refreshdate = new Date(Date.now() + refreshDurationMs)
         const refreshtokenjti = uuidv4()
-        var refreshtoken = jwt.sign({ id: data.id, ip: data.ip, jti: refreshtokenjti, accesstokenid: tokenrequest.insertId }, process.env.REFRESH_TOKEN_SECRET)
-        res.cookie("refreshtoken", refreshtoken, {
+        const newrefreshtoken = jwt.sign({ id: data.id, ip: data.ip, jti: refreshtokenjti, accesstokenid: tokenrequest.insertId }, process.env.REFRESH_TOKEN_SECRET)
+        res.cookie("refreshtoken", newrefreshtoken, {
             httpOnly: true,
             secure: true,
             sameSite: 'Strict',
@@ -83,9 +87,9 @@ const UpdateAccessToken = async (req, res) => {
             UPDATE tokens
             SET value=?, expires_at=?
             WHERE id=?
-            `, [refreshtokenjti, refreshdate, request.id])
-            
-        CheckUserExpirations(request.id)
+            `, [refreshtokenjti, refreshdate, data.id])
+
+        CheckUserExpirations(data.id)
 
         await connection.commit()
         return res.status(200).json({message: "Updated token"})

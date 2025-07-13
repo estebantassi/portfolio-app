@@ -3,30 +3,35 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encrypt, decrypt } = require('../../tools/tools')
+const { encrypt, decrypt, validateid } = require('../../tools/tools')
 
 const SendMessage = async (req, res) => {
-    if (req.cookies == null) return res.status(400).json({message: "Wrong request"})
-    if (req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
-
-    const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-    if (data == null) return res.status(400).json({message: "Invalid token"})
-
-    if (req.body == null || req.body.text == null || req.body.receiverid == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
-
     try {
+        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Wrong request"})
+        if (req.body == null || req.body.text == null || req.body.receiverid == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+        
+        const receiverid = req.body.receiverid
+        const text = req.body.text
+        const accesstoken = req.cookies.accesstoken
+
+        if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
+        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
+
+        const data = await GetTokenData(req, accesstoken, "access")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
+
         const [[request]] = await db.query(`
             SELECT id
             FROM users
             WHERE id=?
-        `, [req.body.receiverid])
+        `, [receiverid])
 
         if (request == null) return res.status(400).json({message: "User not found"})
 
         await db.query(`
             INSERT INTO messages (text, receiverid, senderid, date)
             VALUES (?, ?, ?, ?)
-        `, [req.body.text, req.body.receiverid, data.id, new Date()])
+        `, [text, receiverid, data.id, new Date()])
 
         return res.status(200).json({message: "Message sent"})
     } catch (err) {

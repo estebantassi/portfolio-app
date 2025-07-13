@@ -3,6 +3,8 @@ require('dotenv').config()
 const db = require('../../config/database')
 const { getClientIp } = require('../../config/geo')
 const bcrypt = require('bcrypt')
+const { validateuuid } = require('../../tools/tools')
+
 
 const GetTokenData = async (req, token, type) => {
     const secretMap = {
@@ -21,20 +23,23 @@ const GetTokenData = async (req, token, type) => {
     try {
         const decode = jwt.verify(token, secret)
         if (decode == null || decode.jti == null || decode.id == null) return null
+        if (isNaN(decode.id) || !validateuuid(decode.jti)) return null
 
-        const [requests] = await db.query(`
+        const [[request]] = await db.query(`
             SELECT id, value, expires_at, ip
             FROM tokens
             WHERE type=? AND value=? AND userid=?
+            LIMIT 1
         `, [type, decode.jti, decode.id])
 
-        const request = requests[0]
         if (request == null || request.expires_at == null || request.id == null) return null
 
         if (new Date(request.expires_at) < new Date())
         {
             if (type == "refresh" && decode.accesstokenid != null)
             {
+                if (isNaN(decode.accesstokenid)) return null
+                
                 await db.query(`
                     DELETE FROM tokens
                     WHERE type=? AND id=? AND userid=?

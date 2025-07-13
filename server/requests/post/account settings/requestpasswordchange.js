@@ -6,18 +6,30 @@ const { GetTokenData } = require('../../get/gettokendata')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../../config/mailsender').transporter
-const { encrypt, decrypt } = require('../../../tools/tools')
+const { encrypt, decrypt, validatetoken, validatesalt, validateprivatekey, validatesrpsalt, validatesrpverifier } = require('../../../tools/tools')
 
 const RequestPasswordChange = async (req, res) => {
 
     if (req.cookies == null || req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
     if (req.body == null || req.body.salt == null || req.body.privatekey == null || req.body.srpSalt == null || req.body.srpVerifier == null) return res.status(400).json({message: "Missing data"})
 
-    //DO CHECKS HERE
+    const accesstoken = req.cookies.accesstoken
+    const sensitivedatatoken = req.cookies.sensitivedatatoken
+    const salt = req.body.salt
+    const privatekey = req.body.privatekey
+    const srpsalt = req.body.srpSalt
+    const srpverifier = req.body.srpVerifier
 
-    const data = await GetTokenData(req, req.cookies.accesstoken, "access")
+    if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
+    if (!validatetoken(sensitivedatatoken)) return res.status(400).json({message: "Invalid token format"})
+    if (!validatesalt(salt)) return res.status(400).json({message: "Invalid salt format"})
+    if (!validateprivatekey(privatekey)) return res.status(400).json({message: "Invalid key format"})
+    if (!validatesrpsalt(srpsalt)) return res.status(400).json({message: "Invalid salt format"})
+    if (!validatesrpverifier(srpverifier)) return res.status(400).json({message: "Invalid verifier format"})
+
+    const data = await GetTokenData(req, accesstoken, "access")
     if (data == null) return res.status(400).json({message: "Invalid token"})
-    const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
+    const data2 = await GetTokenData(req, sensitivedatatoken, "sensitivedata")
     if (data2 == null || data2.step < 1 || data2.step > 2) return res.status(400).json({message: "Invalid token"})
 
     try {
@@ -34,10 +46,10 @@ const RequestPasswordChange = async (req, res) => {
         const verifytoken = jwt.sign({
             id: data.id,
             jti: verifyjti,
-            srpSalt: req.body.srpSalt,
-            srpVerifier: req.body.srpVerifier,
-            salt: req.body.salt,
-            privatekey: req.body.privatekey
+            srpSalt: srpsalt,
+            srpVerifier: srpverifier,
+            salt: salt,
+            privatekey: privatekey
         }, process.env.PASSWORDEMAILCHECK_TOKEN_SECRET)
                     
         const verificationDurationMs = process.env.PASSWORDEMAILCHECK_TOKEN_DURATION * 60 * 60 * 1000

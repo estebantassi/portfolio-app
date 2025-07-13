@@ -3,7 +3,7 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encrypt, decrypt } = require('../../tools/tools')
+const { encrypt, decrypt, validateid } = require('../../tools/tools')
 
 const GetMessages = async (req, res) => {
     if (req.cookies == null) return res.status(400).json({message: "Wrong request"})
@@ -13,6 +13,9 @@ const GetMessages = async (req, res) => {
     if (data == null) return res.status(400).json({message: "Invalid token"})
 
     if (req.body == null || req.body.receiverid == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+    
+    const receiverid = req.body.receiverid
+    if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
 
     try {
         const [sent] = await db.query(`
@@ -20,14 +23,14 @@ const GetMessages = async (req, res) => {
             FROM messages
             WHERE senderid=? and receiverid=?
             ORDER BY date
-        `, [data.id, req.body.receiverid])
+        `, [data.id, receiverid])
 
         const [received] = await db.query(`
             SELECT *
             FROM messages
             WHERE senderid=? and receiverid=?
             ORDER BY date
-        `, [req.body.receiverid, data.id])
+        `, [receiverid, data.id])
 
         const mergedMessages = sent.concat(received).sort((a, b) => new Date(a.date) - new Date(b.date))
 

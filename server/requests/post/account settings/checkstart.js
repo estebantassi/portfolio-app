@@ -52,9 +52,9 @@ const CheckStart = async (req, res) => {
         `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
 
         const srpServerEphemeral = srp.generateEphemeral(srpVerifier)
-        await setCachedValue(`accountsettings/ephemereal/${hashedemail}/${sensitivedatatokenjti}`, 60 * 5, srpServerEphemeral.secret)
+        await setCachedValue(`accountsettings/ephemeral/${hashedemail}/${sensitivedatatokenjti}`, 60 * 5, srpServerEphemeral.secret)
 
-        return res.status(200).json({ srpSalt, srpServerEphemereal: srpServerEphemeral.public, email: decryptedemail })
+        return res.status(200).json({ srpSalt, srpServerEphemeral: srpServerEphemeral.public, email: decryptedemail })
     } catch (err) {
         console.log(err)
         return res.status(500).json({message: "An error occured, please try again later"})

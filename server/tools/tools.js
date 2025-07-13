@@ -91,6 +91,15 @@ function validateemail(email) {
     return { valid: true }
 }
 
+function validateusername(username) {
+  return true
+}
+
+function validateid(id) {
+  if (isNaN(id) || id > 999999999999 || id <= 0) return false
+  return true
+}
+
 function validatetoken(token) {
   return typeof token === "string"
     && token.length > 9
@@ -132,6 +141,11 @@ function validatepublickey(key) {
   return true
 }
 
+function validateuuid(uuid) {
+  const uuidv4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidv4Regex.test(uuid)
+}
+
 module.exports = {
   generatelogincode,
   encrypt,
@@ -145,5 +159,8 @@ module.exports = {
   validateprivatekey,
   validatepublickey,
   validatesrpsalt,
-  validatesrpverifier
+  validatesrpverifier,
+  validateuuid,
+  validateusername,
+  validateid
 }

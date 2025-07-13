@@ -6,18 +6,26 @@ const { GetTokenData } = require('../get/gettokendata')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../config/mailsender').transporter
-const { encrypt, decrypt, hash } = require('../../tools/tools')
+const { encrypt, decrypt, hash, validatetoken, validateemail, validateusername } = require('../../tools/tools')
 
 const NewEmailCheck = async (req, res) => {
 
-    if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
-
-    const data = await GetTokenData(req, req.body.token, "newemailcheck")
-
-    if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json({message: "Invalid link"})
-
     let connection
     try {
+
+        if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
+
+        const token = req.body.token
+        if (!validatetoken(token)) return res.status(400).json({message: "Invalid token format"})
+
+        const data = await GetTokenData(req, req.body.token, "newemailcheck")
+        if (data == null || data.oldemail == null || data.newemail == null) return res.status(400).json({message: "Invalid link"})
+
+        const oldemailtest = validateemail(data.oldemail)
+        if (oldemailtest.valid == false) return res.status(400).json({ message: oldemailtest.message })
+        const newemailtest = validateemail(data.newemail)
+        if (newemailtest.valid == false) return res.status(400).json({ message: newemailtest.message })
+
         connection = await db.getConnection()
         await connection.beginTransaction()
 
@@ -35,13 +43,13 @@ const NewEmailCheck = async (req, res) => {
         }
 
         const [[request2]] = await connection.query(`
-            SELECT email_encrypted
+            SELECT email_encrypted, username
             FROM users
             WHERE id=?
             FOR UPDATE
         `, [data.id])
 
-        if (request2 == null || request2.email_encrypted == null) {
+        if (request2 == null || request2.email_encrypted == null || request2.username == null) {
             await connection.rollback()
             return res.status(400).json({message: "User not found"})
         }
@@ -68,7 +76,7 @@ const NewEmailCheck = async (req, res) => {
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-            to: data.username + ' <' + data.oldemail + '>',
+            to: request2.username + ' <' + data.oldemail + '>',
             subject: "Your email has been changed",
             html: `
             <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">
@@ -82,7 +90,7 @@ const NewEmailCheck = async (req, res) => {
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
-            to: data.username + ' <' + data.newemail + '>',
+            to: request2.username + ' <' + data.newemail + '>',
             subject: "Your email has been changed",
             html: `
             <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">

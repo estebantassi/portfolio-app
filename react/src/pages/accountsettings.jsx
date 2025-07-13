@@ -90,17 +90,17 @@ function AccountSettings() {
         signal: controllerRef.current.signal
       })
 
-      if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemereal == null || firstResponse.data.email == null) throw "Error"
+      if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemeral == null || firstResponse.data.email == null) throw "Error"
       const srpSalt = firstResponse.data.srpSalt
-      const srpServerEphemereal = firstResponse.data.srpServerEphemereal
+      const srpServerEphemeral = firstResponse.data.srpServerEphemeral
       const email = firstResponse.data.email
 
       const srpClientEphemeral = srp.generateEphemeral()
       const srpPrivateKey = srp.derivePrivateKey(srpSalt, email, password)
-      const srpClientSession = srp.deriveSession(srpClientEphemeral.secret, srpServerEphemereal, srpSalt, email, srpPrivateKey)
+      const srpClientSession = srp.deriveSession(srpClientEphemeral.secret, srpServerEphemeral, srpSalt, email, srpPrivateKey)
 
       const response = await axios.post('/auth/sensitivedata/accountsettings/check', {
-        srpProof: srpClientSession.proof, srpClientEphemereal: srpClientEphemeral.public
+        srpProof: srpClientSession.proof, srpClientEphemeral: srpClientEphemeral.public
       }, {
         withCredentials: true,
         signal: controllerRef.current.signal

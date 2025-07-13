@@ -6,15 +6,28 @@ const { GetTokenData } = require('../../get/gettokendata')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../../config/mailsender').transporter
-const { encrypt, decrypt } = require('../../../tools/tools')
+const { encrypt, decrypt, validatetoken, validatesalt, validateprivatekey, validatesrpsalt, validatesrpverifier } = require('../../../tools/tools')
 
 const ConfirmPasswordChange = async (req, res) => {
 
     if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
+    
+    const token = req.body.token
+    if (!validatetoken(token))  return res.status(400).json({message: "Invalid token format"})
 
     const data = await GetTokenData(req, req.body.token, "passwordemailcheck")
     if (data == null || data.salt == null || data.privatekey == null || data.srpSalt == null || data.srpVerifier == null) return res.status(400).json({message: "Invalid token"})
 
+    const salt = data.salt
+    const privatekey = data.privatekey
+    const srpsalt = data.srpSalt
+    const srpverifier = data.srpVerifier
+
+    if (!validatesalt(salt)) return res.status(400).json({message: "Invalid salt format"})
+    if (!validateprivatekey(privatekey)) return res.status(400).json({message: "Invalid key format"})
+    if (!validatesrpsalt(srpsalt)) return res.status(400).json({message: "Invalid salt format"})
+    if (!validatesrpverifier(srpverifier)) return res.status(400).json({message: "Invalid verifier format"})
+    
     try {
         const [[request]] = await db.query(`
             SELECT email_encrypted, username

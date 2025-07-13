@@ -14,15 +14,15 @@ const Check = async (req, res) => {
     let connection
     try {
         if (req.cookies == null || req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
-        if (req.body == null || req.body.srpProof == null || req.body.srpClientEphemereal == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+        if (req.body == null || req.body.srpProof == null || req.body.srpClientEphemeral == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
 
         const accesstoken = req.cookies.accesstoken
         const oldsensitivedatatoken = req.cookies.sensitivedatatoken
         const srpProof = req.body.srpProof
-        const srpClientEphemereal = req.body.srpClientEphemereal
+        const srpClientEphemeral = req.body.srpClientEphemeral
 
         if (!validatehex(srpProof)) return res.status(400).json({ message: "Invalid proof format" })
-        if (!validatehex(srpClientEphemereal)) return res.status(400).json({ message: "Invalid ephemereal format" })
+        if (!validatehex(srpClientEphemeral)) return res.status(400).json({ message: "Invalid ephemeral format" })
         if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })
         if (!validatetoken(oldsensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
 
@@ -50,10 +50,10 @@ const Check = async (req, res) => {
         const encryptedemail = request.email_encrypted
         const decryptedemail = decrypt(encryptedemail, process.env.EMAIL_ENCRYPTION_KEY)
 
-        const srpSecretEphemereal = await getCachedValue(`accountsettings/ephemereal/${hashedemail}/${data2.jti}`)
+        const srpSecretEphemeral = await getCachedValue(`accountsettings/ephemeral/${hashedemail}/${data2.jti}`)
         let srpServerSession
         try {
-            srpServerSession = srp.deriveSession(srpSecretEphemereal, srpClientEphemereal, srpSalt, decryptedemail, srpVerifier, srpProof)
+            srpServerSession = srp.deriveSession(srpSecretEphemeral, srpClientEphemeral, srpSalt, decryptedemail, srpVerifier, srpProof)
         } catch {
             await connection.rollback()
             return res.status(400).json({message: "Wrong password"})

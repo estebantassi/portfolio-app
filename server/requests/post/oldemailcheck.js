@@ -5,24 +5,34 @@ const { getClientIp, getGeoFromIp } = require('../../config/geo')
 const { GetTokenData } = require('../get/gettokendata')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
+const { validateemail, validateusername } = require('../../tools/tools')
 const transporter = require('../../config/mailsender').transporter
 
 const OldEmailCheck = async (req, res) => {
 
-    if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
-
-    const data = await GetTokenData(req, req.body.token, "oldemailcheck")
-    
-    if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json({message: "Invalid link"})
-
     try {
+        if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
+
+        const token = req.body.token
+        if (!validatetoken(token)) return res.status(400).json({message: "Invalid token format"})
+
+        const data = await GetTokenData(req, token, "oldemailcheck")
+        if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json({message: "Invalid link"})
+
+        const oldemailtest = validateemail(data.oldemail)
+        if (oldemailtest.valid == false) return res.status(400).json({ message: oldemailtest.message })
+        const newemailtest = validateemail(data.newemail)
+        if (newemailtest.valid == false) return res.status(400).json({ message: newemailtest.message })
+
+        if (!validateusername(data.username)) return res.status(400).json({message: "Invalid username format"})
+    
         await db.query(`
             DELETE FROM tokens
             WHERE type=? AND value=? AND userid=?
         `, ["oldemailcheck", data.jti, data.id])
 
         const verifyjti = uuidv4()
-        const verifytoken = jwt.sign({ oldemail: data.oldemail, newemail: data.newemail, id: data.id, jti: verifyjti, username: data.username }, process.env.NEWEMAILCHECK_TOKEN_SECRET)
+        const verifytoken = jwt.sign({ oldemail: data.oldemail, newemail: data.newemail, id: data.id, jti: verifyjti }, process.env.NEWEMAILCHECK_TOKEN_SECRET)
    
         const verificationDurationMs = process.env.NEWEMAILCHECK_TOKEN_DURATION * 60 * 60 * 1000
         const verificationdate = new Date(Date.now() + verificationDurationMs)

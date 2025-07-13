@@ -24,16 +24,16 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemereal == null) throw "Error"
+            if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemeral == null) throw "Error"
             const srpSalt = firstResponse.data.srpSalt
-            const srpServerEphemereal = firstResponse.data.srpServerEphemereal
+            const srpServerEphemeral = firstResponse.data.srpServerEphemeral
 
             const srpClientEphemeral = srp.generateEphemeral()
             const srpPrivateKey = srp.derivePrivateKey(srpSalt, data.email, data.password)
-            const srpClientSession = srp.deriveSession(srpClientEphemeral.secret, srpServerEphemereal, srpSalt, data.email, srpPrivateKey)
+            const srpClientSession = srp.deriveSession(srpClientEphemeral.secret, srpServerEphemeral, srpSalt, data.email, srpPrivateKey)
 
             const response = await axios.post('/logintoken/login', {
-                email: data.email, srpProof: srpClientSession.proof, srpClientEphemereal: srpClientEphemeral.public
+                email: data.email, srpProof: srpClientSession.proof, srpClientEphemeral: srpClientEphemeral.public
             }, {
                 withCredentials: true
             })

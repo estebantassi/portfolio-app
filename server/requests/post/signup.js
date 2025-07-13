@@ -4,49 +4,45 @@ require('dotenv').config()
 var jwt = require('jsonwebtoken')
 const transporter = require('../../config/mailsender').transporter
 const { v4: uuidv4 } = require('uuid')
-const { encrypt, decrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier } = require('../../tools/tools')
+const { encrypt, decrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier, validateusername } = require('../../tools/tools')
 
 const Signup = async (req, res) => {
 
-    if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.salt == null || req.body.privatekey == null || req.body.publickey == null || req.body.srpSalt == null || req.body.srpVerifier == null)
-        return res.status(400).json({ message: "Missing data" })
-
-    const salt = req.body.salt
-    const publickey = req.body.publickey
-    const privatekey = req.body.privatekey
-    const srpsalt = req.body.srpSalt
-    const srpverifier = req.body.srpVerifier
-    const username = req.body.username
-    const email = req.body.email
-    const emailcheck = req.body.emailcheck
-
-    if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
-    if (!validatepublickey(publickey)) return res.status(400).json({ message: "Invalid key format" })
-    if (!validateprivatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
-    if (!validatesrpsalt(srpsalt)) return res.status(400).json({ message: "Invalid salt format" })
-    if (!validatesrpverifier(srpverifier)) return res.status(400).json({ message: "Invalid verifier format" })
-
-    if (email != emailcheck) return res.status(400).json({ message: "Emails don't match" })
-
-    if (username.length > process.env.MAX_USERNAME_LENGTH) return res.status(400).json({ message: "Username is too long" })
-    if (username.length < process.env.MIN_USERNAME_LENGTH) return res.status(400).json({ message: "Username is too short" })
-
-    const emailtest = validateemail(email)
-    if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
-
-    const encryptedemail = encrypt(email, process.env.EMAIL_ENCRYPTION_KEY)
-    const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
-
     let connection
     try {
+     if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.salt == null || req.body.privatekey == null || req.body.publickey == null || req.body.srpSalt == null || req.body.srpVerifier == null)
+            return res.status(400).json({ message: "Missing data" })
+
+        const salt = req.body.salt
+        const publickey = req.body.publickey
+        const privatekey = req.body.privatekey
+        const srpsalt = req.body.srpSalt
+        const srpverifier = req.body.srpVerifier
+        const username = req.body.username
+        const email = req.body.email
+        const emailcheck = req.body.emailcheck
+
+        if (!validateusername(username))
+        if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
+        if (!validatepublickey(publickey)) return res.status(400).json({ message: "Invalid key format" })
+        if (!validateprivatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
+        if (!validatesrpsalt(srpsalt)) return res.status(400).json({ message: "Invalid salt format" })
+        if (!validatesrpverifier(srpverifier)) return res.status(400).json({ message: "Invalid verifier format" })
+
+        if (email != emailcheck) return res.status(400).json({ message: "Emails don't match" })
+        const emailtest = validateemail(email)
+        if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
+
+        const encryptedemail = encrypt(email, process.env.EMAIL_ENCRYPTION_KEY)
+        const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
+
         connection = await db.getConnection()
         await connection.beginTransaction()
 
-        const date = new Date()
         const [request] = await connection.query(`
             INSERT INTO users (username, email_hash, email_encrypted, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [username, hashedemail, encryptedemail, date, req.body.privatekey, req.body.salt, req.body.publickey, req.body.srpSalt, req.body.srpVerifier])
+        `, [username, hashedemail, encryptedemail, new Date(), privatekey, salt, publickey, srpsalt, srpverifier])
 
         if (request == null || request.insertId == null) {
             await connection.rollback()

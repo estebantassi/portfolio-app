@@ -1,17 +1,24 @@
 const db = require('../../config/database')
+const { validatetoken } = require('../../tools/tools')
 require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { GetTokenData } = require('../get/gettokendata')
 
 const VerifyEmail = async (req, res) => {
 
-    if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
-
-    const data = await GetTokenData(req, req.body.token, "signup")
-    if (data == null || data.email == null) return res.status(400).json({message: "Invalid link"})
-
     let connection
     try {
+        if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
+
+        const token = req.body.token
+        if (!validatetoken(token)) return res.status(400).json({message: "Invalid token format"})
+
+        const data = await GetTokenData(req, token, "signup")
+        if (data == null || data.email == null) return res.status(400).json({message: "Invalid link"})
+
+        const emailtest = validateemail(data.email)
+        if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
+
         connection = await db.getConnection()
         await connection.beginTransaction()
 
