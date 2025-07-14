@@ -6,10 +6,11 @@ import { useFetcher, useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { AuthContext } from '../context/authcontext'
 import { base64ToArrayBuffer, encryptMessage, decryptMessage } from '../tools/tools'
+import { io } from 'socket.io-client'
 
 function Messages() {
 
-    const { user, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
+    const { user, startnetworkrequest, networkControllerRef, socket } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()
@@ -20,6 +21,25 @@ function Messages() {
 
     const [offset, setOffset] = useState(0)
     const [date, setDate] = useState(new Date())
+
+    useEffect(() => {
+        if (!socket) return
+
+        socket.on('newmessage', async (data) => {
+            let message
+            try {
+                const decryptedText = await decryptMessage(secret, data.text)
+                message = { ...data, text: decryptedText }
+            } catch {
+                message = { ...data, text: "[Failed to decrypt]" }
+            }
+            setMessages(prev => [message, ...prev])
+        })
+
+        return () => {
+            socket.off('newmessage')
+        }
+    }, [socket])
 
     useEffect(() => {
 
@@ -33,6 +53,8 @@ function Messages() {
                 setUserdata(updatedData)
             }
         }
+
+        if (link == user.id) navigate("/home")
 
         window.addEventListener("storage", handleStorage)
         return () => window.removeEventListener("storage", handleStorage)

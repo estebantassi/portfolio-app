@@ -51,7 +51,7 @@ function Profile() {
         <>
             <h1>{userdata.username ? userdata.username : ""}</h1>
             {userdata ? <img src={userdata.avatar} alt="Avatar" /> : <></>}
-            {user ? <button onClick={() => navigate("/messages/" + link)}>Send message</button> : <></>}
+            {user && user.id != link ? <button onClick={() => navigate("/messages/" + link)}>Send message</button> : <></>}
         </>
     )
 }

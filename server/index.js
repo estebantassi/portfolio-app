@@ -3,9 +3,14 @@ let cookieParser = require('cookie-parser')
 const cors = require('cors')
 require('dotenv').config()
 const db = require('./config/database')
+const { initSocket } = require('./config/socketio')
+const http = require('http')
 
 const app = express()
 const PORT = process.env.PORT
+
+const server = http.createServer(app)
+initSocket(server)
 
 app.use(cookieParser())
 
@@ -48,7 +53,7 @@ app.get('/auth/refreshtoken/logout', require('./requests/post/logout').Logout)
 
 app.get('/auth/refreshtoken/update', require('./requests/get/updateaccesstoken').UpdateAccessToken)
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
 //DELETE USERS WITH UNVERIFIED EMAIL
 setInterval(async () => {

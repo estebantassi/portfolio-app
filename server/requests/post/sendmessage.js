@@ -4,6 +4,7 @@ const { GetTokenData } = require('../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
 const { encrypt, decrypt, validateid, validatetoken } = require('../../tools/tools')
+const { getIO } = require('../../config/socketio')
 
 const SendMessage = async (req, res) => {
     try {
@@ -19,6 +20,8 @@ const SendMessage = async (req, res) => {
 
         const data = await GetTokenData(req, accesstoken, "access")
         if (data == null) return res.status(400).json({message: "Invalid token"})
+
+        if (data.id == receiverid) return res.status(400).json({message: "Can't send a message to yourself"})
 
         const [[request]] = await db.query(`
             SELECT id
@@ -42,6 +45,8 @@ const SendMessage = async (req, res) => {
             date,
             senderid: data.id
         }
+
+        getIO().to(receiverid.toString()).emit('newmessage', {...messagedata, text})
 
         return res.status(200).json({message: "Message sent", messagedata })
     } catch (err) {

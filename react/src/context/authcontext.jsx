@@ -5,6 +5,7 @@ import Cookies from 'js-cookie'
 import { useNavigate } from "react-router"
 import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64 } from "../tools/tools"
 import srp from "secure-remote-password/client"
+import { io } from 'socket.io-client'
 
 export const AuthContext = createContext()
 
@@ -14,10 +15,13 @@ export const AuthProvider = ({ children }) => {
     const { addToast } = useContext(ToastContext)
     const [user, setUser] = useState(Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null)
     const timeoutRef = useRef(null)
-    
+
     const [isNetworkButtonDisabled, setIsNetworkButtonDisabled] = useState(true)
     const networkTimeoutRef = useRef(null)
     const networkControllerRef = useRef(null)
+    const socketioRef = useRef(null)
+    const socketTimeoutRef = useRef(null)
+    const [socket, setSocket] = useState(null)
 
     const startnetworkrequest = () => {
         setIsNetworkButtonDisabled(true)
@@ -27,7 +31,7 @@ export const AuthProvider = ({ children }) => {
         networkControllerRef.current = new AbortController()
 
         networkTimeoutRef.current = setTimeout(() => {
-        setIsNetworkButtonDisabled(false)
+            setIsNetworkButtonDisabled(false)
         }, 3000)
     }
 
@@ -90,6 +94,20 @@ export const AuthProvider = ({ children }) => {
                 key: keyBase64
             }
 
+            if (socketioRef.current) { socketioRef.current.disconnect() }
+
+            socketioRef.current = io('http://localhost:4444', {
+                path: '/auth/socket.io',
+                withCredentials: true,
+            })
+
+            setSocket(socketioRef.current)
+
+            socketioRef.current.on('error', (data) => {
+                addToast(data?.message || "Error with websocket", "red")
+            })
+
+
             setUser(newuser)
             Cookies.set("user", JSON.stringify(newuser))
 
@@ -97,6 +115,7 @@ export const AuthProvider = ({ children }) => {
             navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
+            console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
@@ -137,6 +156,8 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
+            if (socketioRef.current) { socketioRef.current.disconnect() }
+
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
@@ -145,6 +166,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     useEffect(() => {
+
         return () => {
             if (networkTimeoutRef.current) clearTimeout(networkTimeoutRef.current)
             if (networkControllerRef.current) networkControllerRef.current.abort()
@@ -154,9 +176,32 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         checkauth()
 
+        function reconnectsocket() {
+            if ((!socketioRef.current || socketioRef.current.disconnected) && user) {
+                socketioRef.current = io('http://localhost:4444', {
+                    path: '/auth/socket.io',
+                    withCredentials: true,
+                })
+
+                setSocket(socketioRef.current)
+
+                socketioRef.current.on('error', (data) => {
+                    addToast(data?.message || "Error with websocket", "red")
+                })
+            }
+        }
+
+        socketTimeoutRef.current = setTimeout(() => {
+            reconnectsocket()
+        }, 1000)
+
         return () => {
-            if (timeoutRef.current)
-                clearTimeout(timeoutRef.current)
+            if (socketioRef.current) {
+                socketioRef.current.disconnect()
+                socketioRef.current = null
+            }
+            if (socketTimeoutRef.current) clearTimeout(socketTimeoutRef.current)
+            if (timeoutRef.current) clearTimeout(timeoutRef.current)
         }
     }, [user])
 
@@ -206,7 +251,8 @@ export const AuthProvider = ({ children }) => {
         logincode,
         startnetworkrequest,
         networkControllerRef,
-        isNetworkButtonDisabled
+        isNetworkButtonDisabled,
+        socket
     }
 
     return (

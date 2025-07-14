@@ -1,0 +1,56 @@
+const { Server } = require('socket.io');
+const cookie = require('cookie')
+const { GetTokenData } = require('../requests/get/gettokendata');
+const { validatetoken } = require('../tools/tools');
+
+let io
+
+function initSocket(server) {
+    io = new Server(server, {
+        path: '/auth/socket.io',
+        cors: {
+            origin: 'http://localhost:5173',
+            credentials: true,
+        },
+    })
+
+    io.use((socket, next) => {
+        const cookieHeader = socket.handshake.headers.cookie
+        if (!cookieHeader) return next(new Error('No cookie transmitted'))
+        const cookies = cookie.parse(cookieHeader)
+        socket.request.cookies = cookies
+        next()
+    })
+
+    io.on('connection', async (socket) => {
+        const token = socket.request.cookies['accesstoken']
+        if (!validatetoken(token)) return socket.emit('error', { message: 'Invalid token format' })
+
+        let ip = socket.handshake.address
+        if (socket.handshake.headers['x-forwarded-for']) { ip = socket.handshake.headers['x-forwarded-for'].split(',')[0].trim() }
+        const req = { socket: { remoteAddress: ip } }
+
+        const data = await GetTokenData(req, token, "access")
+        if (data == null) return socket.emit('error', { message: 'Invalid token' })
+
+        socket.join(data.id.toString())
+
+        socket.on('disconnect', () => {
+            console.log('Socket disconnected:', socket.id)
+        })
+    })
+
+    return io
+}
+
+function getIO() {
+    if (!io) {
+        throw new Error('Socket.io not initialized!')
+    }
+    return io
+}
+
+module.exports = {
+    initSocket,
+    getIO,
+}

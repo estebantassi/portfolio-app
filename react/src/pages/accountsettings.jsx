@@ -32,6 +32,8 @@ function AccountSettings() {
   const [encrypted2FAsecret, setEncrypted2FAsecret] = useState("")
 
   useEffect(() => {
+    startnetworkrequest()
+    
     const leavepagetimeout = setTimeout(() => {
       navigate('/home')
     }, 10 * 60 * 1000)
@@ -39,6 +41,7 @@ function AccountSettings() {
     return () => {
       clearTimeout(leavepagetimeout)
     }
+
   }, [])
 
   const accesssettings = async (e) => {
