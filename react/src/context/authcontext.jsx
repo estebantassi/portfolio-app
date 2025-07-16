@@ -228,7 +228,7 @@ export const AuthProvider = ({ children }) => {
             await axios.get('/auth/checkaccesstoken', { withCredentials: true })
             return true
         } catch (err) {
-            updatetoken()
+            await updatetoken()
         }
     }
 

@@ -48,6 +48,12 @@ app.post('/auth/sensitivedata/disable2fa', require('./requests/post/2FA/disable2
 
 app.post('/auth/sendmessage', require ("./requests/post/sendmessage").SendMessage)
 app.post('/auth/getmessages', require ("./requests/post/getmessages").GetMessages)
+app.post('/auth/follow', require ("./requests/post/follow").Follow)
+app.post('/auth/unfollow', require ("./requests/post/unfollow").Unfollow)
+app.post('/auth/block', require ("./requests/post/block").Block)
+app.post('/auth/unblock', require ("./requests/post/unblock").Unblock)
+app.get('/getfollowstate', require ("./requests/post/getfollowstate").GetFollowState)
+app.get('/getblockstate', require ("./requests/post/getblockstate").GetBlockState)
 
 app.get('/auth/refreshtoken/logout', require('./requests/post/logout').Logout)
 

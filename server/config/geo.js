@@ -10,7 +10,7 @@ let lookup
 })()
 
 function getClientIp(req) {
-  return "78.122.30.59"
+  return "0"
   
   const xForwarded = req.headers['x-forwarded-for']
   if (xForwarded) {

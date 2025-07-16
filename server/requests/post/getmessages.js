@@ -3,7 +3,8 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encrypt, decrypt, validateid, validatetoken } = require('../../tools/tools')
+const { validateid, validatetoken } = require('../../tools/tools')
+const { GetBlockStateServer } = require('./getblockstateserver')
 
 const GetMessages = async (req, res) => {
     try {
@@ -21,7 +22,11 @@ const GetMessages = async (req, res) => {
 
         const data = await GetTokenData(req, accesstoken, "access")
         if (data == null) return res.status(400).json({message: "Invalid token"})
-    
+        
+        const anyblocked = await GetBlockStateServer(data.id, receiverid)
+        if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
+        if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
+
         const [request] = await db.query(`
             SELECT *
             FROM messages
@@ -35,7 +40,7 @@ const GetMessages = async (req, res) => {
             OFFSET ?
         `, [data.id, receiverid, receiverid, data.id, date, offset])
 
-        if (request == null || request.length == 0) return res.status(400).json({message: "No more messages"})
+        if (request == null || request.length == 0) return res.status(200).json({message: "No more messages", data: ""})
 
         return res.status(200).json({message: "Message sent", data: request})
     } catch (err) {

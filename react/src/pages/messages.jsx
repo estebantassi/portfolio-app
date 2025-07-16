@@ -6,7 +6,6 @@ import { useFetcher, useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { AuthContext } from '../context/authcontext'
 import { base64ToArrayBuffer, encryptMessage, decryptMessage } from '../tools/tools'
-import { io } from 'socket.io-client'
 
 function Messages() {
 
@@ -18,12 +17,15 @@ function Messages() {
     const [messagetext, setMessagetext] = useState("")
     const [messages, setMessages] = useState([])
     const [secret, setSecret] = useState()
+    
+    const [isBlocked, setIsBlocked] = useState(false)
+    const [isBlocker, setIsBlocker] = useState(false)
 
     const [offset, setOffset] = useState(0)
     const [date, setDate] = useState(new Date())
 
     useEffect(() => {
-        if (!socket) return
+        if (!socket || !secret) return
 
         socket.on('newmessage', async (data) => {
             let message
@@ -36,10 +38,18 @@ function Messages() {
             setMessages(prev => [message, ...prev])
         })
 
+        socket.on('block', async (data) => {
+            if (data.from != link && data.from != user.id) return
+
+            addToast(data.from == link ? "This user blocked you" : "You blocked this user", "red")
+            navigate("/profile/" + link)
+        })
+
         return () => {
             socket.off('newmessage')
+            socket.off('block')
         }
-    }, [socket])
+    }, [socket, secret]);
 
     useEffect(() => {
 
@@ -61,7 +71,7 @@ function Messages() {
     }, [link])
 
     useEffect(() => {
-        if (!userdata.key) return
+        if (userdata == null || userdata.key == null) return
 
         async function getsecret() {
             const rawpublickey = base64ToArrayBuffer(userdata.key)
@@ -107,6 +117,11 @@ function Messages() {
         getsecret()
     }, [userdata])
 
+    useEffect(() => {
+        if (secret != null)
+        getmessages()
+    }, [secret])
+
     const getuserprofile = async () => {
         try {
             let response = await axios.get('/getuserprofile?id=' + link)
@@ -119,8 +134,6 @@ function Messages() {
             setUserdata(response.data)
 
             localStorage.setItem(link, JSON.stringify(response.data))
-
-            getmessages()
         } catch (err) {
             navigate("/home")
             addToast(err.response?.data?.message || "An error occurred", "red")
@@ -146,7 +159,7 @@ function Messages() {
             message.data.messagedata.text = messagetext
 
             setMessages(prev => [message.data.messagedata, ...prev])
-            addToast("MESSAGE SENT", "green")
+            setMessagetext("")
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
@@ -160,6 +173,9 @@ function Messages() {
             }, {
                 withCredentials: true
             })
+
+            if (response == null || response.data == null || response.data.data == null) throw 'Error'
+            if (response.data.data == "") return
 
             const encryptedMessages = response.data.data
 
@@ -178,11 +194,14 @@ function Messages() {
             setMessages(prev => [...prev, ...decryptedMessages])
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
+            console.log(err)
+            if (err?.response?.status == 403) navigate("/profile/" + link)
         }
     }
 
     return (
         <>
+        {isBlocked || isBlocker ? <>Unable to access messages</> : <>
             <h1>Messages with user {link}</h1>
 
             <form onSubmit={(e) => sendmessage(e)}>
@@ -198,6 +217,7 @@ function Messages() {
                     <h2>{msg.text}</h2>
                 </div>
             ))}
+            </>}
         </>
     )
 }

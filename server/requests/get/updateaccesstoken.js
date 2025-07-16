@@ -15,29 +15,25 @@ const UpdateAccessToken = async (req, res) => {
         const refreshtoken = req.cookies.refreshtoken
 
         if (!validatetoken(refreshtoken)) return res.status(400).json({message: "Invalid token format"})
-
+            
         const data = await GetTokenData(req, refreshtoken, "refresh")
         if (data == null || data.accesstokenid == null || isNaN(data.accesstokenid)) return res.status(400).json({message: "Invalid token"})
-
 
         connection = await db.getConnection()
         await connection.beginTransaction()
 
-        const [[request]] = await connection.query(`
+        const [requests] = await connection.query(`
             SELECT value, expires_at
             FROM tokens
             WHERE value=? AND type=? AND userid=?
-            LIMIT 1
             FOR UPDATE
         `, [data.jti, 'refresh', data.id])
 
+        const request = requests[0]
         if (request == null || request.expires_at == null) {
             await connection.rollback()
             return res.status(400).json({message: "Token revoked"})
         }
-
-        res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
-        res.clearCookie("accesstoken", { path: "/auth" })
         
         const ipsalt = await bcrypt.genSalt()
         const cryptedip = await bcrypt.hash(data.ip, ipsalt)
@@ -88,7 +84,7 @@ const UpdateAccessToken = async (req, res) => {
             UPDATE tokens
             SET value=?, expires_at=?
             WHERE id=?
-            `, [refreshtokenjti, refreshdate, data.id])
+            `, [refreshtokenjti, refreshdate, data.tokenid])
 
         CheckUserExpirations(data.id)
 

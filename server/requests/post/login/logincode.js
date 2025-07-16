@@ -66,6 +66,13 @@ const LoginCode = async (req, res) => {
         res.clearCookie("accesstoken", { path: "/auth" })
         res.clearCookie("logintoken", { path: "/logintoken" })
 
+        try {
+            await connection.query(`
+            DELETE FROM tokens
+            WHERE id=?
+            `, [data.tokenid])
+        } catch (err) {}
+
         const ipsalt = await bcrypt.genSalt()
         const cryptedip = await bcrypt.hash(ip, ipsalt)
 
@@ -146,7 +153,6 @@ const LoginCode = async (req, res) => {
             has2FA: requestuser['2FA']
         })
     } catch (err) {
-        console.log(err)
         if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
     } finally {

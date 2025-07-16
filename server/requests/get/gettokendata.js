@@ -25,13 +25,14 @@ const GetTokenData = async (req, token, type) => {
         if (decode == null || decode.jti == null || decode.id == null) return null
         if (isNaN(decode.id) || !validateuuid(decode.jti)) return null
 
-        const [[request]] = await db.query(`
+        const [requests] = await db.query(`
             SELECT id, value, expires_at, ip
             FROM tokens
             WHERE type=? AND value=? AND userid=?
             LIMIT 1
         `, [type, decode.jti, decode.id])
 
+        const request = requests[0]
         if (request == null || request.expires_at == null || request.id == null) return null
 
         if (new Date(request.expires_at) < new Date())
@@ -53,8 +54,6 @@ const GetTokenData = async (req, token, type) => {
 
             return null
         }
-
-       
 
         if (type == "refresh" || type == "access")
         {

@@ -5,6 +5,7 @@ const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
 const { encrypt, decrypt, validateid, validatetoken } = require('../../tools/tools')
 const { getIO } = require('../../config/socketio')
+const { GetBlockStateServer } = require('./getblockstateserver')
 
 const SendMessage = async (req, res) => {
     try {
@@ -22,14 +23,9 @@ const SendMessage = async (req, res) => {
         if (data == null) return res.status(400).json({message: "Invalid token"})
 
         if (data.id == receiverid) return res.status(400).json({message: "Can't send a message to yourself"})
-
-        const [[request]] = await db.query(`
-            SELECT id
-            FROM users
-            WHERE id=?
-        `, [receiverid])
-
-        if (request == null) return res.status(400).json({message: "User not found"})
+        const anyblocked = await GetBlockStateServer(data.id, receiverid)
+        if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
+        if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
 
         const date = new Date()
         const [message] = await db.query(`

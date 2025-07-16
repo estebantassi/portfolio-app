@@ -36,7 +36,7 @@ function initSocket(server) {
         socket.join(data.id.toString())
 
         socket.on('disconnect', () => {
-            console.log('Socket disconnected:', socket.id)
+            
         })
     })
 
