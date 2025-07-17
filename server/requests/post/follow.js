@@ -3,6 +3,8 @@ const { GetTokenData } = require('../get/gettokendata')
 const { validateid, validatetoken } = require('../../tools/tools')
 const { getIO } = require('../../config/socketio')
 const { GetBlockStateServer } = require('./getblockstateserver')
+const { setCachedValue } = require('../../config/redis')
+require('dotenv').config()
 
 const Follow = async (req, res) => {
     try {
@@ -26,12 +28,14 @@ const Follow = async (req, res) => {
             VALUES (?, ?)
         `, [data.id, followeeid])
 
+        await setCachedValue(`follow/${data.id}/${followeeid}`, process.env.FOLLOW_CACHE_DURATION, "1")
+
         getIO().to(followeeid.toString()).emit('follow', { id: followeeid, from: data.id })
         getIO().to(data.id.toString()).emit('follow', { id: followeeid, from: data.id })
 
         return res.status(200).json({message: "Followed user"})
     } catch (err) {
-        console.log(err)
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

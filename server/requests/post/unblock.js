@@ -2,6 +2,8 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const { validateid, validatetoken } = require('../../tools/tools')
 const { getIO } = require('../../config/socketio')
+const { setCachedValue } = require('../../config/redis')
+require('dotenv').config()
 
 const Unblock = async (req, res) => {
     try {
@@ -21,12 +23,14 @@ const Unblock = async (req, res) => {
             WHERE blocker_id=? AND blocked_id=?
         `, [data.id, blockedid])
 
+        await setCachedValue(`block/${data.id}/${blockedid}`, process.env.BLOCK_CACHE_DURATION, "0")
+
         getIO().to(blockedid.toString()).emit('unblock', { id: blockedid, from: data.id })
         getIO().to(data.id.toString()).emit('unblock', { id: blockedid, from: data.id })
 
         return res.status(200).json({message: "Unblocked user"})
     } catch (err) {
-        console.log(err)
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

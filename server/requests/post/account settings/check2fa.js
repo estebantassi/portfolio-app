@@ -69,6 +69,7 @@ const Check2FA = async (req, res) => {
 
         return res.status(200).json({ user, message: "Access granted", encrypted2FAsecret: request["2FAsecret"] })
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 

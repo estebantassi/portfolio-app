@@ -2,6 +2,7 @@ const { GetTokenData } = require('../get/gettokendata')
 const db = require('../../config/database')
 const { CheckUserExpirations } = require("../remove/checkuserexpirations")
 const { validatetoken } = require('../../tools/tools')
+require('dotenv').config()
 
 const Logout = async (req, res) => {
 
@@ -41,6 +42,7 @@ const Logout = async (req, res) => {
 
         return res.status(200).json({message: "Successfully logged out"})
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

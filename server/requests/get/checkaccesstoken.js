@@ -1,5 +1,6 @@
 const { validatetoken } = require('../../tools/tools')
 const { GetTokenData } = require('../get/gettokendata')
+require('dotenv').config()
 
 const CheckAccessToken = async (req, res) => {
 
@@ -15,9 +16,9 @@ const CheckAccessToken = async (req, res) => {
 
         return res.status(200).json({message: "Token is valid"})
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
-
 }
 
 module.exports = { CheckAccessToken }

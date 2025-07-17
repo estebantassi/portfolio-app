@@ -104,6 +104,7 @@ const Enable2FA = async (req, res) => {
         await connection.commit()
         return res.status(200).json({message: "2FA successfully enabled"})
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
     } finally {

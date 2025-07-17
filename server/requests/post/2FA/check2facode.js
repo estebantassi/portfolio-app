@@ -30,6 +30,7 @@ const Check2FAcode = async (userid, code) => {
         
         return true
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return false
     }
 }

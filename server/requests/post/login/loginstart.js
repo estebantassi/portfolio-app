@@ -52,6 +52,7 @@ const LoginStart = async (req, res) => {
 
         return res.status(200).json({ srpSalt, srpServerEphemeral: srpServerEphemeral.public })
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

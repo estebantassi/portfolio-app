@@ -2,6 +2,8 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../get/gettokendata')
 const { validateid, validatetoken } = require('../../tools/tools')
 const { getIO } = require('../../config/socketio')
+const { setCachedValue } = require('../../config/redis')
+require('dotenv').config()
 
 const Block = async (req, res) => {
     try {
@@ -15,7 +17,7 @@ const Block = async (req, res) => {
 
         const data = await GetTokenData(req, accesstoken, "access")
         if (data == null) return res.status(400).json({message: "Invalid token"})
-    
+
         await db.query(`
             INSERT INTO block (blocker_id, blocked_id)
             VALUES (?, ?)
@@ -29,12 +31,14 @@ const Block = async (req, res) => {
             `, [data.id, blockedid, blockedid, data.id])
         } catch (err) {}
 
+        await setCachedValue(`block/${data.id}/${blockedid}`, process.env.BLOCK_CACHE_DURATION, "1")
+
         getIO().to(blockedid.toString()).emit('block', { id: blockedid, from: data.id })
         getIO().to(data.id.toString()).emit('block', { id: blockedid, from: data.id })
 
         return res.status(200).json({message: "Blocked user"})
     } catch (err) {
-        console.log(err)
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

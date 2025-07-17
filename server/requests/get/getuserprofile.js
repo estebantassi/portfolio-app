@@ -25,6 +25,7 @@ const GetUserProfile = async (req, res) => {
 
         return res.status(200).json({message: "Data retrieved", username: request.username, avatar: avatarimage, tag: request.tag, key: request.messagekey_public})
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
     }
 }

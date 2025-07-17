@@ -25,7 +25,13 @@
         await redisClient.setEx(key, ttlInSeconds, value)
     }
 
+    async function deleteCachedValue(key) {
+        await connectRedis()
+        await redisClient.del(key)
+    }
+
     module.exports = {
     getCachedValue,
-    setCachedValue
+    setCachedValue,
+    deleteCachedValue
     }

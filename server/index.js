@@ -66,13 +66,13 @@ setInterval(async () => {
     await db.query(`
     DELETE FROM users 
     WHERE verified = 0 
-    AND created_at < NOW() - INTERVAL 24 HOUR
-    `)
-}, 60 * 1000);
+    AND created_at < ?
+    `, [new Date(Date.now() - 24 * 60 * 60 * 1000)])
+}, 60 * 60 * 1000);
 
 setInterval(async () => {
     await db.query(`
     DELETE FROM tokens 
     WHERE expires_at < ?
     `, [new Date()])
-}, 60 * 1000);
+}, 60 * 60 * 1000);

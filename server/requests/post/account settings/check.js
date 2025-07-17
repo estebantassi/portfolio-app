@@ -91,7 +91,7 @@ const Check = async (req, res) => {
         await connection.commit()
         return res.status(200).json({ srpProof: srpServerSession.proof, user, message: request['2FA'] ? "Enter your 2FA Authenticator Code" : "Access granted", "2FA": request['2FA'] })
     } catch (err) {
-        console.log(err)
+        if (process.env.STATE == 'dev') console.error(err)
         if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
     } finally {

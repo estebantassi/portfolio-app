@@ -17,6 +17,7 @@ const GetImage = async (filepath) => {
         await setCachedValue(filepath, 55 * 60, signedUrl)
         return signedUrl
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return null
     }
 }

@@ -78,7 +78,7 @@ const Signup = async (req, res) => {
         await connection.commit()
         return res.status(200).json({ message: "Verification link sent to your email" })
     } catch (err) {
-        console.log(err)
+        if (process.env.STATE == 'dev') console.error(err)
         if (connection) await connection.rollback()
         if (err.errno && err.errno == 1062) return res.status(400).json({ message: "This email is already taken" })
         return res.status(500).json({ message: "An error occured, please try again later" })

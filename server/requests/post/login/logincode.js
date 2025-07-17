@@ -9,6 +9,7 @@ const { Check2FAcode } = require('../../post/2FA/check2facode')
 const { v4: uuidv4 } = require('uuid')
 const { encrypt, decrypt, validatetoken, validatecode } = require('../../../tools/tools')
 const { CheckUserExpirations } = require("../../remove/checkuserexpirations")
+const { setCachedValue } = require('../../../config/redis')
 
 const LoginCode = async (req, res) => {
     let connection
@@ -153,6 +154,7 @@ const LoginCode = async (req, res) => {
             has2FA: requestuser['2FA']
         })
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
     } finally {

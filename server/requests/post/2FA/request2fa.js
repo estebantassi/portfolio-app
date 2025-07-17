@@ -64,6 +64,7 @@ const Request2FA = async (req, res) => {
             })
         })
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
     } finally {

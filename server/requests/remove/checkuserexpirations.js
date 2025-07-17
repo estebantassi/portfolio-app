@@ -1,4 +1,5 @@
 const db = require('../../config/database')
+require('dotenv').config()
 
 const CheckUserExpirations = async (id) => {
 
@@ -42,6 +43,7 @@ const CheckUserExpirations = async (id) => {
 
         return
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         if (connection) await connection.rollback()
         return
     } finally {

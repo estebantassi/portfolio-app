@@ -4,6 +4,7 @@ const db = require('../../config/database')
 const { getClientIp } = require('../../config/geo')
 const bcrypt = require('bcrypt')
 const { validateuuid } = require('../../tools/tools')
+const { setCachedValue, getCachedValue, deleteCachedValue } = require('../../config/redis')
 
 
 const GetTokenData = async (req, token, type) => {
@@ -25,17 +26,38 @@ const GetTokenData = async (req, token, type) => {
         if (decode == null || decode.jti == null || decode.id == null) return null
         if (isNaN(decode.id) || !validateuuid(decode.jti)) return null
 
-        const [requests] = await db.query(`
-            SELECT id, value, expires_at, ip
-            FROM tokens
-            WHERE type=? AND value=? AND userid=?
-            LIMIT 1
-        `, [type, decode.jti, decode.id])
+        let cachedtoken
+        if (type == "access") cachedtoken = await getCachedValue(`${type}/${decode.id}/${decode.jti}`)
 
-        const request = requests[0]
-        if (request == null || request.expires_at == null || request.id == null) return null
+        if (cachedtoken == null)
+        {
+            const [requests] = await db.query(`
+                SELECT userid, value, expires_at, ip, id
+                FROM tokens
+                WHERE type=? AND value=? AND userid=?
+                LIMIT 1
+            `, [type, decode.jti, decode.id])
 
-        if (new Date(request.expires_at) < new Date())
+            cachedtoken = requests[0]
+            if (cachedtoken == null) return null
+
+            if (type == "access"){
+                await setCachedValue(`${type}/${decode.id}/${cachedtoken.value}`, process.env.ACCESS_TOKEN_DURATION * 60 + 10, JSON.stringify({
+                    id: decode.id,
+                    tokenid: cachedtoken.id,
+                    jti: cachedtoken.value,
+                    type,
+                    expires_at: cachedtoken.expires_at,
+                    ip: cachedtoken.ip
+                }))
+            }
+        } else {
+            cachedtoken = JSON.parse(cachedtoken)
+        }
+
+        if (cachedtoken.expires_at == null || cachedtoken.id == null) return null
+
+        if (new Date(cachedtoken.expires_at) < new Date())
         {
             if (type == "refresh" && decode.accesstokenid != null)
             {
@@ -50,31 +72,26 @@ const GetTokenData = async (req, token, type) => {
             await db.query(`
                 DELETE FROM tokens
                 WHERE type=? AND value=? AND id=? AND userid=?
-            `, [type, decode.jti, request.id, decode.id])
+            `, [type, decode.jti, cachedtoken.id, decode.id])
+
+            if (type == "access") await deleteCachedValue(`${type}/${decode.id}/${cachedtoken.jti}`)
 
             return null
         }
 
         if (type == "refresh" || type == "access")
         {
-            const [[userreq]] = await db.query(`
-                SELECT verified
-                FROM users
-                WHERE id=?
-            `, [decode.id])
-
-            if (userreq == null || userreq.verified == null || userreq.verified == 0) return null
-
-            if (decode.ip == null || request.ip == null) return null
+            if (decode.ip == null || cachedtoken.ip == null) return null
 
             const ip = getClientIp(req)
-            const match = await bcrypt.compare(ip, request.ip)
+            const match = await bcrypt.compare(ip, cachedtoken.ip)
             if (!match) return null
         }
 
-        decode.tokenid = request.id
+        decode.tokenid = cachedtoken.id
         return decode
     } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
         return null
     }
 }
