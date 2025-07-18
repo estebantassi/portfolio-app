@@ -5,6 +5,7 @@ require('dotenv').config()
 const db = require('./config/database')
 const { initSocket } = require('./config/socketio')
 const http = require('http')
+const fileUpload = require('express-fileupload')
 
 const app = express()
 const PORT = process.env.PORT
@@ -21,6 +22,8 @@ app.use(cors(corsOptions))
 
 const bodyParser = require('body-parser')
 app.use(bodyParser.json({ limit: '10mb' }))
+
+app.use(fileUpload())
 
 app.post('/signup', require('./requests/post/signup').Signup)
 app.post('/verifyemail', require('./requests/post/verifyemail').VerifyEmail)

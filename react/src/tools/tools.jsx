@@ -73,10 +73,42 @@ async function decryptDataKey(encryptedDataKey, passwordKey) {
   return privateKey
 }
 
-async function encryptMessage(secretKey, plaintext) {
+function uint8ArrayToBase64(u8Arr) {
+  let CHUNK_SIZE = 0x8000 // 32KB chunk size
+  let index = 0
+  const length = u8Arr.length
+  let result = ''
+  let slice
+
+  while (index < length) {
+    slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length))
+    result += String.fromCharCode.apply(null, slice)
+    index += CHUNK_SIZE
+  }
+
+  return btoa(result)
+}
+
+function base64ToUint8Array(base64) {
+  const raw = atob(base64)
+  const rawLength = raw.length
+  const array = new Uint8Array(rawLength)
+  for (let i = 0; i < rawLength; i++) {
+    array[i] = raw.charCodeAt(i)
+  }
+  return array
+}
+
+async function encryptMessage(secretKey, plaintext, type) {
   const iv = crypto.getRandomValues(new Uint8Array(12))
-  const encoder = new TextEncoder()
-  const encoded = encoder.encode(plaintext)
+  let encoded
+
+  if (type === "image") {
+    encoded = new Uint8Array(plaintext)
+  } else {
+    const encoder = new TextEncoder()
+    encoded = encoder.encode(plaintext)
+  }
 
   const ciphertext = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
@@ -84,27 +116,40 @@ async function encryptMessage(secretKey, plaintext) {
     encoded
   )
 
-  const ivBase64 = btoa(String.fromCharCode(...iv))
-  const ciphertextBase64 = btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
+  const ivBase64 = uint8ArrayToBase64(iv)
+  const ciphertextBase64 = uint8ArrayToBase64(new Uint8Array(ciphertext))
 
-  // Combine into a single string
   return `${ivBase64}:${ciphertextBase64}`
 }
 
-async function decryptMessage(secretKey, encryptedString) {
-  const [ivBase64, ciphertextBase64] = encryptedString.split(':')
-  if (!ivBase64 || !ciphertextBase64) throw new Error("Invalid format")
+async function decryptMessage(secretKey, encryptedData, type) {
+  if (type === "image") {
+    const data = new Uint8Array(encryptedData)
+    const iv = data.slice(0, 12)
+    const ciphertext = data.slice(12)
 
-  const iv = Uint8Array.from(atob(ivBase64), c => c.charCodeAt(0))
-  const ciphertext = Uint8Array.from(atob(ciphertextBase64), c => c.charCodeAt(0))
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      secretKey,
+      ciphertext
+    )
 
-  const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    secretKey,
-    ciphertext
-  )
+    return decrypted
+  } else {
+    const [ivBase64, ciphertextBase64] = encryptedData.split(':')
+    if (!ivBase64 || !ciphertextBase64) throw new Error("Invalid format")
 
-  return new TextDecoder().decode(decrypted)
+    const iv = base64ToUint8Array(ivBase64)
+    const ciphertext = base64ToUint8Array(ciphertextBase64)
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      secretKey,
+      ciphertext
+    )
+    
+    return new TextDecoder().decode(decrypted)
+  }
 }
 
 function arrayBufferToBase64(buffer) {
@@ -152,6 +197,16 @@ function validatetoken(token) {
     && token.split(".").length === 3
 }
 
+function imageToBase64(file)
+{
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = error => reject(error)
+    reader.readAsDataURL(file)
+  })
+}
+
 export {
     deriveKey,
     encryptDataKey,
@@ -163,5 +218,6 @@ export {
     validatehex,
     validatecode,
     validateemail,
-    validatetoken
+    validatetoken,
+    imageToBase64
 }

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useFetcher, useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { AuthContext } from '../context/authcontext'
-import { base64ToArrayBuffer, encryptMessage, decryptMessage } from '../tools/tools'
+import { base64ToArrayBuffer, encryptMessage, decryptMessage, imageToBase64 } from '../tools/tools'
 
 function Messages() {
 
@@ -17,6 +17,9 @@ function Messages() {
     const [messagetext, setMessagetext] = useState("")
     const [messages, setMessages] = useState([])
     const [secret, setSecret] = useState()
+
+    const [image, setImage] = useState()
+    const [imagePreview, setImagePreview] = useState()
     
     const [isBlocked, setIsBlocked] = useState(false)
     const [isBlocker, setIsBlocker] = useState(false)
@@ -30,9 +33,22 @@ function Messages() {
         socket.on('newmessage', async (data) => {
             let message
             try {
-                const decryptedText = await decryptMessage(secret, data.text)
-                message = { ...data, text: decryptedText }
-            } catch {
+                const decryptedText = await decryptMessage(secret, data.text, "text")
+                let newimage
+                if (data.image != 0)
+                {
+                    const response = await fetch(data.image)
+                    if (!response.ok) throw "Error"
+                    
+                    const encryptedArrayBuffer = await response.arrayBuffer()
+                    const decryptedImageBuffer = await decryptMessage(secret, encryptedArrayBuffer, "image")
+                    newimage = URL.createObjectURL(new Blob([decryptedImageBuffer], { type: 'image/jpeg' }))
+                }
+                data.image = newimage
+
+                message = { ...data, text: decryptedText, image: data.image, rawimage: data.rawimage }
+            } catch (err){
+                console.log(err)
                 message = { ...data, text: "[Failed to decrypt]" }
             }
             setMessages(prev => [message, ...prev])
@@ -145,12 +161,20 @@ function Messages() {
         startnetworkrequest()
 
         try {
-            const text = await encryptMessage(secret, messagetext)
+            const text = await encryptMessage(secret, messagetext, "text")
+            const formdata = new FormData()
+            formdata.append('text', text)
+            formdata.append('receiverid', link)
 
-            const message = await axios.post('/auth/sendmessage', {
-                text,
-                receiverid: link
-            }, {
+            if (image)
+            {
+                const imageArrayBuffer = await image.arrayBuffer()
+                const encryptedimage = await encryptMessage(secret, imageArrayBuffer, "image")
+                formdata.append('image', encryptedimage)
+            }
+
+            const message = await axios.post('/auth/sendmessage',
+                formdata, {
                 withCredentials: true,
                 signal: networkControllerRef.current.signal
             })
@@ -158,9 +182,12 @@ function Messages() {
             if (message.data == null || message.data.messagedata == null) throw 'Error'
             message.data.messagedata.text = messagetext
 
-            setMessages(prev => [message.data.messagedata, ...prev])
+            //setMessages(prev => [message.data.messagedata, ...prev])
+            setImage("")
+            setImagePreview("") 
             setMessagetext("")
         } catch (err) {
+            console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
@@ -182,9 +209,22 @@ function Messages() {
             const decryptedMessages = await Promise.all(
             encryptedMessages.map(async (msg) => {
                 try {
-                const decryptedText = await decryptMessage(secret, msg.text)
+                const decryptedText = await decryptMessage(secret, msg.text, "text")
+                let newimage
+                if (msg.image != 0)
+                {
+                    const response = await fetch(msg.image)
+                    if (!response.ok) throw "Error"
+                    
+                    const encryptedArrayBuffer = await response.arrayBuffer()
+                    const decryptedImageBuffer = await decryptMessage(secret, encryptedArrayBuffer, "image")
+                    newimage = URL.createObjectURL(new Blob([decryptedImageBuffer], { type: 'image/jpeg' }))
+                }
+                msg.image = newimage    
+
                 return { ...msg, text: decryptedText }
-                } catch {
+                } catch (err){
+                    console.log(err)
                 return { ...msg, text: "[Failed to decrypt]" }
                 }
             })
@@ -206,6 +246,14 @@ function Messages() {
 
             <form onSubmit={(e) => sendmessage(e)}>
                 <input value={messagetext} placeholder='Write something...' onChange={(e) => setMessagetext(e.target.value)} />
+                <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files[0]
+                    if (file) {
+                        setImage(file)
+                        setImagePreview(URL.createObjectURL(file))
+                    }
+                }}/>
+                {imagePreview ? <img src={imagePreview} alt="imagetosend"/> : <></>}
 
                 <button>Send</button>
             </form>
@@ -215,6 +263,7 @@ function Messages() {
             {messages.map((msg, index) => (
                 <div key={index}>
                     <h2>{msg.text}</h2>
+                    {msg.image ? <img src={msg.image} alt="imagesent"/> : <></>}
                 </div>
             ))}
             </>}

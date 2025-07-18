@@ -5,6 +5,7 @@ const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
 const { validateid, validatetoken } = require('../../tools/tools')
 const { GetBlockStateServer } = require('./getblockstateserver')
+const { GetImage } = require('../../tools/getimage')
 
 const GetMessages = async (req, res) => {
     try {
@@ -41,6 +42,10 @@ const GetMessages = async (req, res) => {
         `, [data.id, receiverid, receiverid, data.id, date, offset])
 
         if (request == null || request.length == 0) return res.status(200).json({message: "No more messages", data: ""})
+
+        for (const message of request) {
+            if (message.image == 1) message.image = await GetImage(`messages/${message.id}`)
+        }
 
         return res.status(200).json({message: "Message sent", data: request})
     } catch (err) {

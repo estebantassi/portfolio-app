@@ -146,6 +146,26 @@ function validateuuid(uuid) {
   return uuidv4Regex.test(uuid)
 }
 
+function validatemessage(message) {
+  if (typeof message !== "string") return false
+
+  const parts = message.split(":")
+  if (parts.length !== 2) return false
+
+  const [ivBase64, ciphertextBase64] = parts
+
+  if (!ivBase64 || !ciphertextBase64) return false
+
+  const base64Regex = /^[A-Za-z0-9+/=]+$/
+  if (!base64Regex.test(ivBase64) || !base64Regex.test(ciphertextBase64)) return false
+
+  const maxCiphertextLength = Math.ceil((process.env.MAX_MESSAGE_LENGTH + 16) / 3) * 4
+  if (ciphertextBase64.length > maxCiphertextLength || ivBase64.length != 16) return false
+
+  return true
+}
+
+
 module.exports = {
   generatelogincode,
   encrypt,
@@ -162,5 +182,6 @@ module.exports = {
   validatesrpverifier,
   validateuuid,
   validateusername,
-  validateid
+  validateid,
+  validatemessage
 }
