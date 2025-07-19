@@ -10,11 +10,14 @@ const fileUpload = require('express-fileupload')
 const app = express()
 const PORT = process.env.PORT
 
+//WEB SOCKETS
 const server = http.createServer(app)
 initSocket(server)
 
+//USE REQ.COOKIES WITH COOKIEPARSER
 app.use(cookieParser())
 
+//CORS
 const corsOptions = require('./config/cors-options')
 const credentials = require('./config/cors-credentials')
 app.use(credentials)
@@ -25,42 +28,55 @@ app.use(bodyParser.json({ limit: '10mb' }))
 
 app.use(fileUpload())
 
-app.post('/signup', require('./requests/post/signup').Signup)
-app.post('/verifyemail', require('./requests/post/verifyemail').VerifyEmail)
-app.post('/loginstart', require('./requests/post/login/loginstart').LoginStart)
-app.post('/logintoken/login', require('./requests/post/login/login').Login)
-app.post('/logintoken/logincode', require('./requests/post/login/logincode').LoginCode)
-app.post('/oldemailcheck', require('./requests/post/oldemailcheck').OldEmailCheck)
-app.post('/newemailcheck', require('./requests/post/newemailcheck').NewEmailCheck)
+//ACCOUNT CREATION
+app.post('/signup', require('./requests/signup/signup').Signup)
+app.post('/verifyemail', require('./requests/signup/verifyemail').VerifyEmail)
 
+//FULL LOGIN
+app.post('/loginstart', require('./requests/login/loginstart').LoginStart)
+app.post('/logintoken/login', require('./requests/login/login').Login)
+app.post('/logintoken/logincode', require('./requests/login/logincode').LoginCode)
 
-app.post('/auth/accountsettings/checkstart', require('./requests/post/account settings/checkstart').CheckStart)
-app.post('/auth/sensitivedata/accountsettings/check', require('./requests/post/account settings/check').Check)
-app.post('/auth/sensitivedata/accountsettings/check2fa', require('./requests/post/account settings/check2fa').Check2FA)
+//ACCESS ACCOUNT SETTINGS
+app.post('/auth/accountsettings/checkstart', require('./requests/account settings/access/checkstart').CheckStart)
+app.post('/auth/sensitivedata/accountsettings/check', require('./requests/account settings/access/check').Check)
+app.post('/auth/sensitivedata/accountsettings/check2fa', require('./requests/account settings/access/check2fa').Check2FA)
 
-app.get('/getuserprofile', require('./requests/get/getuserprofile').GetUserProfile)
-app.get('/auth/checkaccesstoken', require('./requests/get/checkaccesstoken').CheckAccessToken)
-app.post('/auth/sensitivedata/requestemailchange', require('./requests/post/requestemailchange').RequestEmailChange)
+//CHANGE EMAIL
+app.post('/oldemailcheck', require('./requests/account settings/change email/oldemailcheck').OldEmailCheck)
+app.post('/newemailcheck', require('./requests/account settings/change email/newemailcheck').NewEmailCheck)
+app.post('/auth/sensitivedata/requestemailchange', require('./requests/account settings/change email/requestemailchange').RequestEmailChange)
 
-app.post('/confirmpasswordchange', require('./requests/post/account settings/confirmpasswordchange').ConfirmPasswordChange)
-app.post('/auth/sensitivedata/accountsettings/requestpasswordchange', require('./requests/post/account settings/requestpasswordchange').RequestPasswordChange)
+//CHANGE PASSWORD
+app.post('/confirmpasswordchange', require('./requests/account settings/change password/confirmpasswordchange').ConfirmPasswordChange)
+app.post('/auth/sensitivedata/accountsettings/requestpasswordchange', require('./requests/account settings/change password/requestpasswordchange').RequestPasswordChange)
 
-app.post('/auth/sensitivedata/request2fa', require('./requests/post/2FA/request2fa').Request2FA)
-app.post('/auth/sensitivedata/enable2fa', require('./requests/post/2FA/enable2fa').Enable2FA)
-app.post('/auth/sensitivedata/disable2fa', require('./requests/post/2FA/disable2fa').Disable2FA)
+//CHANGE 2FA
+app.post('/auth/sensitivedata/request2fa', require('./requests/account settings/change 2FA/request2fa').Request2FA)
+app.post('/auth/sensitivedata/enable2fa', require('./requests/account settings/change 2FA/enable2fa').Enable2FA)
+app.post('/auth/sensitivedata/disable2fa', require('./requests/account settings/change 2FA/disable2fa').Disable2FA)
 
-app.post('/auth/sendmessage', require ("./requests/post/sendmessage").SendMessage)
-app.post('/auth/getmessages', require ("./requests/post/getmessages").GetMessages)
-app.post('/auth/follow', require ("./requests/post/follow").Follow)
-app.post('/auth/unfollow', require ("./requests/post/unfollow").Unfollow)
-app.post('/auth/block', require ("./requests/post/block").Block)
-app.post('/auth/unblock', require ("./requests/post/unblock").Unblock)
-app.get('/getfollowstate', require ("./requests/post/getfollowstate").GetFollowState)
-app.get('/getblockstate', require ("./requests/post/getblockstate").GetBlockState)
+//MESSAGES
+app.post('/auth/sendmessage', require ("./requests/messages/sendmessage").SendMessage)
+app.post('/auth/getmessages', require ("./requests/messages/getmessages").GetMessages)
 
-app.get('/auth/refreshtoken/logout', require('./requests/post/logout').Logout)
+//FOLLOW
+app.post('/auth/follow', require ("./requests/profile/follow/follow").Follow)
+app.post('/auth/unfollow', require ("./requests/profile/follow/unfollow").Unfollow)
+app.get('/getfollowstate', require ("./requests/profile/follow/getfollowstate").GetFollowState)
 
-app.get('/auth/refreshtoken/update', require('./requests/get/updateaccesstoken').UpdateAccessToken)
+//BLOCK
+app.post('/auth/block', require ("./requests/profile/block/block").Block)
+app.post('/auth/unblock', require ("./requests/profile/block/unblock").Unblock)
+app.get('/getblockstate', require ("./requests/profile/block/getblockstate").GetBlockState)
+
+//TOKENS
+app.get('/auth/checkaccesstoken', require('./requests/session/checkaccesstoken').CheckAccessToken)
+app.get('/auth/refreshtoken/logout', require('./requests/login/logout').Logout)
+app.get('/auth/refreshtoken/update', require('./requests/session/updateaccesstoken').UpdateAccessToken)
+
+//GET PUBLIC USER PROFILE
+app.get('/getuserprofile', require('./requests/profile/getuserprofile').GetUserProfile)
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
@@ -73,6 +89,7 @@ setInterval(async () => {
     `, [new Date(Date.now() - 24 * 60 * 60 * 1000)])
 }, 60 * 60 * 1000);
 
+//DELETE EXPIRED TOKENS
 setInterval(async () => {
     await db.query(`
     DELETE FROM tokens 

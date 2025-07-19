@@ -1,6 +1,6 @@
 const { Server } = require('socket.io');
 const cookie = require('cookie')
-const { GetTokenData } = require('../requests/get/gettokendata');
+const { GetTokenData } = require('../tools/helper functions/gettokendata');
 const { validatetoken } = require('../tools/tools');
 
 let io
