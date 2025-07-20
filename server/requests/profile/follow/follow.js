@@ -1,9 +1,9 @@
-const db = require('../../config/database')
-const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const { validateid, validatetoken } = require('../../tools/tools')
-const { getIO } = require('../../config/socketio')
+const db = require('../../../config/database')
+const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
+const { validateid, validatetoken } = require('../../../tools/tools')
+const { getIO } = require('../../../config/socketio')
 const { GetBlockStateServer } = require('../block/getblockstateserver')
-const { setCachedValue } = require('../../config/redis')
+const { setCachedValue } = require('../../../config/redis')
 require('dotenv').config()
 
 const Follow = async (req, res) => {

@@ -5,11 +5,11 @@ require('dotenv').config()
 const transporter = require('../../config/mailsender').transporter
 const { getClientIp, getGeoFromIp } = require('../../config/geo')
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const { Check2FAcode } = require('../../post/2FA/check2facode')
+const { Check2FAcode } = require('../../tools/helper functions/check2facode')
 const { v4: uuidv4 } = require('uuid')
-const { encrypt, decrypt, validatetoken, validatecode } = require('../../tools/tools')
+const { decrypt, validatetoken, validatecode } = require('../../tools/tools')
 const { CheckUserExpirations } = require("../../tools/helper functions/checkuserexpirations")
-const { setCachedValue } = require('../../config/redis')
+const { GetImage } = require('../../tools/helper functions/getimage')
 
 const LoginCode = async (req, res) => {
     let connection
@@ -29,14 +29,14 @@ const LoginCode = async (req, res) => {
         connection = await db.getConnection()
         await connection.beginTransaction()
         const [[requestuser]] = await connection.query(`
-            SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt, 2FAsecret
+            SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt, 2FAsecret, avatar, banner
             FROM users
             WHERE id = ?
             FOR UPDATE
         `, [data.id])
         
         if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email_encrypted == null || requestuser.tag == null
-            || requestuser.messagekey_encrypted == null || requestuser.messagesalt == null || requestuser['2FAsecret'] == null)
+            || requestuser.messagekey_encrypted == null || requestuser.messagesalt == null || requestuser['2FAsecret'] == null || requestuser.avatar == null || requestuser.banner == null)
             return res.status(400).json({message: "User not found"})
 
 
@@ -140,6 +140,9 @@ const LoginCode = async (req, res) => {
 
         CheckUserExpirations(data.id)
 
+        const avatar = await GetImage(requestuser.avatar != 0 ? `avatar/${data.id}.${requestuser.avatar}` : "avatar/0.jpeg")
+        const banner = await GetImage(requestuser.banner != 0 ? `banner/${data.id}.${requestuser.banner}` : "banner/0.jpeg")
+
         await connection.commit()
         return res.status(200).json({
             message: "Successfully logged in",
@@ -148,7 +151,9 @@ const LoginCode = async (req, res) => {
                 id: data.id,
                 tag: requestuser.tag,
                 encryptedkey: requestuser.messagekey_encrypted,
-                salt: requestuser.messagesalt
+                salt: requestuser.messagesalt,
+                avatar,
+                banner
             },
             encrypted2FAsecret: requestuser['2FAsecret'],
             has2FA: requestuser['2FA']

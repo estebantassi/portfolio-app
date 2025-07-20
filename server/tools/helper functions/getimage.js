@@ -1,6 +1,6 @@
 require('dotenv').config()
-const bucket = require("../config/gcs")
-const { getCachedValue, setCachedValue } = require('../config/redis')
+const bucket = require("../../config/gcs")
+const { getCachedValue, setCachedValue } = require('../../config/redis')
 
 const GetImage = async (filepath) => {
     try {

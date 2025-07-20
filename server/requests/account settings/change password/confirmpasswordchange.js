@@ -1,12 +1,8 @@
-var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const db = require('../../../config/database')
-const { getClientIp, getGeoFromIp } = require('../../../config/geo')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const bcrypt = require('bcrypt')
-const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../../config/mailsender').transporter
-const { encrypt, decrypt, validatetoken, validatesalt, validateprivatekey, validatesrpsalt, validatesrpverifier } = require('../../../tools/tools')
+const { decrypt, validatetoken, validatesalt, validateprivatekey, validatesrpsalt, validatesrpverifier } = require('../../../tools/tools')
 
 const ConfirmPasswordChange = async (req, res) => {
 

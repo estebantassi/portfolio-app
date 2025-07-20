@@ -3,7 +3,7 @@ const db = require('../../../config/database')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
 const speakeasy = require('speakeasy')
 const QRCode = require('qrcode')
-const { encrypt, decrypt, validatetoken } = require('../../../tools/tools')
+const { encrypt, validatetoken } = require('../../../tools/tools')
 
 const Request2FA = async (req, res) => {
 

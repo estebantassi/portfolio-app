@@ -1,11 +1,9 @@
 require('dotenv').config()
-const db = require('../../../config/database')
-const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const speakeasy = require('speakeasy')
-const QRCode = require('qrcode')
-const { validateid, validatetoken } = require('../../../tools/tools')
-const { GetBlockStateServer } = require('../../block/getblockstateserver')
-const { GetImage } = require('../../../tools/getimage')
+const db = require('../../config/database')
+const { GetTokenData } = require('../../tools/helper functions/gettokendata')
+const { validateid, validatetoken } = require('../../tools/tools')
+const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
+const { GetImage } = require('../../tools/helper functions/getimage')
 
 const GetMessages = async (req, res) => {
     try {

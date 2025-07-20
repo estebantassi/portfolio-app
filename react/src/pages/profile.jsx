@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { AuthContext } from '../context/authcontext'
+import ProfileEditor from '../components/profileeditor'
 
 function Profile() {
 
@@ -18,6 +19,8 @@ function Profile() {
 
     const [isBlocked, setIsBlocked] = useState(false)
     const [isBlocking, setIsBlocking] = useState(false)
+
+    const [showProfileEditor, setShowProfileEditor] = useState(false)
 
     useEffect(() => {
         if (!socket) return
@@ -172,23 +175,38 @@ function Profile() {
         <>
             <h1>{userdata.username ? userdata.username : ""}</h1>
             <img src={userdata.avatar} alt="Avatar" />
-            { isBlocked ? <h2>User blocked you</h2> : isBlocking ? <h2>You blocked this user</h2> : <>
-            {user && user.id != link ? <button onClick={() => navigate("/messages/" + link)}>Send message</button> : <></>}
-            {user && user.id != link ? <button onClick={() => processfollow()}>
-                {
-                    isFollowing ? "Unfollow" : (isFollowed ? "Follow back" : "Follow")
-                }
-            </button> : <></>}
-            {isFollowed ? <>Follows you</> : <></>}
 
-            </>
-            }
 
-            {user && user.id != link ? <button onClick={() => processblock()}>
+            { isBlocked || isBlocking ? <>
+
+                {isBlocked ? <h2>User blocked you</h2> : <h2>You blocked this user</h2>}
+                
+                </> : <>
+
+                { user && user.id != link ? <>
+                <button onClick={() => navigate("/messages/" + link)}>Send message</button>
+                <button onClick={() => processfollow()}>
+                    {
+                        isFollowing ? "Unfollow" : (isFollowed ? "Follow back" : "Follow")
+                    }
+                </button>
+                {isFollowed ? <>Follows you</> : <></>}
+                
+                </> : <>
+
+                <button onClick={() => setShowProfileEditor(!showProfileEditor)}>Open editor</button>
+                
+                {showProfileEditor ? <ProfileEditor /> : null}
+
+                </>}
+                
+            </>}
+
+            { user && user.id != link ? <button onClick={() => processblock()}>
                 {
                     isBlocking ? "Unblock" : (isBlocked ? "Block back" : "Block")
                 }
-            </button> : <></>}
+            </button> : null}
         </>
     )
 }

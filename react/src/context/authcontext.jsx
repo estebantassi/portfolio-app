@@ -3,7 +3,7 @@ import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import Cookies from 'js-cookie'
 import { useNavigate } from "react-router"
-import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64 } from "../tools/tools"
+import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64, blobToBase64 } from "../tools/tools"
 import srp from "secure-remote-password/client"
 import { io } from 'socket.io-client'
 
@@ -22,6 +22,18 @@ export const AuthProvider = ({ children }) => {
     const socketioRef = useRef(null)
     const socketTimeoutRef = useRef(null)
     const [socket, setSocket] = useState(null)
+
+    function cleanLocalStorageCache() {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            try {
+                const data = JSON.parse(localStorage.getItem(key))
+                if (data && data.expires && new Date(data.expires) < new Date()) {
+                    localStorage.removeItem(key)
+                }
+            } catch {}
+        }
+    }
 
     const startnetworkrequest = () => {
         setIsNetworkButtonDisabled(true)
@@ -78,6 +90,18 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             })
 
+            const avatarreq = await fetch(response.data.user.avatar)
+            if (!avatarreq.ok) throw "Error"
+            const avatarBlob = await avatarreq.blob()
+            const avatarBase64 = await blobToBase64(avatarBlob)
+            localStorage.setItem('avatar', avatarBase64)
+
+            const bannerreq = await fetch(response.data.user.banner)
+            if (!bannerreq.ok) throw "Error"
+            const bannerBlob = await bannerreq.blob()
+            const bannerBase64 = await blobToBase64(bannerBlob)
+            localStorage.setItem('banner', bannerBase64)
+
             let encrypted2FAsecret = ""
             if (response.data.has2FA == 1) encrypted2FAsecret = response.data.encrypted2FAsecret
 
@@ -91,7 +115,7 @@ export const AuthProvider = ({ children }) => {
                 username: response.data.user.username,
                 id: response.data.user.id,
                 tag: response.data.user.tag,
-                key: keyBase64
+                key: keyBase64,
             }
 
             if (socketioRef.current) { socketioRef.current.disconnect() }
@@ -150,6 +174,8 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         Cookies.remove("user")
         setUser(null)
+        localStorage.removeItem("avatar")
+        localStorage.removeItem("banner")
 
         try {
             const response = await axios.get('/auth/refreshtoken/logout', {
@@ -166,6 +192,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     useEffect(() => {
+        cleanLocalStorageCache()
 
         return () => {
             if (networkTimeoutRef.current) clearTimeout(networkTimeoutRef.current)

@@ -2,8 +2,6 @@ require('dotenv').config()
 const db = require('../../../config/database')
 const { validatetoken, validatesalt, validateprivatekey } = require('../../../tools/tools')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const transporter = require('../../../config/mailsender').transporter
-const speakeasy = require('speakeasy')
 
 const Disable2FA = async (req, res) => {
 

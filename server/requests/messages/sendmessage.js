@@ -1,13 +1,11 @@
 require('dotenv').config()
 const db = require('../../config/database')
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const speakeasy = require('speakeasy')
-const QRCode = require('qrcode')
-const { encrypt, decrypt, validateid, validatetoken, validatemessage } = require('../../tools/tools')
+const { validateid, validatetoken, validatemessage } = require('../../tools/tools')
 const { getIO } = require('../../config/socketio')
 const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
 const bucket = require('../../config/gcs')
-const { GetImage } = require('../../tools/getimage')
+const { GetImage } = require('../../tools/helper functions/getimage')
 
 const SendMessage = async (req, res) => {
     try {
@@ -17,7 +15,7 @@ const SendMessage = async (req, res) => {
         const receiverid = req.body.receiverid
         const text = req.body.text
         const accesstoken = req.cookies.accesstoken
-        const image = req.body.image
+        const image = req.files ? req.files.image : null
 
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
         if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
@@ -33,7 +31,7 @@ const SendMessage = async (req, res) => {
         if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
 
         let hasimage = 0
-        if (image != null) hasimage = 1
+        if (image != null && image.data != null) hasimage = 1
 
         const date = new Date()
         const [message] = await db.query(`
@@ -45,8 +43,7 @@ const SendMessage = async (req, res) => {
 
         if (hasimage == 1)
         {
-            const buffer = Buffer.from(image, 'base64')
-            await bucket.file(`messages/${message.insertId}`).save(buffer, {
+            await bucket.file(`messages/${message.insertId}`).save(image.data, {
                 metadata: {
                     contentType: 'application/octet-stream',
                     cacheControl: 'no-store'

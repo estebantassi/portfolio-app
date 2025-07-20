@@ -1,10 +1,9 @@
 const db = require('../../config/database')
-const bcrypt = require('bcrypt')
 require('dotenv').config()
 var jwt = require('jsonwebtoken')
 const transporter = require('../../config/mailsender').transporter
 const { v4: uuidv4 } = require('uuid')
-const { encrypt, decrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier, validateusername } = require('../../tools/tools')
+const { encrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier, validateusername } = require('../../tools/tools')
 
 const Signup = async (req, res) => {
 

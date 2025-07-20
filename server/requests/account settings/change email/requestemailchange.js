@@ -1,12 +1,10 @@
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
 const db = require('../../../config/database')
-const { getClientIp, getGeoFromIp } = require('../../../config/geo')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../../config/mailsender').transporter
-const { encrypt, decrypt, hash, validateemail } = require('../../../tools/tools')
+const { decrypt, hash, validateemail } = require('../../../tools/tools')
 
 const RequestEmailChange = async (req, res) => {
 
@@ -35,7 +33,7 @@ const RequestEmailChange = async (req, res) => {
         `, [hashednewemail])
 
         if (request != null) return res.status(400).json({message: "This email is already taken"})
-.
+
         const [[request2]] = await db.query(`
             SELECT email_encrypted, username, 2FA
             FROM users

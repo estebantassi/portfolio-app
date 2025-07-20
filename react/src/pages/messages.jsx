@@ -1,11 +1,11 @@
 import { useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
-import { useEffect, useState } from 'react'
-import { useFetcher, useParams } from "react-router"
+import { useEffect, useState, memo, useCallback, useRef } from 'react'
+import { useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { AuthContext } from '../context/authcontext'
-import { base64ToArrayBuffer, encryptMessage, decryptMessage, imageToBase64 } from '../tools/tools'
+import { base64ToArrayBuffer, encryptMessage, decryptMessage, getImageType, reconstructImage } from '../tools/tools'
 
 function Messages() {
 
@@ -20,12 +20,11 @@ function Messages() {
 
     const [image, setImage] = useState()
     const [imagePreview, setImagePreview] = useState()
-    
-    const [isBlocked, setIsBlocked] = useState(false)
-    const [isBlocker, setIsBlocker] = useState(false)
 
-    const [offset, setOffset] = useState(0)
-    const [date, setDate] = useState(new Date())
+    const canLoadMessagesRef = useRef(true)
+
+    const date = new Date()
+
 
     useEffect(() => {
         if (!socket || !secret) return
@@ -34,24 +33,17 @@ function Messages() {
             let message
             try {
                 const decryptedText = await decryptMessage(secret, data.text, "text")
-                let newimage
-                if (data.image != 0)
-                {
-                    const response = await fetch(data.image)
-                    if (!response.ok) throw "Error"
-                    
-                    const encryptedArrayBuffer = await response.arrayBuffer()
-                    const decryptedImageBuffer = await decryptMessage(secret, encryptedArrayBuffer, "image")
-                    newimage = URL.createObjectURL(new Blob([decryptedImageBuffer], { type: 'image/jpeg' }))
-                }
-                data.image = newimage
+                data.image = await reconstructImage(data.image, secret)
 
-                message = { ...data, text: decryptedText, image: data.image, rawimage: data.rawimage }
+                message = { ...data, text: decryptedText }
             } catch (err){
-                console.log(err)
                 message = { ...data, text: "[Failed to decrypt]" }
             }
             setMessages(prev => [message, ...prev])
+        })
+
+        socket.on('deletemessage', async (data) => {
+            setMessages(prev => prev.filter(msg => msg.id !== data.messageid));
         })
 
         socket.on('block', async (data) => {
@@ -64,6 +56,7 @@ function Messages() {
         return () => {
             socket.off('newmessage')
             socket.off('block')
+            socket.off('deletemessage')
         }
     }, [socket, secret]);
 
@@ -170,7 +163,8 @@ function Messages() {
             {
                 const imageArrayBuffer = await image.arrayBuffer()
                 const encryptedimage = await encryptMessage(secret, imageArrayBuffer, "image")
-                formdata.append('image', encryptedimage)
+                const blob = new Blob([encryptedimage])
+                formdata.append('image', blob)
             }
 
             const message = await axios.post('/auth/sendmessage',
@@ -193,10 +187,12 @@ function Messages() {
     }
 
     const getmessages = async () => {
+        if (!canLoadMessagesRef.current) return
+        canLoadMessagesRef.current = false
 
         try {
             const response = await axios.post('/auth/getmessages', {
-                receiverid: link, offset, date
+                receiverid: link, offset: messages.length, date
             }, {
                 withCredentials: true
             })
@@ -205,43 +201,60 @@ function Messages() {
             if (response.data.data == "") return
 
             const encryptedMessages = response.data.data
-
             const decryptedMessages = await Promise.all(
             encryptedMessages.map(async (msg) => {
                 try {
                 const decryptedText = await decryptMessage(secret, msg.text, "text")
-                let newimage
-                if (msg.image != 0)
-                {
-                    const response = await fetch(msg.image)
-                    if (!response.ok) throw "Error"
-                    
-                    const encryptedArrayBuffer = await response.arrayBuffer()
-                    const decryptedImageBuffer = await decryptMessage(secret, encryptedArrayBuffer, "image")
-                    newimage = URL.createObjectURL(new Blob([decryptedImageBuffer], { type: 'image/jpeg' }))
-                }
-                msg.image = newimage    
+                msg.image = await reconstructImage(msg.image, secret) 
 
-                return { ...msg, text: decryptedText }
-                } catch (err){
-                    console.log(err)
-                return { ...msg, text: "[Failed to decrypt]" }
+                    return { ...msg, text: decryptedText }
+                } catch {
+                    return { ...msg, text: "[Failed to decrypt]" }
                 }
             })
             )
 
-            setOffset(prev => prev + 2)
             setMessages(prev => [...prev, ...decryptedMessages])
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
-            console.log(err)
             if (err?.response?.status == 403) navigate("/profile/" + link)
+        } finally {
+            canLoadMessagesRef.current = true
         }
     }
 
+    const deletemessage = useCallback(async (id) => {
+        startnetworkrequest()
+
+        try {
+            const response = await axios.post('/auth/deletemessage', {
+                messageid: id
+            }, {
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
+            })
+
+            setMessages(prev => prev.filter(msg => msg.id !== id));
+            addToast(response?.data?.message || "Success", "green")
+        } catch (err) {
+            addToast(err.response?.data?.message || "An error occurred", "red")
+        }
+    }, [])
+
+    const MessageItem = memo(({ msg, userId, onDelete }) => {
+        return (
+            <div>
+                <h2>{msg.text}</h2>
+                {msg.image ? <img src={msg.image} alt="imagesent" /> : null}
+                {msg.senderid === userId ? (
+                    <button onClick={() => onDelete(msg.id)}>Delete Message</button>
+                ) : null}
+            </div>
+        )
+    })
+
     return (
         <>
-        {isBlocked || isBlocker ? <>Unable to access messages</> : <>
             <h1>Messages with user {link}</h1>
 
             <form onSubmit={(e) => sendmessage(e)}>
@@ -253,20 +266,21 @@ function Messages() {
                         setImagePreview(URL.createObjectURL(file))
                     }
                 }}/>
-                {imagePreview ? <img src={imagePreview} alt="imagetosend"/> : <></>}
+                {imagePreview ? <img src={imagePreview} alt="imagetosend"/> : null}
 
                 <button>Send</button>
             </form>
 
             <button onClick={() => { getmessages() }}>Get Messages</button>
 
-            {messages.map((msg, index) => (
-                <div key={index}>
-                    <h2>{msg.text}</h2>
-                    {msg.image ? <img src={msg.image} alt="imagesent"/> : <></>}
-                </div>
+            {messages.map((msg) => (
+                <MessageItem
+                    key={msg.id}
+                    msg={msg}
+                    userId={user.id}
+                    onDelete={deletemessage}
+                />
             ))}
-            </>}
         </>
     )
 }

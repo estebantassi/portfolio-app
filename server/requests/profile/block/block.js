@@ -1,8 +1,8 @@
-const db = require('../../config/database')
-const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const { validateid, validatetoken } = require('../../tools/tools')
-const { getIO } = require('../../config/socketio')
-const { setCachedValue } = require('../../config/redis')
+const db = require('../../../config/database')
+const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
+const { validateid, validatetoken } = require('../../../tools/tools')
+const { getIO } = require('../../../config/socketio')
+const { setCachedValue } = require('../../../config/redis')
 require('dotenv').config()
 
 const Block = async (req, res) => {

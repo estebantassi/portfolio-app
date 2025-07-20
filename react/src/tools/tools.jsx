@@ -3,7 +3,6 @@ async function deriveKey(password, encrypted2FAsecret, base64Salt) {
   const encoder = new TextEncoder()
 
   const secretvalue = password + "" + encrypted2FAsecret
-  console.log(secretvalue)
 
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -116,6 +115,13 @@ async function encryptMessage(secretKey, plaintext, type) {
     encoded
   )
 
+  if (type === "image") {
+    const result = new Uint8Array(iv.length + ciphertext.byteLength)
+    result.set(iv, 0)
+    result.set(new Uint8Array(ciphertext), iv.length)
+    return result.buffer
+  }
+
   const ivBase64 = uint8ArrayToBase64(iv)
   const ciphertextBase64 = uint8ArrayToBase64(new Uint8Array(ciphertext))
 
@@ -135,21 +141,21 @@ async function decryptMessage(secretKey, encryptedData, type) {
     )
 
     return decrypted
-  } else {
-    const [ivBase64, ciphertextBase64] = encryptedData.split(':')
-    if (!ivBase64 || !ciphertextBase64) throw new Error("Invalid format")
-
-    const iv = base64ToUint8Array(ivBase64)
-    const ciphertext = base64ToUint8Array(ciphertextBase64)
-
-    const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv },
-      secretKey,
-      ciphertext
-    )
-    
-    return new TextDecoder().decode(decrypted)
   }
+
+  const [ivBase64, ciphertextBase64] = encryptedData.split(':')
+  if (!ivBase64 || !ciphertextBase64) throw new Error("Invalid format")
+
+  const iv = base64ToUint8Array(ivBase64)
+  const ciphertext = base64ToUint8Array(ciphertextBase64)
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    secretKey,
+    ciphertext
+  )
+  
+  return new TextDecoder().decode(decrypted)
 }
 
 function arrayBufferToBase64(buffer) {
@@ -197,13 +203,39 @@ function validatetoken(token) {
     && token.split(".").length === 3
 }
 
-function imageToBase64(file)
+function getImageType(buffer) {
+    const bytes = new Uint8Array(buffer);
+
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
+        return "image/gif"
+    }
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[bytes.length - 2] === 0xFF && bytes[bytes.length - 1] === 0xD9) {
+        return "image/jpeg"
+    }
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+        return "image/png"
+    }
+
+    return "application/octet-stream"
+}
+
+async function reconstructImage(image, secret)
 {
+  if (image == null || image == 0) return null
+  const response = await fetch(image)
+  if (!response.ok) return null
+  const encryptedArrayBuffer = await response.arrayBuffer()
+  const decryptedImageBuffer = await decryptMessage(secret, encryptedArrayBuffer, "image")
+  const type = getImageType(decryptedImageBuffer)
+  return URL.createObjectURL(new Blob([decryptedImageBuffer], { type }))
+}
+
+function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = error => reject(error)
-    reader.readAsDataURL(file)
+    reader.onloadend = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
   })
 }
 
@@ -219,5 +251,7 @@ export {
     validatecode,
     validateemail,
     validatetoken,
-    imageToBase64
+    getImageType,
+    reconstructImage,
+    blobToBase64
 }

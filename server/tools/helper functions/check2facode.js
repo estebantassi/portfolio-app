@@ -1,9 +1,7 @@
 require('dotenv').config()
-const db = require('../../../config/database')
-const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const transporter = require('../../../config/mailsender').transporter
+const db = require('../../config/database')
 const speakeasy = require('speakeasy')
-const { decrypt } = require('../../../tools/tools')
+const { decrypt } = require('../tools')
 
 const Check2FAcode = async (userid, code) => {
 

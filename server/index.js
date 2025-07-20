@@ -59,6 +59,7 @@ app.post('/auth/sensitivedata/disable2fa', require('./requests/account settings/
 //MESSAGES
 app.post('/auth/sendmessage', require ("./requests/messages/sendmessage").SendMessage)
 app.post('/auth/getmessages', require ("./requests/messages/getmessages").GetMessages)
+app.post('/auth/deletemessage', require ("./requests/messages/deletemessage").DeleteMessage)
 
 //FOLLOW
 app.post('/auth/follow', require ("./requests/profile/follow/follow").Follow)
@@ -87,7 +88,7 @@ setInterval(async () => {
     WHERE verified = 0 
     AND created_at < ?
     `, [new Date(Date.now() - 24 * 60 * 60 * 1000)])
-}, 60 * 60 * 1000);
+}, 60 * 60 * 1000)
 
 //DELETE EXPIRED TOKENS
 setInterval(async () => {
@@ -95,4 +96,4 @@ setInterval(async () => {
     DELETE FROM tokens 
     WHERE expires_at < ?
     `, [new Date()])
-}, 60 * 60 * 1000);
+}, 60 * 60 * 1000)

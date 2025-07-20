@@ -1,9 +1,9 @@
 require('dotenv').config()
-const db = require('../../../../config/database')
-const { GetTokenData } = require('../../../../tools/helper functions/gettokendata')
-const transporter = require('../../../../config/mailsender').transporter
+const db = require('../../../config/database')
+const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
+const transporter = require('../../../config/mailsender').transporter
 const speakeasy = require('speakeasy')
-const { decrypt, encrypt, validatetoken, validatecode, validatesalt, validateprivatekey } = require('../../../../tools/tools')
+const { decrypt, validatetoken, validatecode, validatesalt, validateprivatekey } = require('../../../tools/tools')
 var jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid')
 

@@ -1,7 +1,7 @@
 require('dotenv').config()
 const db = require('../../config/database')
 const { getCachedValue, setCachedValue } = require('../../config/redis')
-const { GetImage } = require("../../tools/getimage")
+const { GetImage } = require("../../tools/helper functions/getimage")
 
 const GetUserProfile = async (req, res) => {
 

@@ -1,15 +1,11 @@
-const db = require('../../../../config/database')
-const bcrypt = require('bcrypt')
+const db = require('../../../config/database')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
-const transporter = require('../../../../config/mailsender').transporter
-const { generatelogincode } = require("../../../../tools/tools")
 const { v4: uuidv4 } = require('uuid')
-const { CheckUserExpirations } = require("../../../../tools/helper functions/checkuserexpirations")
-const { encrypt, decrypt, hash, validateemail, validatetoken } = require('../../../../tools/tools')
+const { decrypt, validatetoken } = require('../../../tools/tools')
 const srp = require('secure-remote-password/server')
-const { getCachedValue, setCachedValue } = require('../../../../config/redis')
-const { GetTokenData } = require('../../../../tools/helper functions/gettokendata')
+const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
+const { setCachedValue } = require('../../../config/redis')
 
 const CheckStart = async (req, res) => {
     try {

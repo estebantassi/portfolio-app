@@ -1,12 +1,10 @@
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
-const db = require('../../../../config/database')
-const { getClientIp, getGeoFromIp } = require('../../../../config/geo')
-const { GetTokenData } = require('../../../../tools/helper functions/gettokendata')
-const bcrypt = require('bcrypt')
+const db = require('../../../config/database')
+const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
 const { v4: uuidv4 } = require('uuid')
-const { validateemail, validateusername } = require('../../../../tools/tools')
-const transporter = require('../../../../config/mailsender').transporter
+const { validateemail, validateusername } = require('../../../tools/tools')
+const transporter = require('../../../config/mailsender').transporter
 
 const OldEmailCheck = async (req, res) => {
 
