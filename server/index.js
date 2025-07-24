@@ -76,7 +76,8 @@ app.get('/auth/checkaccesstoken', require('./requests/session/checkaccesstoken')
 app.get('/auth/refreshtoken/logout', require('./requests/login/logout').Logout)
 app.get('/auth/refreshtoken/update', require('./requests/session/updateaccesstoken').UpdateAccessToken)
 
-//GET PUBLIC USER PROFILE
+//PROFILE
+app.post('/auth/editprofile', require("./requests/profile/editprofile").EditProfile)
 app.get('/getuserprofile', require('./requests/profile/getuserprofile').GetUserProfile)
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))

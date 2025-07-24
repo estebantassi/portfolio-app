@@ -6,20 +6,14 @@ import axios from '../api/axios'
 function Home() {
 
   const { addToast } = useContext(ToastContext)
-  const { user } = useContext(AuthContext)
-
-  const [banner, setBanner] = useState(localStorage.getItem('banner'))
-  const [avatar, setAvatar] = useState(localStorage.getItem('avatar'))
+  const { user, avatar, banner } = useContext(AuthContext)
 
   return (
     <>
       <h1>{ user ? user.username : "home"}</h1>
-      <button onClick={() => {
-        console.log(user.key)
-      }}></button>
 
-      {avatar ? <img src={avatar} alt="image" /> : null}
-      {banner ? <img src={banner} alt="image" /> : null}
+      {user ? <img src={avatar} alt="image" /> : null}
+      {user ? <img src={banner} alt="image" /> : null}
     </>
   )
 }

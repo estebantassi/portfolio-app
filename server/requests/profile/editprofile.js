@@ -1,0 +1,145 @@
+require('dotenv').config()
+const db = require('../../config/database')
+const bucket = require('../../config/gcs')
+const { setCachedValue, getCachedValue } = require('../../config/redis')
+const { getIO } = require('../../config/socketio')
+const { GetImage } = require('../../tools/helper functions/getimage')
+const { GetTokenData } = require('../../tools/helper functions/gettokendata')
+const { validatetoken, validateusername, validatetag, validatebio } = require('../../tools/tools')
+const sharp = require('sharp')
+
+const EditProfile = async (req, res) => {
+    try {
+        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
+        if (req.body == null || req.body.bio == null || req.body.username == null || req.body.tag == null) return res.status(400).json({message: "Missing data"})
+        
+        const accesstoken = req.cookies.accesstoken
+        let bio = req.body.bio
+        let username = req.body.username
+        let tag = req.body.tag
+        let avatar = req?.files?.avatar?.data
+        let banner = req?.files?.banner?.data
+
+        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
+
+        const data = await GetTokenData(req, accesstoken, "access")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
+
+        const [[request]] = await db.query(`
+            SELECT username, avatar, banner, tag, messagekey_public, bio
+            FROM users
+            WHERE id=?
+        `, [data.id])
+
+        let updateFields = []
+        let updateValues = [];
+
+        if (request.tag != tag)
+        {
+            if (!validatetag(tag, data.id)) return res.status(400).json({message: "Invalid tag format"})
+            updateFields.push(`tag = ?`)
+            updateValues.push(tag)
+        } else tag = request.tag
+
+        if (request.username != username)
+        {
+            if (!validateusername(username)) return res.status(400).json({message: "Invalid username format"})
+            updateFields.push(`username = ?`)
+            updateValues.push(username)
+        } else username = request.username
+
+        if (request.bio != bio)
+        {
+            if (!validatebio(bio)) return res.status(400).json({message: "Invalid bio format"})
+            updateFields.push(`bio = ?`)
+            updateValues.push(bio)
+        } else bio = request.bio
+
+        if (avatar)
+        {
+            avatar = sharp(avatar, { animated: true })
+            const avatarmetadata = await avatar.metadata()
+
+            if (avatarmetadata)
+            {
+                avatar = await avatar
+                    .resize(300, 300)
+                    .webp()
+                    .toBuffer()
+
+                if (avatar.length > 200 * 1024) return res.status(400).json({ message: "Your avatar is too big, its compression is over 200KB" })
+
+                await bucket.file(`avatar/${data.id}`).save(avatar, {
+                    metadata: {
+                        contentType: 'image/webp',
+                        cacheControl: 'no-store'
+                    }
+                })
+
+                avatar = `data:image/webp;base64,${avatar.toString('base64')}`
+                updateFields.push('avatar = 1')
+            } else return res.status(400).json({ message: "Invalid avatar format" })
+        }
+
+        if (banner)
+        {
+            banner = sharp(banner, { animated: true })
+            const bannermetadata = await banner.metadata()
+
+            if (bannermetadata)
+            {
+                banner = await banner
+                    .resize(1500, 500)
+                    .webp()
+                    .toBuffer()
+
+                if (banner.length > 500 * 1024) return res.status(400).json({ message: "Your banner is too big, its compression is over 500KB" })
+
+                await bucket.file(`banner/${data.id}`).save(banner, {
+                    metadata: {
+                        contentType: 'image/webp',
+                        cacheControl: 'no-store'
+                    }
+                })
+
+                banner = `data:image/webp;base64,${banner.toString('base64')}`
+                updateFields.push('banner = 1')
+            } else return res.status(400).json({ message: "Invalid banner format" })
+        }
+
+        let combinedfields
+        if (updateFields.length > 1) combinedfields = updateFields.join(', ')
+        else combinedfields = updateFields[0]
+
+        if (!combinedfields) return res.status(400).json({ message: "Nothing changed" })
+
+        await db.query(`
+            UPDATE users
+            SET ${combinedfields}
+            WHERE id=?
+        `, [...updateValues, data.id])
+
+        let newuser = {
+            username,
+            bio,
+            tag,
+            messagekey_public: request.messagekey_public
+        }
+
+        if (banner) newuser.banner = 1
+        else newuser.banner = request.banner
+        if (avatar) newuser.avatar = 1
+        else newuser.avatar = request.avatar
+
+        await setCachedValue(`profile/${data.id}`, process.env.PROFILE_CACHE_DURATION, JSON.stringify(newuser))
+
+        getIO().to(data.id.toString()).emit('profileupdate', {...newuser, banner, avatar})
+
+        return res.status(200).json({message: "Profile edited", avatar, banner})
+    } catch (err) {
+        if (process.env.STATE == 'dev') console.error(err)
+        return res.status(500).json({message: "An error occured, please try again later"})
+    }
+}
+
+module.exports = { EditProfile }

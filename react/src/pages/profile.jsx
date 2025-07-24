@@ -9,7 +9,7 @@ import ProfileEditor from '../components/profileeditor'
 
 function Profile() {
 
-    const { user, socket } = useContext(AuthContext)
+    const { user, socket, avatar, banner } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()
@@ -65,23 +65,17 @@ function Profile() {
     }, [socket])
 
     useEffect(() => {
-        const userdata = JSON.parse(localStorage.getItem(link))
-        if (userdata == null || new Date(userdata.expires) < new Date()) getuserprofile()
-        else setUserdata(userdata)
+        const olduserdata = JSON.parse(localStorage.getItem(link))
+        if ((olduserdata == null || new Date(olduserdata.expires) < new Date())) {
+            if (user && user.id == link) setUserdata(null)
+            else getuserprofile()
+        }
+        else setUserdata(olduserdata)
 
         if (user && user.id != link) {
             getfollowstate()
             getblockstate()
         }
-
-        const handleStorage = (event) => {
-            if (event.key === link) {
-                const updatedData = JSON.parse(event.newValue)
-                setUserdata(updatedData)
-            }
-        }
-        window.addEventListener("storage", handleStorage)
-        return () => window.removeEventListener("storage", handleStorage)
     }, [link])
 
     const getuserprofile = async () => {
@@ -173,40 +167,37 @@ function Profile() {
 
     return (
         <>
-            <h1>{userdata.username ? userdata.username : ""}</h1>
-            <img src={userdata.avatar} alt="Avatar" />
+            <h1>{user?.id == link ? user.username : userdata.username}</h1>
+            <img src={user?.id == link ? avatar : userdata.avatar} alt="Avatar" />
 
 
-            { isBlocked || isBlocking ? <>
+            { user && user.id != link ? <>
+                { isBlocked || isBlocking ? <>
 
-                {isBlocked ? <h2>User blocked you</h2> : <h2>You blocked this user</h2>}
-                
-                </> : <>
+                    {isBlocked ? <h2>User blocked you</h2> : <h2>You blocked this user</h2>}
+                    
+                    </> : <>
 
-                { user && user.id != link ? <>
-                <button onClick={() => navigate("/messages/" + link)}>Send message</button>
-                <button onClick={() => processfollow()}>
-                    {
-                        isFollowing ? "Unfollow" : (isFollowed ? "Follow back" : "Follow")
-                    }
-                </button>
-                {isFollowed ? <>Follows you</> : <></>}
-                
-                </> : <>
-
-                <button onClick={() => setShowProfileEditor(!showProfileEditor)}>Open editor</button>
-                
-                {showProfileEditor ? <ProfileEditor /> : null}
-
+                    {userdata && userdata.bio ? <h2>{userdata.bio}</h2> : null}
+                    
+                    <button onClick={() => navigate("/messages/" + link)}>Send message</button>
+                    <button onClick={() => processfollow()}>
+                        {
+                            isFollowing ? "Unfollow" : (isFollowed ? "Follow back" : "Follow")
+                        }
+                    </button>
+                    {isFollowed ? <>Follows you</> : <></>}
+                                
                 </>}
                 
-            </>}
+                <button onClick={() => processblock()}>{isBlocking ? "Unblock" : (isBlocked ? "Block back" : "Block")}</button>
 
-            { user && user.id != link ? <button onClick={() => processblock()}>
-                {
-                    isBlocking ? "Unblock" : (isBlocked ? "Block back" : "Block")
-                }
-            </button> : null}
+            </> : user ? <>
+
+                <button onClick={() => setShowProfileEditor(!showProfileEditor)}>Open editor</button>
+                {showProfileEditor ? <ProfileEditor /> : null}
+            
+            </> : null}
         </>
     )
 }

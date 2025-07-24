@@ -29,7 +29,7 @@ const LoginCode = async (req, res) => {
         connection = await db.getConnection()
         await connection.beginTransaction()
         const [[requestuser]] = await connection.query(`
-            SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt, 2FAsecret, avatar, banner
+            SELECT 2FA, username, email_encrypted, tag, messagekey_encrypted, messagesalt, 2FAsecret, avatar, banner, bio
             FROM users
             WHERE id = ?
             FOR UPDATE
@@ -140,8 +140,8 @@ const LoginCode = async (req, res) => {
 
         CheckUserExpirations(data.id)
 
-        const avatar = await GetImage(requestuser.avatar != 0 ? `avatar/${data.id}.${requestuser.avatar}` : "avatar/0.jpeg")
-        const banner = await GetImage(requestuser.banner != 0 ? `banner/${data.id}.${requestuser.banner}` : "banner/0.jpeg")
+        const avatar = await GetImage(requestuser.avatar == 1 ? `avatar/${data.id}` : "avatar/0")
+        const banner = await GetImage(requestuser.banner == 1 ? `banner/${data.id}` : "banner/0")
 
         await connection.commit()
         return res.status(200).json({
@@ -153,7 +153,8 @@ const LoginCode = async (req, res) => {
                 encryptedkey: requestuser.messagekey_encrypted,
                 salt: requestuser.messagesalt,
                 avatar,
-                banner
+                banner,
+                bio: requestuser.bio
             },
             encrypted2FAsecret: requestuser['2FAsecret'],
             has2FA: requestuser['2FA']

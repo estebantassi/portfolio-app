@@ -92,7 +92,22 @@ function validateemail(email) {
 }
 
 function validateusername(username) {
-  return true
+    return typeof username === "string"
+    && username.length >= process.env.MIN_USERNAME_LENGTH
+    && username.length <= process.env.MAX_USERNAME_LENGTH
+}
+
+function validatetag(tag, id) {
+    return typeof tag === "string"
+    && (isNaN(tag) || tag == id)
+    && tag.length >= process.env.MIN_USERNAME_LENGTH
+    && tag.length <= process.env.MAX_USERNAME_LENGTH
+}
+
+function validatebio(bio) {
+    return typeof bio === "string"
+    && bio.length >= process.env.MIN_BIO_LENGTH
+    && bio.length <= process.env.MAX_BIO_LENGTH
 }
 
 function validateid(id) {
@@ -183,5 +198,7 @@ module.exports = {
   validateuuid,
   validateusername,
   validateid,
-  validatemessage
+  validatemessage,
+  validatetag,
+  validatebio
 }

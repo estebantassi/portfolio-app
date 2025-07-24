@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
     const navigate = useNavigate()
     const { addToast } = useContext(ToastContext)
     const [user, setUser] = useState(Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null)
+    const [avatar, setAvatar] = useState(localStorage.getItem("avatar"))
+    const [banner, setBanner] = useState(localStorage.getItem("banner"))
     const timeoutRef = useRef(null)
 
     const [isNetworkButtonDisabled, setIsNetworkButtonDisabled] = useState(true)
@@ -22,6 +24,27 @@ export const AuthProvider = ({ children }) => {
     const socketioRef = useRef(null)
     const socketTimeoutRef = useRef(null)
     const [socket, setSocket] = useState(null)
+
+    useEffect(() => {
+        if (!socket || !user) return
+
+        socket.on('profileupdate', async (data) => {
+            setUser(prev => ({...prev, username: data.username, bio: data.bio, tag: data.tag}))
+
+            if (data?.avatar) {
+                localStorage.setItem("avatar", data.avatar)
+                setAvatar(data.avatar)
+            }
+            if (data?.banner) {
+                localStorage.setItem("banner", data.banner)
+                setBanner(data.banner)
+            }
+        })
+
+        return () => {
+            socket.off('profileupdate')
+        }
+    }, [socket, user])
 
     function cleanLocalStorageCache() {
         for (let i = 0; i < localStorage.length; i++) {
@@ -94,13 +117,15 @@ export const AuthProvider = ({ children }) => {
             if (!avatarreq.ok) throw "Error"
             const avatarBlob = await avatarreq.blob()
             const avatarBase64 = await blobToBase64(avatarBlob)
-            localStorage.setItem('avatar', avatarBase64)
+            setAvatar(avatarBase64)
+            localStorage.setItem("avatar", avatarBase64)
 
             const bannerreq = await fetch(response.data.user.banner)
             if (!bannerreq.ok) throw "Error"
             const bannerBlob = await bannerreq.blob()
             const bannerBase64 = await blobToBase64(bannerBlob)
-            localStorage.setItem('banner', bannerBase64)
+            setBanner(bannerBase64)
+            localStorage.setItem("banner", bannerBase64)
 
             let encrypted2FAsecret = ""
             if (response.data.has2FA == 1) encrypted2FAsecret = response.data.encrypted2FAsecret
@@ -110,13 +135,6 @@ export const AuthProvider = ({ children }) => {
 
             const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', key)
             const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
-
-            const newuser = {
-                username: response.data.user.username,
-                id: response.data.user.id,
-                tag: response.data.user.tag,
-                key: keyBase64,
-            }
 
             if (socketioRef.current) { socketioRef.current.disconnect() }
 
@@ -131,11 +149,14 @@ export const AuthProvider = ({ children }) => {
                 addToast(data?.message || "Error with websocket", "red")
             })
 
+            setUser({
+                id: response.data.user.id,
+                key: keyBase64,
+                username: response.data.user.username,
+                tag: response.data.user.tag,
+                bio: response.data.user.bio
+            })
 
-            setUser(newuser)
-            Cookies.set("user", JSON.stringify(newuser))
-
-            checkauth()
             navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
@@ -197,14 +218,44 @@ export const AuthProvider = ({ children }) => {
         return () => {
             if (networkTimeoutRef.current) clearTimeout(networkTimeoutRef.current)
             if (networkControllerRef.current) networkControllerRef.current.abort()
+
+            if (socketioRef.current) {
+                socketioRef.current.disconnect()
+                socketioRef.current = null
+            }
+            if (socketTimeoutRef.current) clearTimeout(socketTimeoutRef.current)
+            if (timeoutRef.current) clearTimeout(timeoutRef.current)
         }
     }, [])
 
-    useEffect(() => {
+    useEffect(()=> {
+        if (!user) return
         checkauth()
 
-        function reconnectsocket() {
-            if ((!socketioRef.current || socketioRef.current.disconnected) && user) {
+        socketTimeoutRef.current = setTimeout(async () => {
+            if ((!socketioRef.current || socketioRef.current.disconnected) && user) 
+            {
+                try {
+                const response = await axios.get('/getuserprofile?id=' + user.id)
+
+                if (response == null || response.data == null) throw 'Error'
+
+                const avatarreq = await fetch(response.data.avatar)
+                if (!avatarreq.ok) throw "Error"
+                const avatarBlob = await avatarreq.blob()
+                const avatarBase64 = await blobToBase64(avatarBlob)
+                setAvatar(avatarBase64)
+                localStorage.setItem("avatar", avatarBase64)
+
+                const bannerreq = await fetch(response.data.banner)
+                if (!bannerreq.ok) throw "Error"
+                const bannerBlob = await bannerreq.blob()
+                const bannerBase64 = await blobToBase64(bannerBlob)
+                setBanner(bannerBase64)
+                localStorage.setItem("banner", bannerBase64)
+
+                setUser(prev => ({...prev, username: response.data.username, tag: response.data.tag, bio: response.data.bio}))
+
                 socketioRef.current = io('http://localhost:4444', {
                     path: '/auth/socket.io',
                     withCredentials: true,
@@ -215,25 +266,18 @@ export const AuthProvider = ({ children }) => {
                 socketioRef.current.on('error', (data) => {
                     addToast(data?.message || "Error with websocket", "red")
                 })
-            }
-        }
 
-        socketTimeoutRef.current = setTimeout(() => {
-            reconnectsocket()
+            } catch (err) {
+                addToast(err.response?.data?.message || "An error occurred", "red")
+            }
+            }
         }, 1000)
 
-        return () => {
-            if (socketioRef.current) {
-                socketioRef.current.disconnect()
-                socketioRef.current = null
-            }
-            if (socketTimeoutRef.current) clearTimeout(socketTimeoutRef.current)
-            if (timeoutRef.current) clearTimeout(timeoutRef.current)
-        }
+        Cookies.set("user", JSON.stringify(user))
     }, [user])
 
     const checkauth = async () => {
-        if (!user) return
+        if (!Cookies.get("user")) return
 
         if (localStorage.getItem("authtimer") < Date.now() - 3000) {
             localStorage.setItem("authtimer", Date.now())
@@ -244,7 +288,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem("authtimer", Date.now())
             checktoken()
             checkauth()
-            console.log("Checked user")
 
         }, localStorage.getItem("authtimer") - Date.now() + 3000)
     }
@@ -279,7 +322,11 @@ export const AuthProvider = ({ children }) => {
         startnetworkrequest,
         networkControllerRef,
         isNetworkButtonDisabled,
-        socket
+        socket,
+        avatar,
+        setAvatar,
+        banner,
+        setBanner
     }
 
     return (

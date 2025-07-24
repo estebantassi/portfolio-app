@@ -80,7 +80,7 @@ function Messages() {
     }, [link])
 
     useEffect(() => {
-        if (userdata == null || userdata.key == null) return
+        if (userdata == null || userdata.messagekey_public == null) return
 
         async function getsecret() {
             const rawpublickey = base64ToArrayBuffer(userdata.key)
