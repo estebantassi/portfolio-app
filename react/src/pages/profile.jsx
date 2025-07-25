@@ -4,12 +4,12 @@ import axios from '../api/axios'
 import { useEffect, useState } from 'react'
 import { useParams } from "react-router"
 import { useNavigate } from "react-router"
-import { AuthContext } from '../context/authcontext'
+import { useAuth } from '../context/authcontext'
 import ProfileEditor from '../components/profileeditor'
 
 function Profile() {
 
-    const { user, socket, avatar, banner } = useContext(AuthContext)
+    const { user, socket, avatar, banner } = useAuth()
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()
@@ -169,6 +169,7 @@ function Profile() {
         <>
             <h1>{user?.id == link ? user.username : userdata.username}</h1>
             <img src={user?.id == link ? avatar : userdata.avatar} alt="Avatar" />
+            {userdata?.bio ? <h2>{userdata.bio}</h2> : null}
 
 
             { user && user.id != link ? <>
@@ -177,8 +178,6 @@ function Profile() {
                     {isBlocked ? <h2>User blocked you</h2> : <h2>You blocked this user</h2>}
                     
                     </> : <>
-
-                    {userdata && userdata.bio ? <h2>{userdata.bio}</h2> : null}
                     
                     <button onClick={() => navigate("/messages/" + link)}>Send message</button>
                     <button onClick={() => processfollow()}>

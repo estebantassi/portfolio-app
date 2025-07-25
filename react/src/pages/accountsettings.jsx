@@ -1,8 +1,8 @@
 import { useContext, useEffect } from 'react'
 import { ToastContext } from '../context/toastcontext'
-import { AuthContext } from '../context/authcontext'
+import { useAuth } from '../context/authcontext'
 import axios from '../api/axios'
-import { useState, useRef, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from "react-router"
 import { decryptDataKey, deriveKey, encryptDataKey, arrayBufferToBase64, base64ToArrayBuffer } from "../tools/tools"
 import srp from "secure-remote-password/client"
@@ -12,7 +12,7 @@ function AccountSettings() {
   const navigate = useNavigate()
 
   const { addToast } = useContext(ToastContext)
-  const { user, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled } = useContext(AuthContext)
+  const { user, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled } = useAuth()
   const [isauth, setIsauth] = useState(false)
   const [password, setPassword] = useState("")
   const [showaccesscode2FA, setShowaccesscode2FA] = useState(false)

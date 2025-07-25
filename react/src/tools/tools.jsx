@@ -239,6 +239,20 @@ function blobToBase64(blob) {
   })
 }
 
+async function fetchbase64image(url)
+{
+  try {
+    const req = await fetch(url)
+    if (!req.ok) return null
+    const blob = await req.blob()
+    const base64 = await blobToBase64(blob)
+
+    return base64
+  } catch {
+    return null
+  }
+}
+
 export {
     deriveKey,
     encryptDataKey,
@@ -253,5 +267,6 @@ export {
     validatetoken,
     getImageType,
     reconstructImage,
-    blobToBase64
+    blobToBase64,
+    fetchbase64image
 }

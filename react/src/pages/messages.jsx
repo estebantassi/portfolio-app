@@ -4,12 +4,12 @@ import axios from '../api/axios'
 import { useEffect, useState, memo, useCallback, useRef } from 'react'
 import { useParams } from "react-router"
 import { useNavigate } from "react-router"
-import { AuthContext } from '../context/authcontext'
-import { base64ToArrayBuffer, encryptMessage, decryptMessage, getImageType, reconstructImage } from '../tools/tools'
+import { useAuth } from '../context/authcontext'
+import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage } from '../tools/tools'
 
 function Messages() {
 
-    const { user, startnetworkrequest, networkControllerRef, socket } = useContext(AuthContext)
+    const { user, startnetworkrequest, networkControllerRef, socket } = useAuth()
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()

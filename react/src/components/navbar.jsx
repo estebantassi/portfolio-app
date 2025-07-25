@@ -1,10 +1,9 @@
 import { NavLink } from "react-router"
-import { AuthContext } from '../context/authcontext'
-import { useContext } from "react"
+import {  useAuth } from '../context/authcontext'
 
 
 function Navbar() {
-  const { user } = useContext(AuthContext)
+  const { user } = useAuth()
   
   return (
     <>

@@ -1,12 +1,11 @@
 import { useEffect, useState, useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
-import { AuthContext } from '../context/authcontext'
-import axios from '../api/axios'
+import { useAuth } from '../context/authcontext'
 
 function Login() {
 
   const { addToast } = useContext(ToastContext)
-  const { login, logincode, startnetworkrequest, isNetworkButtonDisabled } = useContext(AuthContext)
+  const { login, logincode, startnetworkrequest, isNetworkButtonDisabled } = useAuth()
 
   const [data, setData] = useState({
     email: "",

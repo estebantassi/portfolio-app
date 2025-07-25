@@ -1,5 +1,6 @@
 require('dotenv').config()
 const db = require('../../../config/database')
+const { deleteCachedValue, getCachedValue } = require('../../../config/redis')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
 const transporter = require('../../../config/mailsender').transporter
 const { decrypt, validatetoken, validatesalt, validateprivatekey, validatesrpsalt, validatesrpverifier } = require('../../../tools/tools')
@@ -41,10 +42,15 @@ const ConfirmPasswordChange = async (req, res) => {
             WHERE id=?
             `, [data.privatekey, data.salt, data.srpSalt, data.srpVerifier, data.id])
 
+        // await db.query(`
+        //     DELETE FROM tokens
+        //     WHERE type=? AND value=? AND userid=?
+        // `, ["passwordemailcheck", data.jti, data.id])
+
         await db.query(`
             DELETE FROM tokens
-            WHERE type=? AND value=? AND userid=?
-        `, ["passwordemailcheck", data.jti, data.id])
+            WHERE userid=?
+        `, [data.id])
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

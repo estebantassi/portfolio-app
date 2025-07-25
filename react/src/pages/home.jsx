@@ -1,12 +1,8 @@
-import { useContext, useState } from 'react'
-import { ToastContext } from '../context/toastcontext'
-import { AuthContext } from '../context/authcontext'
-import axios from '../api/axios'
+import { useAuth } from '../context/authcontext'
 
 function Home() {
 
-  const { addToast } = useContext(ToastContext)
-  const { user, avatar, banner } = useContext(AuthContext)
+  const { user, avatar, banner } = useAuth()
 
   return (
     <>

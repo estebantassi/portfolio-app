@@ -1,12 +1,11 @@
-import { useEffect, useState, useContext } from 'react';
-import { ToastContext } from '../context/toastcontext';
-import { AuthContext } from '../context/authcontext';
-import axios from '../api/axios';
+import { useEffect, useState, useContext } from 'react'
+import { ToastContext } from '../context/toastcontext'
+import { useAuth } from '../context/authcontext'
 
 function Signup() {
 
   const { addToast } = useContext(ToastContext)
-  const { signup } = useContext(AuthContext)
+  const { signup } = useAuth()
 
   const [data, setData] = useState({
     username: "",
