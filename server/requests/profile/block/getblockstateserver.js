@@ -26,10 +26,8 @@ const GetBlockStateServer = async (user1, user2) => {
                 ) AS user1_blocked_user2
             `, [user1, user2])
 
-            if (request == null) return res.status(400).json({message: "Error with database"})
-
             user1BlockedUser2 = request.user1_blocked_user2
-            await setCachedValue(`block/${user1}/${user2}`, process.env.BLOCK_CACHE_DURATION, user1BlockedUser2.toString())
+            await setCachedValue(`block/${user1}/${user2}`, process.env.BLOCK_CACHE_DURATION, user1BlockedUser2 ? "1" : "0")
             if (user1BlockedUser2) return 1
         }
 
@@ -42,10 +40,8 @@ const GetBlockStateServer = async (user1, user2) => {
                 ) AS user2_blocked_user1
             `, [user2, user1])
 
-            if (request == null) return res.status(400).json({message: "Error with database"})
-
             user2BlockedUser1 = request.user2_blocked_user1
-            await setCachedValue(`block/${user2}/${user1}`, process.env.BLOCK_CACHE_DURATION, user2BlockedUser1.toString())
+            await setCachedValue(`block/${user2}/${user1}`, process.env.BLOCK_CACHE_DURATION, user2BlockedUser1 ? "1" : "0")
             if (user2BlockedUser1) return 1
         }
 

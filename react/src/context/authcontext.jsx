@@ -3,7 +3,7 @@ import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import Cookies from 'js-cookie'
 import { useNavigate } from "react-router"
-import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64, blobToBase64, fetchbase64image } from "../tools/tools"
+import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64, fetchbase64image } from "../tools/tools"
 import srp from "secure-remote-password/client"
 import { io } from 'socket.io-client'
 
@@ -21,27 +21,30 @@ export const AuthProvider = ({ children }) => {
     const [isNetworkButtonDisabled, setIsNetworkButtonDisabled] = useState(true)
     const networkTimeoutRef = useRef(null)
     const networkControllerRef = useRef(null)
+    const audioContextRef = useRef(null)
+
     const socketioRef = useRef(null)
     const socketTimeoutRef = useRef(null)
     const [socket, setSocket] = useState(null)
 
     useEffect(() => {
-        if (socket || !user) return
+        if (!user) return
+        if (socketioRef.current) return
 
         socketTimeoutRef.current = setTimeout(async () => {
             try {
-                if (socketioRef.current && !socketioRef.current.disconnected) return
-
                 socketioRef.current = io('http://localhost:4444', {
                     path: '/auth/socket.io',
                     withCredentials: true,
                 })
 
+                socketioRef.current.on('connect', () => {
+                    setSocket(socketioRef.current)
+                })
+
                 socketioRef.current.on('error', (data) => {
                     addToast(data?.message || "Error with websocket", "red")
                 })
-
-                setSocket(socketioRef.current)
 
                 socketioRef.current.on('profileupdate', async (data) => {
                     setUser(prev => ({...prev, username: data.username, bio: data.bio, tag: data.tag}))
@@ -78,13 +81,19 @@ export const AuthProvider = ({ children }) => {
         }, 1000)
 
         return () => {
-            if (socketTimeoutRef.current) clearTimeout(socketTimeoutRef.current)
-            if (socket) socket.off('profileupdate')
-            if (socket) socket.off('error')
-            if (socketioRef.current) socketioRef.current.disconnect()
-            if (socketioRef.current) socketioRef.current = null
+            if (socketTimeoutRef.current) {
+                clearTimeout(socketTimeoutRef.current)
+                socketTimeoutRef.current = null
+            }
+            if (socketioRef.current) {
+                socketioRef.current.off('audioStream')
+                socketioRef.current.off('profileupdate')
+                socketioRef.current.off('error')
+                socketioRef.current.disconnect()
+                socketioRef.current = null
+            }
         }
-    }, [socket, user])
+    }, [user?.id])
 
     useEffect(() => {
         if (!user) return
@@ -92,7 +101,10 @@ export const AuthProvider = ({ children }) => {
         Cookies.set("user", JSON.stringify(user))
 
         return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current)
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current)
+                timeoutRef.current = null
+            }
         }
     }, [user])
     
@@ -174,9 +186,9 @@ export const AuthProvider = ({ children }) => {
             const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', key)
             const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
 
+            sessionStorage.setItem("key", keyBase64)
             setUser({
                 id: response.data.user.id,
-                key: keyBase64,
                 username: response.data.user.username,
                 tag: response.data.user.tag,
                 bio: response.data.user.bio
@@ -239,15 +251,16 @@ export const AuthProvider = ({ children }) => {
     }
 
     const checkauth = async () => {
-        const timer = parseInt(localStorage.getItem("authtimer") || "0", 10)
-        if (timer < Date.now() - 3000) {
-            localStorage.setItem("authtimer", Date.now())
-        }
+        const now = Date.now()
+        const lastCheck = parseInt(localStorage.getItem("authtimer") || "0", 10)
+        const nextCheckDelay = Math.max(3000, lastCheck + 3000 - now)
 
-        timeoutRef.current = setTimeout(async () => {
-            localStorage.setItem("authtimer", Date.now())
-            if (await checktoken()) checkauth()
-        }, timer - Date.now() + 3000)
+        if (now - lastCheck >= 3000) {
+            localStorage.setItem("authtimer", now)
+            if (await checktoken()) timeoutRef.current = setTimeout(checkauth, 3000)
+        } else {
+            timeoutRef.current = setTimeout(checkauth, nextCheckDelay)
+        }
     }
 
     const checktoken = async () => {

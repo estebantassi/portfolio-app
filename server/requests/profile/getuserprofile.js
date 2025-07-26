@@ -25,7 +25,8 @@ const GetUserProfile = async (req, res) => {
                 banner: request.banner,
                 messagekey_public: request.messagekey_public,
                 tag: request.tag,
-                bio: request.bio
+                bio: request.bio,
+                id
             }
             await setCachedValue(`profile/${id}`, process.env.PROFILE_CACHE_DURATION, JSON.stringify(cacheduser))
         }
@@ -35,7 +36,7 @@ const GetUserProfile = async (req, res) => {
         const avatarimage = await GetImage("avatar/" + (cacheduser.avatar == 1 ? id : "0"))
         const bannerimage = await GetImage("banner/" + (cacheduser.banner == 1 ? id : "0"))
 
-        return res.status(200).json({message: "Data retrieved", bio: cacheduser.bio, banner: bannerimage, username: cacheduser.username, avatar: avatarimage, tag: cacheduser.tag, messagekey_public: cacheduser.key})
+        return res.status(200).json({message: "Data retrieved", bio: cacheduser.bio, banner: bannerimage, username: cacheduser.username, avatar: avatarimage, tag: cacheduser.tag, messagekey_public: cacheduser.messagekey_public, id})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

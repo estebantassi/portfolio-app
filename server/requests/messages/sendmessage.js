@@ -33,6 +33,12 @@ const SendMessage = async (req, res) => {
         let hasimage = 0
         if (image != null && image.data != null) hasimage = 1
 
+        const date = new Date()
+        const [message] = await db.query(`
+            INSERT INTO messages (text, receiverid, senderid, date, image)
+            VALUES (?, ?, ?, ?, ?)
+        `, [text, receiverid, data.id, date, hasimage])
+
         if (hasimage == 1)
         {
             await bucket.file(`messages/${message.insertId}`).save(image.data, {
@@ -42,12 +48,6 @@ const SendMessage = async (req, res) => {
                 }
             })
         }
-
-        const date = new Date()
-        const [message] = await db.query(`
-            INSERT INTO messages (text, receiverid, senderid, date, image)
-            VALUES (?, ?, ?, ?, ?)
-        `, [text, receiverid, data.id, date, hasimage])
 
         if (message == null || message.insertId == null) return res.status(400).json({message: "Message not sent"})
 

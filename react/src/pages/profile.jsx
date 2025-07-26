@@ -6,6 +6,7 @@ import { useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { useAuth } from '../context/authcontext'
 import ProfileEditor from '../components/profileeditor'
+import getuserprofile from '../tools/getuserprofile'
 
 function Profile() {
 
@@ -65,12 +66,17 @@ function Profile() {
     }, [socket])
 
     useEffect(() => {
-        const olduserdata = JSON.parse(localStorage.getItem(link))
-        if ((olduserdata == null || new Date(olduserdata.expires) < new Date())) {
-            if (user && user.id == link) setUserdata(null)
-            else getuserprofile()
+        async function inituser () {
+            if (user && user.id == link) return setUserdata({...user, avatar, banner})
+            const data = await getuserprofile(link)
+            setUserdata(data)
+            if (data == null) {
+                addToast("Error loading user", "red")
+                navigate("/home")
+            }
         }
-        else setUserdata(olduserdata)
+
+        inituser()
 
         if (user && user.id != link) {
             getfollowstate()
@@ -78,23 +84,23 @@ function Profile() {
         }
     }, [link])
 
-    const getuserprofile = async () => {
-        try {
-            let response = await axios.get('/getuserprofile?id=' + link)
+    // const getuserprofile = async () => {
+    //     try {
+    //         let response = await axios.get('/getuserprofile?id=' + link)
 
-            if (response == null || response.data == null) throw 'Error'
-            if (response.data.message != null) delete response.data.message
+    //         if (response == null || response.data == null) throw 'Error'
+    //         if (response.data.message != null) delete response.data.message
 
-            response.data.expires = new Date(Date.now() + 60 * 1000)
+    //         response.data.expires = new Date(Date.now() + 60 * 1000)
 
-            setUserdata(response.data)
+    //         setUserdata(response.data)
 
-            localStorage.setItem(link, JSON.stringify(response.data))
-        } catch (err) {
-            navigate("/home")
-            addToast(err.response?.data?.message || "An error occurred", "red")
-        }
-    }
+    //         localStorage.setItem(link, JSON.stringify(response.data))
+    //     } catch (err) {
+    //         navigate("/home")
+    //         addToast(err.response?.data?.message || "An error occurred", "red")
+    //     }
+    // }
 
     const getfollowstate = async () => {
         try {

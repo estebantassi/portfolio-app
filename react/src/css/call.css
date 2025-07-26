@@ -1,0 +1,7 @@
+.call-online-avatar{
+    opacity: 100%;
+}
+
+.call-offline-avatar{
+    animation: pulse 1.5s infinite ease-in-out;
+}

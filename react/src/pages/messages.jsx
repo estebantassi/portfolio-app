@@ -6,10 +6,13 @@ import { useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { useAuth } from '../context/authcontext'
 import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage } from '../tools/tools'
+import { useCall } from '../context/callcontext'
+import getuserprofile from '../tools/getuserprofile'
 
 function Messages() {
 
-    const { user, startnetworkrequest, networkControllerRef, socket } = useAuth()
+    const { startCall } = useCall()
+    const { user, avatar, banner, startnetworkrequest, networkControllerRef, socket } = useAuth()
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()
@@ -61,29 +64,26 @@ function Messages() {
     }, [socket, secret]);
 
     useEffect(() => {
-
-        const userdata = JSON.parse(localStorage.getItem(link))
-        if (userdata == null || new Date(userdata.expires) < new Date()) getuserprofile()
-        else setUserdata(userdata)
-
-        const handleStorage = (event) => {
-            if (event.key === link) {
-                const updatedData = JSON.parse(event.newValue)
-                setUserdata(updatedData)
+        async function inituser () {
+            if (user && user.id == link) return navigate("/home")
+            const data = await getuserprofile(link)
+            setUserdata(data)
+            if (data == null) {
+                addToast("Error loading user", "red")
+                navigate("/home")
             }
         }
 
-        if (link == user.id) navigate("/home")
-
-        window.addEventListener("storage", handleStorage)
-        return () => window.removeEventListener("storage", handleStorage)
+        inituser()
     }, [link])
 
     useEffect(() => {
         if (userdata == null || userdata.messagekey_public == null) return
 
         async function getsecret() {
-            const rawpublickey = base64ToArrayBuffer(userdata.key)
+            const userkey = sessionStorage.getItem("key")
+
+            const rawpublickey = base64ToArrayBuffer(userdata.messagekey_public )
             const publickey = await crypto.subtle.importKey(
                 "raw",
                 rawpublickey,
@@ -95,7 +95,7 @@ function Messages() {
                 []
             )
 
-            const rawprivatekey = base64ToArrayBuffer(user.key)
+            const rawprivatekey = base64ToArrayBuffer(userkey)
             const privatekey = await crypto.subtle.importKey(
                 "pkcs8",
                 rawprivatekey,
@@ -130,24 +130,6 @@ function Messages() {
         if (secret != null)
         getmessages()
     }, [secret])
-
-    const getuserprofile = async () => {
-        try {
-            let response = await axios.get('/getuserprofile?id=' + link)
-
-            if (response.data == null) throw 'Error'
-            if (response.data.message != null) delete response.data.message
-
-            response.data.expires = new Date(Date.now() + 60 * 1000)
-
-            setUserdata(response.data)
-
-            localStorage.setItem(link, JSON.stringify(response.data))
-        } catch (err) {
-            navigate("/home")
-            addToast(err.response?.data?.message || "An error occurred", "red")
-        }
-    }
 
     const sendmessage = async (e) => {
         e.preventDefault()
@@ -272,6 +254,8 @@ function Messages() {
             </form>
 
             <button onClick={() => { getmessages() }}>Get Messages</button>
+
+            <button onClick={() => { startCall(userdata) }}>Call</button>
 
             {messages.map((msg) => (
                 <MessageItem

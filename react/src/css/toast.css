@@ -38,6 +38,13 @@
     right: 50px;
 }
 
+.toast-button-wrapper{
+    display: flex;
+    justify-content: center;
+    background-color: transparent;
+    width: 100%;
+}
+
 @keyframes toast {
     0% {
         opacity: 0;

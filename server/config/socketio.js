@@ -2,6 +2,9 @@ const { Server } = require('socket.io');
 const cookie = require('cookie')
 const { GetTokenData } = require('../tools/helper functions/gettokendata');
 const { validatetoken } = require('../tools/tools');
+const { getCachedValue } = require('./redis');
+const { GetFollowStateServer } = require('../requests/profile/follow/getfollowstateserver');
+const { GetBlockStateServer } = require('../requests/profile/block/getblockstateserver');
 
 let io
 
@@ -34,6 +37,16 @@ function initSocket(server) {
         if (data == null) return socket.emit('error', { message: 'Invalid token' })
 
         socket.join(data.id.toString())
+        socket.userId = data.id
+
+        socket.on("signal", ({ to, data }) => {
+
+            io.to(to.toString()).emit("signal", { from: socket.userId, data })
+
+            return
+            const status = getCachedValue(`call/${socket.userId}/${to}`) == "online" && getCachedValue(`call/${to}/${socket.userId}`) == "online"
+            if (status) io.to(to).emit("signal", { from: socket.userId, data })
+        })
 
         socket.on('disconnect', () => {
             

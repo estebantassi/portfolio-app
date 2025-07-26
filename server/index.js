@@ -61,6 +61,10 @@ app.post('/auth/sendmessage', require ("./requests/messages/sendmessage").SendMe
 app.post('/auth/getmessages', require ("./requests/messages/getmessages").GetMessages)
 app.post('/auth/deletemessage', require ("./requests/messages/deletemessage").DeleteMessage)
 
+//CALL
+app.post('/auth/requestcall', require('./requests/messages/call/requestcall').RequestCall)
+app.post('/auth/acceptcall', require('./requests/messages/call/acceptcall').AcceptCall)
+
 //FOLLOW
 app.post('/auth/follow', require ("./requests/profile/follow/follow").Follow)
 app.post('/auth/unfollow', require ("./requests/profile/follow/unfollow").Unfollow)
