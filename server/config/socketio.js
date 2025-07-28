@@ -1,10 +1,11 @@
-const { Server } = require('socket.io');
+const { Server } = require('socket.io')
 const cookie = require('cookie')
-const { GetTokenData } = require('../tools/helper functions/gettokendata');
-const { validatetoken } = require('../tools/tools');
-const { getCachedValue } = require('./redis');
-const { GetFollowStateServer } = require('../requests/profile/follow/getfollowstateserver');
-const { GetBlockStateServer } = require('../requests/profile/block/getblockstateserver');
+const { GetTokenData } = require('../tools/helper functions/gettokendata')
+const { validatetoken } = require('../tools/tools')
+const { getCachedValue, deleteCachedValue, setCachedValue } = require('./redis')
+const { GetFollowStateServer } = require('../requests/profile/follow/getfollowstateserver')
+const { GetBlockStateServer } = require('../requests/profile/block/getblockstateserver')
+require('dotenv').config()
 
 let io
 
@@ -39,17 +40,29 @@ function initSocket(server) {
         socket.join(data.id.toString())
         socket.userId = data.id
 
-        socket.on("signal", ({ to, data }) => {
+        socket.on("signal", async ({ to, data }) => {
+
+            if (await GetFollowStateServer(socket.userId, to) != 2) return socket.emit('error', { message: "You're not following each other." })
+
+            setCachedValue(`callsocket/${socket.userId}`, process.env.CALLSOCKET_CACHE_DURATION, socket.id.toString())
 
             io.to(to.toString()).emit("signal", { from: socket.userId, data })
-
-            return
-            const status = getCachedValue(`call/${socket.userId}/${to}`) == "online" && getCachedValue(`call/${to}/${socket.userId}`) == "online"
-            if (status) io.to(to).emit("signal", { from: socket.userId, data })
         })
 
-        socket.on('disconnect', () => {
-            
+        socket.on('disconnect', async () => {
+            const call = JSON.parse(await getCachedValue(`call/${socket.userId}`))
+
+            if (call)
+            {
+                const socketvalue = await getCachedValue(`callsocket/${socket.userId}`)
+                if (socketvalue && socketvalue == socket.id) 
+                {
+                        await deleteCachedValue(`call/${call.id}`)
+                        await deleteCachedValue(`call/${socket.userId}`)
+
+                        getIO().to(call.id.toString()).emit('endedcall')
+                }
+            }
         })
     })
 

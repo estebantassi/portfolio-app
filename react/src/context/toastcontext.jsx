@@ -8,26 +8,20 @@ export const ToastProvider = ({ children }) => {
     const toastContainerRef = useRef(null)
     const lastToastTimeRef = useRef(0)
 
-    const addToast = (text, color, onAccept=null, onRefuse=null, used=false) => {
+    const addToast = (text, color, onAccept=null, onRefuse=null) => {
         const now = Date.now()
         const delay = Math.max(0, lastToastTimeRef.current + 500 - now)
         setTimeout(() => {
 
             const toastElement = document.createElement('div')
             toastElement.style = `background-color: ${color}`
-            toastElement.className = `toast`
+            toastElement.className = `toast toast-regular`
             toastElement.textContent = text
             toastContainerRef.current.appendChild(toastElement)
 
-            let isSaved = onAccept != null && onRefuse != null
-            if (isSaved)
+            if (onAccept != null && onRefuse != null)
             {
-                if (!used)
-                {
-                    const existing = JSON.parse(localStorage.getItem('pendingToasts') || '[]')
-                    existing.push({ text, color, onAccept, onRefuse, used: true })
-                    localStorage.setItem('pendingToasts', JSON.stringify(existing))
-                }
+                toastElement.className = `toast toast-call`
 
                 const buttonDiv = document.createElement('div')
                 const callButtonAccept = document.createElement('button')
@@ -58,29 +52,16 @@ export const ToastProvider = ({ children }) => {
                 toastElement.appendChild(buttonDiv)
             }
 
-            setTimeout(() => removeToast(toastElement, isSaved), 5000)
+            const timeoutDuration = onAccept != null && onRefuse != null ? 10000 : 5000;
+
+            setTimeout(() => removeToast(toastElement), timeoutDuration)
         }, delay)
 
         lastToastTimeRef.current = now + delay
     }
 
-    useEffect(() => {
-        const storedToasts = JSON.parse(localStorage.getItem('pendingToasts') || '[]')
-        storedToasts.forEach(({ text, color, onAccept, onRefuse, used }) => {
-            addToast(text, color, onAccept, onRefuse, used)
-        })
-    }, [])
-
-    const removeToast = (toastElement, isSaved) => {
+    const removeToast = (toastElement) => {
         if (toastElement && toastContainerRef.current.contains(toastElement)) toastContainerRef.current.removeChild(toastElement)
-
-        if (isSaved)
-        {
-            const existing = JSON.parse(localStorage.getItem('pendingToasts'))
-            if (!existing) return
-            existing.shift()
-            localStorage.setItem('pendingToasts', JSON.stringify(existing))
-        }
     }
 
     let contextData = {

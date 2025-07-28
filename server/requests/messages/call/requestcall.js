@@ -1,6 +1,6 @@
 require('dotenv').config()
 const db = require('../../../config/database')
-const { setCachedValue } = require('../../../config/redis')
+const { setCachedValue, getCachedValue, deleteCachedValue } = require('../../../config/redis')
 const { getIO } = require('../../../config/socketio')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
 const { validateid, validatetoken } = require('../../../tools/tools')
@@ -25,11 +25,21 @@ const RequestCall = async (req, res) => {
 
         if (followstate != 2) return res.status(400).json({message: "Call failed, are you following each other ?"})
 
-        console.log(`from requestcall : call/${data.id}/${calleeid}`)
-        await setCachedValue(`call/${data.id}/${calleeid}`, process.env.CALL_ACCEPT_DURATION, "pending")
+        let end = false
+
+        const call = JSON.parse(await getCachedValue(`call/${data.id}`))
+        if (call) {
+            await deleteCachedValue(`call/${call.id}`)
+            await deleteCachedValue(`call/${data.id}`)
+
+            getIO().to(call.id.toString()).emit('endedcall')
+            end = true
+        }
+
+        await setCachedValue(`call/${data.id}`, process.env.CALL_TIMEOUT_DURATION, JSON.stringify({status: "pending", id: calleeid}))
         getIO().to(calleeid.toString()).emit('incomingcall', { from: data.id, offer })
 
-        return res.status(200).json({message: "Call started"})
+        return res.status(200).json({message: "Call started", end})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

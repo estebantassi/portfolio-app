@@ -5,7 +5,7 @@ import { useEffect, useState, memo, useCallback, useRef } from 'react'
 import { useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { useAuth } from '../context/authcontext'
-import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage } from '../tools/tools'
+import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage, encryptDataKey } from '../tools/tools'
 import { useCall } from '../context/callcontext'
 import getuserprofile from '../tools/getuserprofile'
 
@@ -61,12 +61,13 @@ function Messages() {
             socket.off('block')
             socket.off('deletemessage')
         }
-    }, [socket, secret]);
+    }, [socket, secret])
 
     useEffect(() => {
         async function inituser () {
             if (user && user.id == link) return navigate("/home")
             const data = await getuserprofile(link)
+
             setUserdata(data)
             if (data == null) {
                 addToast("Error loading user", "red")
@@ -75,13 +76,15 @@ function Messages() {
         }
 
         inituser()
+
+
     }, [link])
 
     useEffect(() => {
         if (userdata == null || userdata.messagekey_public == null) return
 
         async function getsecret() {
-            const userkey = sessionStorage.getItem("key")
+            const userkey = localStorage.getItem("messagekey")
 
             const rawpublickey = base64ToArrayBuffer(userdata.messagekey_public )
             const publickey = await crypto.subtle.importKey(

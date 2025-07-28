@@ -4,6 +4,7 @@ const { validateid, validatetoken } = require('../../../tools/tools')
 const { getIO } = require('../../../config/socketio')
 const { GetBlockStateServer } = require('../block/getblockstateserver')
 const { setCachedValue } = require('../../../config/redis')
+const { Notify } = require('../../../tools/helper functions/notify')
 require('dotenv').config()
 
 const Follow = async (req, res) => {
@@ -32,6 +33,8 @@ const Follow = async (req, res) => {
 
         getIO().to(followeeid.toString()).emit('follow', { id: followeeid, from: data.id })
         getIO().to(data.id.toString()).emit('follow', { id: followeeid, from: data.id })
+
+        await Notify("follow", followeeid, data.id)
 
         return res.status(200).json({message: "Followed user"})
     } catch (err) {

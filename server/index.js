@@ -64,6 +64,8 @@ app.post('/auth/deletemessage', require ("./requests/messages/deletemessage").De
 //CALL
 app.post('/auth/requestcall', require('./requests/messages/call/requestcall').RequestCall)
 app.post('/auth/acceptcall', require('./requests/messages/call/acceptcall').AcceptCall)
+app.post('/auth/endcall', require('./requests/messages/call/endcall').EndCall)
+app.get('/auth/getcallstate', require('./requests/messages/call/getcallstate').GetCallState)
 
 //FOLLOW
 app.post('/auth/follow', require ("./requests/profile/follow/follow").Follow)

@@ -17,6 +17,7 @@ import Login from './pages/login.jsx'
 import Logout from './pages/logout.jsx'
 import Profile from './pages/profile.jsx'
 import Messages from './pages/messages.jsx'
+import Notifications from './pages/notifications.jsx'
 
 import VerifyEmail from './pages/verifyemail.jsx'
 import AccountSettings from './pages/accountsettings.jsx'
@@ -52,6 +53,7 @@ createRoot(document.getElementById('root')).render(
               <Route element={<Protectedroute />}>
                 <Route path="/messages/:link" element={<Messages />} />
                 <Route path="/logout" element={<Logout />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="/accountsettings" element={<AccountSettings />} />
               </Route>
 

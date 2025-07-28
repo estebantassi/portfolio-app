@@ -11,6 +11,18 @@ function generatelogincode() {
     return result;
 }
 
+function generateRandomString(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const bytes = crypto.randomBytes(length);
+
+  for (let i = 0; i < length; i++) {
+    result += chars[bytes[i] % chars.length];
+  }
+
+  return result;
+}
+
 function hash(value, key)
 {
   const output = crypto
@@ -183,6 +195,7 @@ function validatemessage(message) {
 
 module.exports = {
   generatelogincode,
+  generateRandomString,
   encrypt,
   decrypt,
   hash,

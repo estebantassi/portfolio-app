@@ -14,6 +14,7 @@ export const CallProvider = ({ children }) => {
 
     const [isInCall, setIsInCall] = useState(null)
     const isInCallRef = useRef(null)
+    const callTimeoutRef = useRef(null)
 
     const streamRef = useRef(null)
     const peerRef = useRef(null)
@@ -50,6 +51,10 @@ export const CallProvider = ({ children }) => {
             iceCandidateQueue.current = []
         })
 
+        socket.on("endedcall", async () => {
+            if (isInCallRef.current) endCall(false)
+        })
+
         socket.on("signal", async ({ from, data }) => {
             if (data.candidate) {
                 if (peerRef.current && peerRef.current.remoteDescription) {
@@ -65,6 +70,7 @@ export const CallProvider = ({ children }) => {
         })
 
         return () => {
+            socket.off("endedcall")
             socket.off("incomingcall")
             socket.off('signal')
             socket.off('acceptedcall')
@@ -114,6 +120,8 @@ export const CallProvider = ({ children }) => {
             const caller = await getuserprofile(data.from)
             if (caller == null) return addToast("Error loading user", "red")
 
+            startCallTimeout()
+
             isInCallRef.current = {data: caller, online: true}
             setIsInCall({data: caller, online: true})
         } catch (err) {
@@ -133,7 +141,6 @@ export const CallProvider = ({ children }) => {
             
             const offer = await peerRef.current.createOffer()
             await peerRef.current.setLocalDescription(offer)
-            
 
             const response = await axios.post('/auth/requestcall', {
                 calleeid: userdata.id,
@@ -141,6 +148,10 @@ export const CallProvider = ({ children }) => {
             }, {
                 withCredentials: true
             })
+
+            if (response.data.end) endCall()
+
+            startCallTimeout()
 
             addToast(response?.data?.message || "Success", 'green')
             isInCallRef.current = {data: userdata, online: false}
@@ -150,8 +161,44 @@ export const CallProvider = ({ children }) => {
         }
     }
 
-    const endCall = () => {
-        return
+    const startCallTimeout = async () => {
+        callTimeoutRef.current = setTimeout(async () => {
+            try {
+
+                const response = await axios.get('/auth/getcallstate', {
+                    withCredentials: true
+                })
+
+                if (response.data == null || response.data.state == null) throw "Error"
+                if (response.data.state == false) return endCall(false)
+
+            } catch (err) {
+                return endCall(false)
+            }
+
+            startCallTimeout()
+        }, 5000)
+    }
+
+    const endCall = async (share = true) => {
+        if (!isInCallRef.current) return
+
+        if (share)
+        {
+            try {
+                const response = await axios.post('/auth/endcall', {}, {
+                    withCredentials: true
+                })
+            } catch (err) {
+                addToast(err.response?.data?.message || "An error occurred", "red")
+            }
+        }
+
+        if (callTimeoutRef.current) {
+            clearTimeout(callTimeoutRef.current)
+            callTimeoutRef.current = null
+        }
+        
         isInCallRef.current = null
         setIsInCall(null)
 
@@ -168,6 +215,8 @@ export const CallProvider = ({ children }) => {
             streamRef.current.getTracks().forEach(track => track.stop())
             streamRef.current = null
         }
+
+        addToast("Call ended", "red")
     }
 
     const refuseCall = (data) => {
@@ -185,7 +234,7 @@ export const CallProvider = ({ children }) => {
             <p>Call with {isInCall.data.username}</p>
             <img src={isInCall.data.avatar} alt="avatar" className={`avatar ${isInCall.online ? "call-online-avatar" : "call-offline-avatar"}`} />
 
-            <button onClick={() => endCall()}>End Call</button>
+            <button onClick={() => {isInCall.online ? endCall() : endCall(false)}}>End Call</button>
             
             </>
             }

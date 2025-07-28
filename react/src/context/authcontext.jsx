@@ -186,7 +186,7 @@ export const AuthProvider = ({ children }) => {
             const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', key)
             const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
 
-            sessionStorage.setItem("key", keyBase64)
+            localStorage.setItem("messagekey", keyBase64)
             setUser({
                 id: response.data.user.id,
                 username: response.data.user.username,
@@ -235,6 +235,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("avatar")
         localStorage.removeItem("banner")
         localStorage.removeItem("authtimer")
+        localStorage.removeItem("messagekey")
 
         if (socketioRef.current) { socketioRef.current.disconnect() }
 

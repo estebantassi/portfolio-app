@@ -3,7 +3,7 @@ require('dotenv').config()
 var jwt = require('jsonwebtoken')
 const transporter = require('../../config/mailsender').transporter
 const { v4: uuidv4 } = require('uuid')
-const { encrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier, validateusername } = require('../../tools/tools')
+const { encrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier, validateusername, generateRandomString } = require('../../tools/tools')
 
 const Signup = async (req, res) => {
 
@@ -35,13 +35,15 @@ const Signup = async (req, res) => {
         const encryptedemail = encrypt(email, process.env.EMAIL_ENCRYPTION_KEY)
         const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
 
+        const messagekey_decrypter = generateRandomString(64)
+
         connection = await db.getConnection()
         await connection.beginTransaction()
 
         const [request] = await connection.query(`
-            INSERT INTO users (username, email_hash, email_encrypted, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [username, hashedemail, encryptedemail, new Date(), privatekey, salt, publickey, srpsalt, srpverifier])
+            INSERT INTO users (username, email_hash, email_encrypted, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier, messagekey_decrypter)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [username, hashedemail, encryptedemail, new Date(), privatekey, salt, publickey, srpsalt, srpverifier, messagekey_decrypter])
 
         if (request == null || request.insertId == null) {
             await connection.rollback()

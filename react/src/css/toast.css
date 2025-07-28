@@ -13,7 +13,7 @@
     border-radius: 20px;
     
 
-    animation: toast 5s ease-in-out;
+    
     animation-fill-mode: forwards;
     margin-bottom: var(--toast-margin-height);
 
@@ -21,6 +21,14 @@
     border-radius: 10px;
     border-style: solid;
     border-color: white;
+}
+
+.toast-regular{
+    animation: toast-regular 5s ease-in-out;
+}
+
+.toast-call{
+    animation: toast-call 10s ease-in-out;
 }
 
 .toastbox{
@@ -45,7 +53,7 @@
     width: 100%;
 }
 
-@keyframes toast {
+@keyframes toast-regular {
     0% {
         opacity: 0;
     }
@@ -53,6 +61,23 @@
         opacity: 1;
     }
     90% {
+        opacity: 1;
+        margin-top: 0;
+    }
+    100% {
+        opacity: 0;
+        margin-top: -62.5px;
+    }
+}
+
+@keyframes toast-call {
+    0% {
+        opacity: 0;
+    }
+    5% {
+        opacity: 1;
+    }
+    95% {
         opacity: 1;
         margin-top: 0;
     }
