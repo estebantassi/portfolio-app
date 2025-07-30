@@ -38,7 +38,7 @@ const OldEmailCheck = async (req, res) => {
         await db.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
             VALUES (?, ?, ?, ?)
-        `, ["newemailcheck", verifyjti, data.id, verificationdate])
+        `, ["newemailcheck", verifyjti, data.id, verificationdate.toISOString()])
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

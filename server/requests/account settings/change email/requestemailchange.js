@@ -55,7 +55,7 @@ const RequestEmailChange = async (req, res) => {
         await db.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
             VALUES (?, ?, ?, ?)
-        `, ["oldemailcheck", verifyjti, data.id, verificationdate])
+        `, ["oldemailcheck", verifyjti, data.id, verificationdate.toISOString()])
 
         
         transporter.sendMail({

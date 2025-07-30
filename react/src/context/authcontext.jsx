@@ -6,6 +6,7 @@ import { useNavigate } from "react-router"
 import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64, fetchbase64image } from "../tools/tools"
 import srp from "secure-remote-password/client"
 import { io } from 'socket.io-client'
+import { useMemo } from "react"
 
 export const AuthContext = createContext()
 
@@ -63,17 +64,23 @@ export const AuthProvider = ({ children }) => {
 
                 const avatarBase64 = await fetchbase64image(response.data.avatar)
                 if (avatarBase64){
-                    setAvatar(avatarBase64)
-                    localStorage.setItem("avatar", avatarBase64)
+                    if (avatar != avatarBase64) {
+                        setAvatar(avatarBase64)
+                        localStorage.setItem("avatar", avatarBase64)
+                    }
                 }
 
                 const bannerBase64 = await fetchbase64image(response.data.banner)
                 if (bannerBase64){
-                    setBanner(bannerBase64)
-                    localStorage.setItem("banner", bannerBase64)
+                    if (banner != bannerBase64) {
+                        setBanner(bannerBase64)
+                        localStorage.setItem("banner", bannerBase64)
+                    }
                 }
 
-                setUser(prev => ({...prev, username: response.data.username, tag: response.data.tag, bio: response.data.bio}))
+                const newuserdata = {username: response.data.username, tag: response.data.tag, bio: response.data.bio}
+
+                JSON.stringify(user) != JSON.stringify({...user, ...newuserdata}) && setUser(prev => ({...prev, ...newuserdata}))
 
             } catch (err) {
                 addToast(err.response?.data?.message || "An error occurred", "red")

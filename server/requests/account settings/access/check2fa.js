@@ -57,7 +57,7 @@ const Check2FA = async (req, res) => {
         await db.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
-        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
+        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate.toISOString()])
 
         let user = {}
         user.email = decryptedemail

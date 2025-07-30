@@ -86,6 +86,9 @@ app.get('/auth/refreshtoken/update', require('./requests/session/updateaccesstok
 app.post('/auth/editprofile', require("./requests/profile/editprofile").EditProfile)
 app.get('/getuserprofile', require('./requests/profile/getuserprofile').GetUserProfile)
 
+//NOTIFICATIONS
+app.get('/auth/getnotifications', require('./requests/notifications/getnotifications').GetNotifications)
+
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
 //DELETE USERS WITH UNVERIFIED EMAIL

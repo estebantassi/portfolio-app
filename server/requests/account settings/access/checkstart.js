@@ -45,7 +45,7 @@ const CheckStart = async (req, res) => {
         await db.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
-        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
+        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate.toISOString()])
 
         const srpServerEphemeral = srp.generateEphemeral(srpVerifier)
         await setCachedValue(`accountsettings/ephemeral/${hashedemail}/${sensitivedatatokenjti}`, 60 * 5, srpServerEphemeral.secret)

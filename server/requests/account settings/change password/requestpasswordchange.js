@@ -59,7 +59,7 @@ const RequestPasswordChange = async (req, res) => {
         await db.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
             VALUES (?, ?, ?, ?)
-        `, ["passwordemailcheck", verifyjti, data.id, verificationdate])
+        `, ["passwordemailcheck", verifyjti, data.id, verificationdate.toISOString()])
         
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

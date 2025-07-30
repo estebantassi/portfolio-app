@@ -9,6 +9,22 @@ import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage, 
 import { useCall } from '../context/callcontext'
 import getuserprofile from '../tools/getuserprofile'
 
+const MessageItem = memo(({ msg, userId, onDelete }) => {
+
+    const created_at = new Date(msg.created_at)
+
+    return (
+        <div>
+            <h2>{msg.text}</h2>
+            {msg.image ? <img src={msg.image} alt="imagesent" /> : null}
+            {msg.senderid === userId ? (
+                <button onClick={() => onDelete(msg.id)}>Delete Message</button>
+            ) : null}
+            <p>{created_at.toLocaleString()}</p>
+        </div>
+    )
+})
+
 function Messages() {
 
     const { startCall } = useCall()
@@ -161,12 +177,10 @@ function Messages() {
             if (message.data == null || message.data.messagedata == null) throw 'Error'
             message.data.messagedata.text = messagetext
 
-            //setMessages(prev => [message.data.messagedata, ...prev])
             setImage("")
             setImagePreview("") 
             setMessagetext("")
         } catch (err) {
-            console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
@@ -183,7 +197,7 @@ function Messages() {
             })
 
             if (response == null || response.data == null || response.data.data == null) throw 'Error'
-            if (response.data.data == "") return
+            if (response.data.data.length == 0) return
 
             const encryptedMessages = response.data.data
             const decryptedMessages = await Promise.all(
@@ -226,21 +240,9 @@ function Messages() {
         }
     }, [])
 
-    const MessageItem = memo(({ msg, userId, onDelete }) => {
-        return (
-            <div>
-                <h2>{msg.text}</h2>
-                {msg.image ? <img src={msg.image} alt="imagesent" /> : null}
-                {msg.senderid === userId ? (
-                    <button onClick={() => onDelete(msg.id)}>Delete Message</button>
-                ) : null}
-            </div>
-        )
-    })
-
     return (
         <>
-            <h1>Messages with user {link}</h1>
+            {userdata && userdata.username && <h1>Messages with {userdata.username}</h1>}
 
             <form onSubmit={(e) => sendmessage(e)}>
                 <input value={messagetext} placeholder='Write something...' onChange={(e) => setMessagetext(e.target.value)} />

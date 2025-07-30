@@ -80,7 +80,7 @@ const Check = async (req, res) => {
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
-        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
+        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate.toISOString()])
 
         let user = {}
         if (request["2FA"] == 0) { user.email = decryptedemail }

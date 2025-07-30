@@ -60,7 +60,7 @@ const UpdateAccessToken = async (req, res) => {
         const [tokenrequest] = await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at, ip)
             VALUES (?, ?, ?, ?, ?)
-        `, [data.id, 'access', accesstokenjti, accessdate, cryptedip])
+        `, [data.id, 'access', accesstokenjti, accessdate.toISOString(), cryptedip])
 
         if (tokenrequest == null || tokenrequest.insertId == null)
         {
@@ -84,7 +84,7 @@ const UpdateAccessToken = async (req, res) => {
             UPDATE tokens
             SET value=?, expires_at=?
             WHERE id=?
-            `, [refreshtokenjti, refreshdate, data.tokenid])
+            `, [refreshtokenjti, refreshdate.toISOString(), data.tokenid])
 
         CheckUserExpirations(data.id)
 

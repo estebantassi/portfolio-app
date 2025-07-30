@@ -7,7 +7,7 @@ const { getIO } = require('../../config/socketio')
 const Notify = async (type, notifiedid, notifierid) => {
 
     try {
-
+        //TO ADD : COMBINE SAME NOTIFICATIONS THAT HAPPENED WITHIN 24 HOURS OR SO
         const date = new Date()
 
         const [requests] = await db.query(`
@@ -20,12 +20,12 @@ const Notify = async (type, notifiedid, notifierid) => {
         const request = requests[0]
         if (request == null)
         {
-            await db.query(`
-                INSERT INTO notifications (notifier_id, notified_id, type, date)
+            const [request] = await db.query(`
+                INSERT INTO notifications (notifier_id, notified_id, type, created_at)
                 VALUES (?, ?, ?, ?)
-            `, [notifierid, notifiedid, type, date])
+            `, [notifierid, notifiedid, type, date.toISOString()])
 
-            getIO().to(notifiedid.toString()).emit('notification', { from: notifierid, type, date })
+            getIO().to(notifiedid.toString()).emit('notification', { id: request.insertId, type, notified_id: parseInt(notifiedid, 10), notifier_id: notifierid, created_at: date.toISOString() })
         }
 
     } catch (err) {

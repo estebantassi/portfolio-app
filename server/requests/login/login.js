@@ -86,7 +86,7 @@ const Login = async (req, res) => {
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
-        `, [request.id, 'logintoken', temptokenjti, date])
+        `, [request.id, 'logintoken', temptokenjti, date.toISOString()])
 
         if (request['2FA'] == 0) {
             const code = generatelogincode()
@@ -94,7 +94,7 @@ const Login = async (req, res) => {
             await connection.query(`
                 INSERT INTO tokens (userid, type, value, expires_at)
                 VALUES (?, ?, ?, ?)
-            `, [request.id, 'logincode', code, date])
+            `, [request.id, 'logincode', code, date.toISOString()])
 
             transporter.sendMail({
                 from: '"Portfolio security system" <' + process.env.EMAIL + '>',

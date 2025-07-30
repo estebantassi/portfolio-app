@@ -83,7 +83,7 @@ const Enable2FA = async (req, res) => {
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
-        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate])
+        `, [data.id, 'sensitivedata', sensitivedatatokenjti, sensitivedatadate.toISOString()])
 
         const decryptedemail = decrypt(request.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)
 

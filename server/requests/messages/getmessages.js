@@ -33,13 +33,11 @@ const GetMessages = async (req, res) => {
                 (senderid = ? AND receiverid = ?)
                 OR
                 (senderid = ? AND receiverid = ?)
-            ) AND date <= ?
-            ORDER BY date DESC
+            ) AND created_at <= ?
+            ORDER BY id DESC
             LIMIT 2
             OFFSET ?
-        `, [data.id, receiverid, receiverid, data.id, date, offset])
-
-        if (request == null || request.length == 0) return res.status(200).json({message: "No more messages", data: ""})
+        `, [data.id, receiverid, receiverid, data.id, date.toISOString(), offset])
 
         for (const message of request) {
             if (message.image == 1) message.image = await GetImage(`messages/${message.id}`)

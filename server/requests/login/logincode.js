@@ -92,7 +92,7 @@ const LoginCode = async (req, res) => {
         const [tokenrequest] = await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at, ip)
             VALUES (?, ?, ?, ?, ?)
-        `, [data.id, 'access', accesstokenjti, accessdate, cryptedip])
+        `, [data.id, 'access', accesstokenjti, accessdate.toISOString(), cryptedip])
 
         if (tokenrequest == null || tokenrequest.insertId == null) {
             await connection.rollback()
@@ -114,7 +114,7 @@ const LoginCode = async (req, res) => {
         await connection.query(`
             INSERT INTO tokens (userid, type, value, expires_at, ip)
             VALUES (?, ?, ?, ?, ?)
-        `, [data.id, 'refresh', refreshtokenjti, refreshdate, cryptedip])
+        `, [data.id, 'refresh', refreshtokenjti, refreshdate.toISOString(), cryptedip])
 
         if (requestuser['2FA'] == 0)
         {

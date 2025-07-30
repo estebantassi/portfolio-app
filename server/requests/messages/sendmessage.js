@@ -6,6 +6,7 @@ const { getIO } = require('../../config/socketio')
 const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
 const bucket = require('../../config/gcs')
 const { GetImage } = require('../../tools/helper functions/getimage')
+const { Notify } = require('../../tools/helper functions/notify')
 
 const SendMessage = async (req, res) => {
     try {
@@ -35,9 +36,9 @@ const SendMessage = async (req, res) => {
 
         const date = new Date()
         const [message] = await db.query(`
-            INSERT INTO messages (text, receiverid, senderid, date, image)
+            INSERT INTO messages (text, receiverid, senderid, created_at, image)
             VALUES (?, ?, ?, ?, ?)
-        `, [text, receiverid, data.id, date, hasimage])
+        `, [text, receiverid, data.id, date.toISOString(), hasimage])
 
         if (hasimage == 1)
         {
@@ -56,10 +57,12 @@ const SendMessage = async (req, res) => {
         const messagedata = {
             receiverid,
             id: message.insertId,
-            date,
+            created_at: date.toISOString(),
             senderid: data.id,
             image: hasimage
         }
+
+        Notify("message", receiverid, data.id)
 
         getIO().to(receiverid.toString()).emit('newmessage', {...messagedata, text})
         getIO().to(data.id.toString()).emit('newmessage', {...messagedata, text})

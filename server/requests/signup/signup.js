@@ -40,10 +40,11 @@ const Signup = async (req, res) => {
         connection = await db.getConnection()
         await connection.beginTransaction()
 
+        const date = new Date()
         const [request] = await connection.query(`
             INSERT INTO users (username, email_hash, email_encrypted, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier, messagekey_decrypter)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [username, hashedemail, encryptedemail, new Date(), privatekey, salt, publickey, srpsalt, srpverifier, messagekey_decrypter])
+        `, [username, hashedemail, encryptedemail, date.toISOString(), privatekey, salt, publickey, srpsalt, srpverifier, messagekey_decrypter])
 
         if (request == null || request.insertId == null) {
             await connection.rollback()
@@ -54,12 +55,12 @@ const Signup = async (req, res) => {
         const verifytoken = jwt.sign({ email, id: request.insertId, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
 
         const verificationDurationMs = process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000
-        const verificationdate = new Date(Date.now() + verificationDurationMs)
+        const verificationdate = new Date(date + verificationDurationMs)
 
         await connection.query(`
             INSERT INTO tokens (type, value, userid, expires_at)
             VALUES (?, ?, ?, ?)
-        `, ["signup", verifyjti, request.insertId, verificationdate])
+        `, ["signup", verifyjti, request.insertId, verificationdate.toISOString()])
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',

@@ -44,7 +44,7 @@ const LoginStart = async (req, res) => {
         await db.query(`
             INSERT INTO tokens (userid, type, value, expires_at)
             VALUES (?, ?, ?, ?)
-        `, [request.id, 'logintoken', temptokenjti, date])
+        `, [request.id, 'logintoken', temptokenjti, date.toISOString()])
 
         return res.status(200).json({ srpSalt, srpServerEphemeral: srpServerEphemeral.public })
     } catch (err) {
