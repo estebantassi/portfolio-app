@@ -1,10 +1,11 @@
 *{
     font-family: "Open Sans", sans-serif;
-
-    background-color: darkslategrey;
     color: white;
-
     margin: 0;
+}
+
+body{
+    background-color: darkslategrey;
 }
 
 img{

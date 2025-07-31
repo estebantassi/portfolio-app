@@ -45,7 +45,7 @@ function Notifications() {
   const [offset, setOffset] = useState(0)
   const [notifications, setNotifications] = useState([])
 
-  const { AddToast } = useContext(ToastContext)
+  const { addToast } = useContext(ToastContext)
 
   useEffect(() => {
     if (!socket) return

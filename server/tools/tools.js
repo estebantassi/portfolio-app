@@ -192,6 +192,10 @@ function validatemessage(message) {
   return true
 }
 
+function validateposttext(text) {
+  return typeof text === "string" && text.length <= 500 && text.length > 0
+}
+
 
 module.exports = {
   generatelogincode,
@@ -213,5 +217,6 @@ module.exports = {
   validateid,
   validatemessage,
   validatetag,
-  validatebio
+  validatebio,
+  validateposttext
 }

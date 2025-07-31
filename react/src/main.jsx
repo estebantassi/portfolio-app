@@ -24,7 +24,7 @@ import AccountSettings from './pages/accountsettings.jsx'
 import OldEmailCheck from './pages/oldemailcheck.jsx'
 import NewEmailCheck from './pages/newemailcheck.jsx'
 import PasswordEmailCheck from './pages/passwordemailcheck.jsx'
-
+import Posts from './pages/posts.jsx'
 
 
 createRoot(document.getElementById('root')).render(
@@ -43,6 +43,7 @@ createRoot(document.getElementById('root')).render(
                 <Route path="/newemailcheck/:link" element={<NewEmailCheck />} />
                 <Route path="/passwordemailcheck/:link" element={<PasswordEmailCheck />} />
                 <Route path="/verifyemail/:link" element={<VerifyEmail />} />
+                <Route path="/posts/:link" element={<Posts />} />
               </Route>
 
               <Route element={<Logoutroute />}>
