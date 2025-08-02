@@ -28,6 +28,10 @@ app.use(bodyParser.json({ limit: '10mb' }))
 
 app.use(fileUpload())
 
+const { AccessMiddleware, RefreshMiddleware } = require('./middleware/auth')
+app.use('/auth', AccessMiddleware)
+app.use('/refreshtoken', RefreshMiddleware)
+
 //ACCOUNT CREATION
 app.post('/signup', require('./requests/signup/signup').Signup)
 app.post('/verifyemail', require('./requests/signup/verifyemail').VerifyEmail)
@@ -69,18 +73,16 @@ app.get('/auth/getcallstate', require('./requests/messages/call/getcallstate').G
 
 //FOLLOW
 app.post('/auth/follow', require ("./requests/profile/follow/follow").Follow)
-app.post('/auth/unfollow', require ("./requests/profile/follow/unfollow").Unfollow)
 app.get('/getfollowstate', require ("./requests/profile/follow/getfollowstate").GetFollowState)
 
 //BLOCK
 app.post('/auth/block', require ("./requests/profile/block/block").Block)
-app.post('/auth/unblock', require ("./requests/profile/block/unblock").Unblock)
 app.get('/getblockstate', require ("./requests/profile/block/getblockstate").GetBlockState)
 
 //TOKENS
 app.get('/auth/checkaccesstoken', require('./requests/session/checkaccesstoken').CheckAccessToken)
 app.get('/auth/refreshtoken/logout', require('./requests/login/logout').Logout)
-app.get('/auth/refreshtoken/update', require('./requests/session/updateaccesstoken').UpdateAccessToken)
+app.get('/refreshtoken/update', require('./requests/session/updateaccesstoken').UpdateAccessToken)
 
 //PROFILE
 app.post('/auth/editprofile', require("./requests/profile/editprofile").EditProfile)
@@ -91,8 +93,9 @@ app.get('/auth/getnotifications', require('./requests/notifications/getnotificat
 
 //POSTS
 app.post('/auth/sendpost', require('./requests/posts/sendpost').SendPost)
-app.get('/getposts', require('./requests/posts/getposts').GetPosts)
-app.get('/getpostsabove', require('./requests/posts/getpostsabove').GetPostsAbove)
+app.post('/auth/like', require('./requests/posts/likes/like').Like)
+app.get('/auth/getposts', require('./requests/posts/getposts').GetPosts)
+app.get('/auth/getpostsabove', require('./requests/posts/getpostsabove').GetPostsAbove)
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 

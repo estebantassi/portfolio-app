@@ -7,20 +7,17 @@ const { GetImage } = require('../../tools/helper functions/getimage')
 
 const GetMessages = async (req, res) => {
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
         if (req.body == null || req.body.receiverid == null || req.body.offset == null || req.body.date == null) return res.status(400).json({message: "Missing data"})
         
         const offset = req.body.offset
         const receiverid = req.body.receiverid
         const date = new Date(req.body.date)
-        const accesstoken = req.cookies.accesstoken
-        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
         if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
         
         const anyblocked = await GetBlockStateServer(data.id, receiverid)
         if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})

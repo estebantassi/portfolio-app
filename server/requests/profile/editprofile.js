@@ -10,20 +10,16 @@ const sharp = require('sharp')
 
 const EditProfile = async (req, res) => {
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
         if (req.body == null || req.body.bio == null || req.body.username == null || req.body.tag == null) return res.status(400).json({message: "Missing data"})
         
-        const accesstoken = req.cookies.accesstoken
         let bio = req.body.bio
         let username = req.body.username
         let tag = req.body.tag
         let avatar = req?.files?.avatar?.data
         let banner = req?.files?.banner?.data
 
-        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
-
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const [[request]] = await db.query(`
             SELECT username, avatar, banner, tag, messagekey_public, bio

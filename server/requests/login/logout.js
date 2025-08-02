@@ -7,38 +7,30 @@ require('dotenv').config()
 const Logout = async (req, res) => {
 
     try {
-        if (req.cookies == null || req.cookies.refreshtoken == null) return res.status(400).json({message: "Already logged out"})
-        
-        const refreshtoken = req.cookies.refreshtoken
-        if (!validatetoken(refreshtoken)) return res.status(400).json({message: "Invalid token format"})
-
         res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
         res.clearCookie("accesstoken", { path: "/auth" })
+        
+        const data = req.accesstokendata
+        const data2 = req.refreshtokendata
 
-    
-        const data = await GetTokenData(req, req.cookies.refreshtoken, "refresh")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
-
-        await db.query(`
-            DELETE FROM tokens
-            WHERE userid=? AND value=? AND type=?
-            `, [data.id, data.jti, 'refresh'])
-
-        const accesstoken = req.cookies.accesstoken
-
-        if (accesstoken && validatetoken(accesstoken)) {
-            try {
-                const data2 = await GetTokenData(req, accesstoken, "access")
-                if (data2 != null && data2.jti != null) {
-                    await db.query(`
-                    DELETE FROM tokens
-                    WHERE userid=? AND value=? AND type=?
-                `, [data.id, data2.jti, 'access'])
-                }
-            } catch { }
+        if (data2 != null)
+        {
+            await db.query(`
+                DELETE FROM tokens
+                WHERE userid=? AND value=? AND type=?
+            `, [data2.id, data2.jti, 'refresh'])
         }
 
-        CheckUserExpirations(data.id)
+        if (data != null)
+        {
+            await db.query(`
+                DELETE FROM tokens
+                WHERE userid=? AND value=? AND type=?
+            `, [data.id, data.jti, 'access'])
+        }
+
+        if (data != null) CheckUserExpirations(data.id)
+        else if (data2 != null) CheckUserExpirations(data2.id)
 
         return res.status(200).json({message: "Successfully logged out"})
     } catch (err) {

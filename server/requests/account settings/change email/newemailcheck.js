@@ -8,7 +8,6 @@ const NewEmailCheck = async (req, res) => {
 
     let connection
     try {
-
         if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
 
         const token = req.body.token

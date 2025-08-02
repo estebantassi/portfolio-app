@@ -12,6 +12,8 @@ const GetPosts = async (req, res) => {
         const repliedto = parseInt(req?.query?.repliedto, 10)
         let date = req?.query?.date
 
+        const data = req.accesstokendata
+
         if (offset == null || date == null) return res.status(400).json({message: "Missing data"})
 
         date = new Date(date)
@@ -19,21 +21,36 @@ const GetPosts = async (req, res) => {
         if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
 
-        const [request] = await db.query(`
+        let [request] = await db.query(`
             SELECT *
             FROM posts
             WHERE created_at <= ? AND replied_to=?
             ORDER BY id DESC
-            LIMIT 2
+            LIMIT 3
             OFFSET ?
         `, [date.toISOString(), repliedto, offset])
 
+        const hasMore = request.length > 2
+        request = request.slice(0, 2)
+
         for (const post of request) {
+            post.liked = false
+            if (data?.id && request?.id)
+            {
+                const [[liked]] = await db.query(`
+                    SELECT *
+                    FROM likes
+                    WHERE post_id=? AND user_id=?
+                `, [request.id, data.id])
+
+                if (liked) request.liked = true
+            }
+
             if (post?.image) post.image = await GetImage(`posts/${post.id}`)
             else post.image = null
         }
 
-        return res.status(200).json({message: "Data retrieved", posts: request})
+        return res.status(200).json({message: "Data retrieved", posts: request, end: !hasMore})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

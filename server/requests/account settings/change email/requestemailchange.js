@@ -9,7 +9,7 @@ const { decrypt, hash, validateemail } = require('../../../tools/tools')
 const RequestEmailChange = async (req, res) => {
 
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Wrong request"})
+        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Wrong request"})
         if (req.body == null || req.body.newemail == null || req.body.newemailcheck == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
 
         const newemail = req.body.newemail
@@ -20,8 +20,8 @@ const RequestEmailChange = async (req, res) => {
         const emailtest = validateemail(newemail)
         if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
 
-        const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
         const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
         if (data2 == null || data2.step < 1 || data2.step > 2) return res.status(400).json({message: "Invalid token"})
     

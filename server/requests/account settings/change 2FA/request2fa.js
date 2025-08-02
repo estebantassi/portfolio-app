@@ -9,16 +9,14 @@ const Request2FA = async (req, res) => {
 
     let connection
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
+        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
 
-        const accesstoken = req.cookies.accesstoken
         const sensitivedatatoken = req.cookies.sensitivedatatoken
 
-        if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })
         if (!validatetoken(sensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
 
-        const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
         const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
         if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
 

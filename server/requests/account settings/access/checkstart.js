@@ -9,13 +9,8 @@ const { setCachedValue } = require('../../../config/redis')
 
 const CheckStart = async (req, res) => {
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
-
-        const accesstoken = req.cookies.accesstoken
-        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token"})
-
-        const data = await GetTokenData(req, req.cookies.accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const [[request]] = await db.query(`
             SELECT email_hash, srpsalt, srpverifier, email_encrypted

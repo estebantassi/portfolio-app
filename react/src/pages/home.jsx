@@ -4,16 +4,17 @@ import { useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import { memo } from 'react'
-import { NavLink } from 'react-router'
+import { NavLink, useNavigate } from 'react-router'
 import getuserprofile from '../tools/getuserprofile'
 import { useEffect } from 'react'
 import { useCallback } from 'react'
+import '../css/posts.css'
 
-const PostItem = memo(({ post, poster }) => {
+const PostItem = memo(({ post, poster, navigate }) => {
   const created_at = new Date(post.created_at)
 
   return (
-    <div>
+    <div className='post-home-wrapper' onClick={() => navigate(`/posts/${post.id}`)}>
       {post?.text && <h2>{post.text}</h2>}
       {post?.image && <img src={post.image} alt=""/>}
       <p>{poster?.username} {created_at.toLocaleString()}</p>
@@ -22,6 +23,8 @@ const PostItem = memo(({ post, poster }) => {
 })
 
 function Home() {
+
+  const navigate = useNavigate()
 
   const { user, avatar, banner } = useAuth()
   const { addToast } = useContext(ToastContext)
@@ -39,7 +42,7 @@ function Home() {
 
   const getPosts = async () => {
     try {
-      const response = await axios.get(`/getposts?date=${date}&offset=${posts.length}&repliedto=0`)
+      const response = await axios.get(`/auth/getposts?date=${date}&offset=${posts.length}&repliedto=0`, { withCredentials: true })
 
       for (const post of response.data.posts) {
           const poster = await getuserprofile(post.poster_id)
@@ -113,6 +116,7 @@ function Home() {
           key={data.post.id}
           post={data.post}
           poster={data.poster}
+          navigate={navigate}
         />
       ))}
 

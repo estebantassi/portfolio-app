@@ -6,40 +6,76 @@ const { setCachedValue } = require('../../../config/redis')
 require('dotenv').config()
 
 const Block = async (req, res) => {
+    let connection
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
         if (req.body == null || req.body.blockedid == null) return res.status(400).json({message: "Missing data"})
         
         const blockedid = req.body.blockedid
-        const accesstoken = req.cookies.accesstoken
-        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
         if (!validateid(blockedid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
 
-        await db.query(`
-            INSERT INTO block (blocker_id, blocked_id)
-            VALUES (?, ?)
+        const [[user]] = await db.query(`
+            SELECT 1
+            FROM users
+            WHERE id=?
+        `, [blockedid])
+
+        if (!user) return res.status(400).json({message: "This user doesn't exist"})
+
+        connection = await db.getConnection()
+        await connection.beginTransaction()
+
+        const [[block]] = await connection.query(`
+            SELECT 1
+            FROM block
+            WHERE blocker_id=? AND blocked_id=?
         `, [data.id, blockedid])
 
-        try {
-            await db.query(`
-                DELETE FROM follow
-                WHERE (followee_id=? AND follower_id=?)
-                OR (followee_id=? AND follower_id=?)
-            `, [data.id, blockedid, blockedid, data.id])
-        } catch (err) {}
+        let message
+        let blocked
+        if (block) {
+            await connection.query(`
+                DELETE FROM block
+                WHERE blocker_id=? AND blocked_id=?
+            `, [data.id, blockedid])
 
-        await setCachedValue(`block/${data.id}/${blockedid}`, process.env.BLOCK_CACHE_DURATION, "1")
+            blocked = false
+            message = "Unblocked user"
+        } else {
+            await connection.query(`
+                INSERT INTO block (blocker_id, blocked_id)
+                VALUES (?, ?)
+            `, [data.id, blockedid])
+
+            blocked = true
+            message = "Blocked user"
+        }
+
+        await connection.commit()
+        if (block) {
+            try {
+                await db.query(`
+                    DELETE FROM follow
+                    WHERE (followee_id=? AND follower_id=?)
+                    OR (followee_id=? AND follower_id=?)
+                `, [data.id, blockedid, blockedid, data.id])
+            } catch (err) {}
+        }
+
+        await setCachedValue(`block/${data.id}/${blockedid}`, process.env.BLOCK_CACHE_DURATION, blocked ? "1" : "0")
 
         getIO().to(blockedid.toString()).emit('block', { id: blockedid, from: data.id })
         getIO().to(data.id.toString()).emit('block', { id: blockedid, from: data.id })
 
-        return res.status(200).json({message: "Blocked user"})
+        return res.status(200).json({message, blocked})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
+        if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
+    } finally {
+        if (connection) connection.release()
     }
 }
 

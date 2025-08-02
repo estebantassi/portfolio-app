@@ -12,22 +12,20 @@ const Enable2FA = async (req, res) => {
 
     try {
         if (req.body == null || req.body.code == null || req.body.privatekey == null || req.body.salt == null) return res.status(400).json({message: "Missing data"})
-        if (req.cookies == null || req.cookies.accesstoken == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
+        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
 
         const code = req.body.code
         const privatekey = req.body.privatekey
         const salt = req.body.salt
-        const accesstoken = req.cookies.accesstoken
         const oldsensitivedatatoken = req.cookies.sensitivedatatoken
 
         if (!validateprivatekey(privatekey))  return res.status(400).json({ message: "Invalid key format" })
         if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
         if (!validatecode(code)) return res.status(400).json({ message: "Invalid code format" })
-        if (!validatetoken(accesstoken)) return res.status(400).json({ message: "Invalid token format" })
         if (!validatetoken(oldsensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
 
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
         const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
         if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
         

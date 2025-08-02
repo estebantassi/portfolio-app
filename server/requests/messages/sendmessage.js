@@ -10,21 +10,18 @@ const { Notify } = require('../../tools/helper functions/notify')
 
 const SendMessage = async (req, res) => {
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Wrong request"})
         if (req.body == null || req.body.text == null || req.body.receiverid == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
         
         const receiverid = req.body.receiverid
         const text = req.body.text
-        const accesstoken = req.cookies.accesstoken
         const image = req.files ? req.files.image : null
 
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
-        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
         if (!validatemessage(text)) return res.status(400).json({message: "Invalid text format"})
         //VALIDATE IMAGE
 
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         if (data.id == receiverid) return res.status(400).json({message: "Can't send a message to yourself"})
         const anyblocked = await GetBlockStateServer(data.id, receiverid)

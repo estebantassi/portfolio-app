@@ -1,0 +1,75 @@
+import { AuthContext } from '../context/authcontext'
+import { useContext, useEffect, useState } from "react"
+import { ToastContext } from '../context/toastcontext'
+import axios from '../api/axios'
+
+function PostSender({ setPosts, repliedto, setShowPoster }) {
+    const { user, avatar, banner } = useContext(AuthContext)
+    const { addToast } = useContext(ToastContext)
+
+    const [text, setText] = useState("")
+    const [image, setImage] = useState("")
+    const [imagePreview, setImagePreview] = useState("")
+
+    const sendPost = async (e) => {
+        e.preventDefault()
+
+        const formdata = new FormData()
+        formdata.append("text", text)
+        formdata.append('repliedto', repliedto)
+        formdata.append("image", image)
+
+        try {
+            const response = await axios.post('/auth/sendpost',
+                formdata
+                , {
+                withCredentials: true
+            })
+
+            const poster = {
+                username: user.username,
+                tag: user.tag,
+                avatar: avatar,
+                banner: banner,
+                bio: user.bio,
+                id: user.id
+            }
+
+            setText("")
+            setImage("")
+            setImagePreview("")
+
+            setPosts(prev => [{post: response.data.postdata, poster}, ...prev])
+
+            addToast(response?.data?.message || "Success", "green")
+        } catch (err) {
+            console.log(err)
+            addToast(err.response?.data?.message || "An error occurred", "red")
+        }
+    }
+
+    return (
+        <div>
+            <h1>SEND A POST</h1>
+
+            <form onSubmit={(e) => sendPost(e)}>
+                <input value={text} placeholder='Write something...' onChange={(e) => setText(e.target.value)} />
+                <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files[0]
+                    if (file) {
+                        setImage(file)
+                        setImagePreview(URL.createObjectURL(file))
+                    }
+                }} />
+                {imagePreview && <img src={imagePreview} alt="postimage" />}
+
+                <button>Send</button>
+            </form>
+            <button onClick={() => setShowPoster(false)}>Close</button>
+        </div>
+    )
+
+
+}
+
+export default PostSender

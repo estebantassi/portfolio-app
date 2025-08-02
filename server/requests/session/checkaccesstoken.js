@@ -3,17 +3,9 @@ const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 require('dotenv').config()
 
 const CheckAccessToken = async (req, res) => {
-
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
-
-        const accesstoken = req.cookies.accesstoken
-
-        if(!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
-
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
-
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
         return res.status(200).json({message: "Token is valid"})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)

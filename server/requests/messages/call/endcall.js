@@ -8,13 +8,8 @@ const { GetFollowStateServer } = require('../../profile/follow/getfollowstateser
 
 const EndCall = async (req, res) => {
     try {
-        if (req.cookies == null || req.cookies.accesstoken == null) return res.status(400).json({message: "Missing token"})
-        
-        const accesstoken = req.cookies.accesstoken
-        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
-
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const call1 = JSON.parse(await getCachedValue(`call/${data.id}`))
         if (!call1 || call1.status != "online") return res.status(400).json({message: "Not in call"})

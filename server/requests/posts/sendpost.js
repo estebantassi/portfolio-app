@@ -10,21 +10,18 @@ const { Notify } = require('../../tools/helper functions/notify')
 
 const SendPost = async (req, res) => {
     try {
-        const accesstoken = req?.cookies?.accesstoken
         const repliedto = req?.body?.repliedto
         const text = req?.body?.text
         const image = req?.files?.image
         
-        if (accesstoken == null) return res.status(400).json({message: "Wrong request"})
         if (repliedto == null || text == null || text == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
 
         if (!validateid(repliedto) && repliedto != 0) return res.status(400).json({message: "Invalid id format"})
-        if (!validatetoken(accesstoken)) return res.status(400).json({message: "Invalid token format"})
         if (!validateposttext(text)) return res.status(400).json({message: "Invalid text format"})
         //VALIDATE IMAGE
 
-        const data = await GetTokenData(req, accesstoken, "access")
-        if (data == null) return res.status(400).json({message: "Invalid token"})
+        const data = req.accesstokendata
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         let hasimage = 0
         if (image?.data != null) hasimage = 1
