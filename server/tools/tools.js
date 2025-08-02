@@ -94,7 +94,7 @@ function validatecode(value) {
 }
 
 function validateemail(email) {
-    if (email != null) return { valid: false, message: "Email is empty" }
+    if (email == null) return { valid: false, message: "Email is empty" }
     const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
     if (typeof email !== "string" || !emailRegexp.test(email)) return { valid: false, message: "Invalid email format" }
 
@@ -124,7 +124,7 @@ function validatebio(bio) {
 }
 
 function validateid(id) {
-  if (id == null || isNaN(id) || id > 999999999999) return false
+  if (id == null || isNaN(id) || id < 0) return false
   return true
 }
 

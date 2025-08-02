@@ -28,11 +28,6 @@ app.use(bodyParser.json({ limit: '10mb' }))
 
 app.use(fileUpload())
 
-//REMOVE THIS BECAUSE ITS CLEARER TO NOT USE IT
-const { AccessMiddleware, RefreshMiddleware } = require('./middleware/auth')
-app.use('/auth', AccessMiddleware)
-app.use('/refreshtoken', RefreshMiddleware)
-
 //ACCOUNT CREATION
 app.post('/signup', require('./requests/signup/signup').Signup)
 app.post('/verifyemail', require('./requests/signup/verifyemail').VerifyEmail)
