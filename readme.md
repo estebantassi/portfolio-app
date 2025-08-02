@@ -1,8 +1,7 @@
-To-do : 
- 
-
-Urgent : 
- 
+To-do :  
+  
+Urgent :  
+  
 -Check images when sent through messages/posts  
 -Finish validate functions  
 -Put controllers on requests properly  
@@ -10,11 +9,11 @@ Urgent :
 -Finish home page  
 -Load with intersect  
 -CSS (DO LAST)  
-
-
-Not urgent : 
+  
+Not urgent :  
+  
 -Stacking notifications  
 -Request limits per ip and per account  
 -Privacy policy  
 -Loading logo (optional)  
--Toggle IP-based checks in settings + add agent-based checks  
+-Toggle IP-based checks in settings + add agent-based checks
