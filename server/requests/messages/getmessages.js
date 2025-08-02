@@ -7,11 +7,9 @@ const { GetImage } = require('../../tools/helper functions/getimage')
 
 const GetMessages = async (req, res) => {
     try {
-        if (req.body == null || req.body.receiverid == null || req.body.offset == null || req.body.date == null) return res.status(400).json({message: "Missing data"})
-        
-        const offset = req.body.offset
-        const receiverid = req.body.receiverid
-        const date = new Date(req.body.date)
+        const offset = req?.body?.offset
+        const receiverid = req?.body?.receiverid
+        const date = new Date(req?.body?.date)
         if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})

@@ -6,21 +6,18 @@ const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
 const Disable2FA = async (req, res) => {
 
     try {
-        if (req.body == null || req.body.privatekey == null || req.body.salt == null) return res.status(400).json({message: "Missing data"})
-        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
+        //CHANGE ALLAT
+        const sensitivedatatoken = req?.cookies?.sensitivedatatoken
+        const data2 = await GetTokenData(req, sensitivedatatoken, "sensitivedata")
+        if (data2 == null || data2.step == null || data2.step != 2) return res.status(400).json({message: "Invalid token"})
 
-        const privatekey = req.body.privatekey
-        const salt = req.body.salt
-        const sensitivedatatoken = req.cookies.sensitivedatatoken
-
+        const privatekey = req?.body?.privatekey
+        const salt = req?.body?.salt
         if (!validateprivatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
         if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
-        if (!validatetoken(sensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
 
         const data = req.accesstokendata
         if (data == null) return res.status(401).json({ message: "Authentication required" })
-        const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step == null || data2.step != 2) return res.status(400).json({message: "Invalid token"})
     
         await db.query(`
             UPDATE users

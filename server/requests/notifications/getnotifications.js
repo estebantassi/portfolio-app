@@ -8,10 +8,9 @@ const { validatetoken } = require('../../tools/tools')
 const GetNotifications = async (req, res) => {
 
     try {
-        if (req.query == null || req.query.offset == null || req.query.date == null) return res.status(400).json({message: "Missing data"})
-        
-        const offset = parseInt(req.query.offset, 10)
-        const date = new Date(req.query.date)
+
+        const offset = parseInt(req?.query?.offset, 10)
+        const date = new Date(req?.query?.date)
         if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
 

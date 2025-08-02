@@ -10,11 +10,9 @@ const { Notify } = require('../../tools/helper functions/notify')
 
 const SendMessage = async (req, res) => {
     try {
-        if (req.body == null || req.body.text == null || req.body.receiverid == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
-        
-        const receiverid = req.body.receiverid
-        const text = req.body.text
-        const image = req.files ? req.files.image : null
+        const receiverid = req?.body?.receiverid
+        const text = req?.body?.text
+        const image = req?.files?.image
 
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
         if (!validatemessage(text)) return res.status(400).json({message: "Invalid text format"})
@@ -47,7 +45,7 @@ const SendMessage = async (req, res) => {
             })
         }
 
-        if (message == null || message.insertId == null) return res.status(400).json({message: "Message not sent"})
+        if (message == null) return res.status(400).json({message: "Message not sent"})
 
         if (hasimage == 1) hasimage = await GetImage(`messages/${message.insertId}`)
 

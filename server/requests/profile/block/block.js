@@ -8,9 +8,7 @@ require('dotenv').config()
 const Block = async (req, res) => {
     let connection
     try {
-        if (req.body == null || req.body.blockedid == null) return res.status(400).json({message: "Missing data"})
-        
-        const blockedid = req.body.blockedid
+        const blockedid = req?.body?.blockedid
         if (!validateid(blockedid)) return res.status(400).json({message: "Invalid id format"})
 
         const data = req.accesstokendata

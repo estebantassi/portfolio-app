@@ -1,5 +1,3 @@
-const { validatetoken } = require('../../tools/tools')
-const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 require('dotenv').config()
 
 const CheckAccessToken = async (req, res) => {

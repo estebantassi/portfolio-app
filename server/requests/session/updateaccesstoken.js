@@ -5,7 +5,6 @@ require('dotenv').config()
 const { GetTokenData } = require("../../tools/helper functions/gettokendata")
 const { v4: uuidv4 } = require('uuid')
 const { CheckUserExpirations } = require("../../tools/helper functions/checkuserexpirations")
-const { validatetoken } = require('../../tools/tools')
 
 const UpdateAccessToken = async (req, res) => {
     let connection
@@ -24,7 +23,7 @@ const UpdateAccessToken = async (req, res) => {
         `, [data.jti, 'refresh', data.id])
 
         const request = requests[0]
-        if (request == null || request.expires_at == null) {
+        if (request == null) {
             await connection.rollback()
             return res.status(400).json({message: "Token revoked"})
         }
@@ -56,7 +55,7 @@ const UpdateAccessToken = async (req, res) => {
             VALUES (?, ?, ?, ?, ?)
         `, [data.id, 'access', accesstokenjti, accessdate.toISOString(), cryptedip])
 
-        if (tokenrequest == null || tokenrequest.insertId == null)
+        if (tokenrequest == null)
         {
             await connection.rollback()
             return res.status(400).json({message: "Error"})

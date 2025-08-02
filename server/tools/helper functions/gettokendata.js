@@ -3,12 +3,14 @@ require('dotenv').config()
 const db = require('../../config/database')
 const { getClientIp } = require('../../config/geo')
 const bcrypt = require('bcrypt')
-const { validateuuid } = require('../tools')
+const { validateuuid, validatetoken } = require('../tools')
 const { setCachedValue, getCachedValue, deleteCachedValue } = require('../../config/redis')
 
 
 const GetTokenData = async (req, token, type) => {
     try {
+        if (!validatetoken(token)) return null
+
         const secretMap = {
             access: process.env.ACCESS_TOKEN_SECRET,
             refresh: process.env.REFRESH_TOKEN_SECRET,

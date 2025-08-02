@@ -71,29 +71,30 @@ function decrypt(encryptedString, keyvalue) {
 }
 
 function validatehex(value) {
-    return typeof value === 'string' &&
+    return value != null && typeof value === 'string' &&
          /^[0-9a-fA-F]+$/.test(value) &&
          value.length % 2 === 0 &&
          value.length >= 64 && value.length <= 512
 }
 
 function validatesrpsalt(salt) {
-  return typeof salt === 'string' &&
+  return salt != null && typeof salt === 'string' &&
          /^[0-9a-fA-F]+$/.test(salt) &&
          salt.length >= 32 && salt.length <= 64
 }
 
 function validatesrpverifier(verifier) {
-  return typeof verifier === 'string' &&
+  return verifier != null && typeof verifier === 'string' &&
          /^[0-9a-fA-F]+$/.test(verifier) &&
          verifier.length === 512
 }
 
 function validatecode(value) {
-  return typeof value === 'string' && /^[A-Za-z0-9]{6}$/.test(value)
+  return value != null && typeof value === 'string' && /^[A-Za-z0-9]{6}$/.test(value)
 }
 
 function validateemail(email) {
+    if (email != null) return { valid: false, message: "Email is empty" }
     const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
     if (typeof email !== "string" || !emailRegexp.test(email)) return { valid: false, message: "Invalid email format" }
 
@@ -104,42 +105,43 @@ function validateemail(email) {
 }
 
 function validateusername(username) {
-    return typeof username === "string"
+    return username != null && typeof username === "string"
     && username.length >= process.env.MIN_USERNAME_LENGTH
     && username.length <= process.env.MAX_USERNAME_LENGTH
 }
 
 function validatetag(tag, id) {
-    return typeof tag === "string"
+    return tag != null && typeof tag === "string"
     && (isNaN(tag) || tag == id)
     && tag.length >= process.env.MIN_USERNAME_LENGTH
     && tag.length <= process.env.MAX_USERNAME_LENGTH
 }
 
 function validatebio(bio) {
-    return typeof bio === "string"
+    return bio != null && typeof bio === "string"
     && bio.length >= process.env.MIN_BIO_LENGTH
     && bio.length <= process.env.MAX_BIO_LENGTH
 }
 
 function validateid(id) {
-  if (isNaN(id) || id > 999999999999 || id <= 0) return false
+  if (id == null || isNaN(id) || id > 999999999999) return false
   return true
 }
 
 function validatetoken(token) {
-  return typeof token === "string"
+  return token != null && typeof token === "string"
     && token.length > 9
     && token.length < 5001
     && token.split(".").length === 3
 }
 
 function validatesalt(salt) {
-  if (typeof salt !== 'string') return false
+  if (salt == null || typeof salt !== 'string') return false
   try { return Buffer.from(salt, 'base64').length === 16 } catch { return false }
 }
 
 function validateprivatekey(key) {
+  if (key == null) return false
   try {
     if (typeof key !== 'string') return false
 
@@ -159,6 +161,7 @@ function validateprivatekey(key) {
 }
 
 function validatepublickey(key) {
+  if (key == null) return false
   try {
     const pubBuf = Buffer.from(key, 'base64')
     if (pubBuf.length !== 65) return false
@@ -169,12 +172,13 @@ function validatepublickey(key) {
 }
 
 function validateuuid(uuid) {
+  if (uuid == null) return false
   const uuidv4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   return uuidv4Regex.test(uuid)
 }
 
 function validatemessage(message) {
-  if (typeof message !== "string") return false
+  if (message == null || typeof message !== "string") return false
 
   const parts = message.split(":")
   if (parts.length !== 2) return false
@@ -193,7 +197,15 @@ function validatemessage(message) {
 }
 
 function validateposttext(text) {
-  return typeof text === "string" && text.length <= 500 && text.length > 0
+  return text != null && typeof text === "string" && text.length <= 500 && text.length > 0
+}
+
+function validateanswer(answer) {
+  if (answer == null) return false
+}
+
+function validateoffer(offer) {
+  if (offer == null) return false
 }
 
 
@@ -218,5 +230,7 @@ module.exports = {
   validatemessage,
   validatetag,
   validatebio,
-  validateposttext
+  validateposttext,
+  validateanswer,
+  validateoffer
 }

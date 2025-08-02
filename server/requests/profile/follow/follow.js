@@ -14,7 +14,6 @@ const Follow = async (req, res) => {
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const followeeid = req?.body?.followeeid
-        if (followeeid == null) return res.status(400).json({message: "Missing data"})
         if (!validateid(followeeid)) return res.status(400).json({message: "Invalid id format"})
 
         const anyblocked = await GetBlockStateServer(data.id, followeeid)

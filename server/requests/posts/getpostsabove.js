@@ -7,7 +7,6 @@ const { validateid, validatetoken } = require('../../tools/tools')
 const GetPostsAbove = async (req, res) => {
     try {
         const postid = parseInt(req?.query?.postid, 10)
-
         if (!validateid(postid)) return res.status(400).json({message: "Invalid id format"})
 
         const data = req.accesstokendata

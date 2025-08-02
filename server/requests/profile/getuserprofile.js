@@ -2,14 +2,12 @@ require('dotenv').config()
 const db = require('../../config/database')
 const { getCachedValue, setCachedValue } = require('../../config/redis')
 const { GetImage } = require("../../tools/helper functions/getimage")
+const { validateid } = require('../../tools/tools')
 
 const GetUserProfile = async (req, res) => {
-
     try {
-        if (req.query == null || req.query.id == null) return res.status(400).json({message: "Missing data"})
-        
-        const id = req.query.id
-        if (isNaN(id)) return res.status(400).json({message: "Invalid id format"})
+        const id = req?.query?.id
+        if (!validateid(id)) return res.status(400).json({message: "Invalid id format"})
         let cacheduser = JSON.parse(await getCachedValue(`profile/${id}`))
         if (!cacheduser)
         {
@@ -31,7 +29,7 @@ const GetUserProfile = async (req, res) => {
             await setCachedValue(`profile/${id}`, process.env.PROFILE_CACHE_DURATION, JSON.stringify(cacheduser))
         }
 
-        if (cacheduser == null || cacheduser.bio == null || cacheduser.username == null || cacheduser.avatar == null || cacheduser.banner == null || cacheduser.tag == null || cacheduser.messagekey_public == null) return res.status(400).json({message: "User not found"})
+        if (cacheduser == null) return res.status(400).json({message: "User not found"})
 
         const avatarimage = await GetImage("avatar/" + (cacheduser.avatar == 1 ? id : "0"))
         const bannerimage = await GetImage("banner/" + (cacheduser.banner == 1 ? id : "0"))

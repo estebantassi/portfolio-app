@@ -3,23 +3,19 @@ const db = require('../../config/database')
 const { getCachedValue, setCachedValue } = require('../../config/redis')
 const { GetImage } = require("../../tools/helper functions/getimage")
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const { validatetoken } = require('../../tools/tools')
+const { validatetoken, validateid } = require('../../tools/tools')
 
 const GetPosts = async (req, res) => {
 
     try {
         const offset = parseInt(req?.query?.offset, 10)
         const repliedto = parseInt(req?.query?.repliedto, 10)
-        let date = req?.query?.date
-
-        const data = req.accesstokendata
-
-        if (offset == null || date == null) return res.status(400).json({message: "Missing data"})
-
-        date = new Date(date)
-        
+        const date = new Date(req?.query?.date)
         if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
+        if (!validateid(repliedto)) return res.status(400).json({message: "Invalid id format"})
+
+        const data = req.accesstokendata
 
         let [request] = await db.query(`
             SELECT *

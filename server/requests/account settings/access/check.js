@@ -10,22 +10,18 @@ const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
 const Check = async (req, res) => {
     let connection
     try {
-        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
-        if (req.body == null || req.body.srpProof == null || req.body.srpClientEphemeral == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
-
-        const oldsensitivedatatoken = req.cookies.sensitivedatatoken
-        const srpProof = req.body.srpProof
-        const srpClientEphemeral = req.body.srpClientEphemeral
-
+        //CHANGE ALLAT
+        const oldsensitivedatatoken = req?.cookies?.sensitivedatatoken
+        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
+        if (data2 == null || data2.step == null || data2.step != 0) return res.status(400).json({message: "Invalid token"})
+        
+        const srpProof = req?.body?.srpProof
+        const srpClientEphemeral = req?.body?.srpClientEphemeral
         if (!validatehex(srpProof)) return res.status(400).json({ message: "Invalid proof format" })
         if (!validatehex(srpClientEphemeral)) return res.status(400).json({ message: "Invalid ephemeral format" })
-        if (!validatetoken(oldsensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
 
         const data = req.accesstokendata
         if (data == null) return res.status(401).json({ message: "Authentication required" })
-
-        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step == null || data2.step != 0) return res.status(400).json({message: "Invalid token"})
 
         connection = await db.getConnection()
         await connection.beginTransaction()

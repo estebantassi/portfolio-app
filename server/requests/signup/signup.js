@@ -9,17 +9,14 @@ const Signup = async (req, res) => {
 
     let connection
     try {
-     if (req.body == null || req.body.username == null || req.body.email == null || req.body.emailcheck == null || req.body.salt == null || req.body.privatekey == null || req.body.publickey == null || req.body.srpSalt == null || req.body.srpVerifier == null)
-            return res.status(400).json({ message: "Missing data" })
-
-        const salt = req.body.salt
-        const publickey = req.body.publickey
-        const privatekey = req.body.privatekey
-        const srpsalt = req.body.srpSalt
-        const srpverifier = req.body.srpVerifier
-        const username = req.body.username
-        const email = req.body.email
-        const emailcheck = req.body.emailcheck
+        const salt = req?.body?.salt
+        const publickey = req?.body?.publickey
+        const privatekey = req?.body?.privatekey
+        const srpsalt = req?.body?.srpSalt
+        const srpverifier = req?.body?.srpVerifier
+        const username = req?.body?.username
+        const email = req?.body?.email
+        const emailcheck = req?.body?.emailcheck
 
         if (!validateusername(username))
         if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })

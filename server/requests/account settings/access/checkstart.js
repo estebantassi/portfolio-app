@@ -18,7 +18,8 @@ const CheckStart = async (req, res) => {
             WHERE id=?
         `, [data.id])
 
-        if (request == null || request.email_hash == null || request.srpsalt == null || request.srpverifier == null || request.email_encrypted == null) return res.status(400).json({message: "User not found"})
+        if (request == null) return res.status(400).json({message: "User not found"})
+            
         const hashedemail = request.email_hash
         const encryptedemail = request.email_encrypted
         const decryptedemail = decrypt(encryptedemail, process.env.EMAIL_ENCRYPTION_KEY)

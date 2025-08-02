@@ -11,23 +11,20 @@ const Enable2FA = async (req, res) => {
     let connection
 
     try {
-        if (req.body == null || req.body.code == null || req.body.privatekey == null || req.body.salt == null) return res.status(400).json({message: "Missing data"})
-        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
+        //CHANGE ALLAT
+        const oldsensitivedatatoken = req?.cookies?.sensitivedatatoken
+        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
+        if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
 
-        const code = req.body.code
-        const privatekey = req.body.privatekey
-        const salt = req.body.salt
-        const oldsensitivedatatoken = req.cookies.sensitivedatatoken
-
+        const code = req?.body?.code
+        const privatekey = req?.body?.privatekey
+        const salt = req?.body?.salt
         if (!validateprivatekey(privatekey))  return res.status(400).json({ message: "Invalid key format" })
         if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
         if (!validatecode(code)) return res.status(400).json({ message: "Invalid code format" })
-        if (!validatetoken(oldsensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
-
+        
         const data = req.accesstokendata
         if (data == null) return res.status(401).json({ message: "Authentication required" })
-        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
         
         connection = await db.getConnection()
         await connection.beginTransaction()
@@ -39,8 +36,7 @@ const Enable2FA = async (req, res) => {
             FOR UPDATE
             `, [data.id])
 
-        if (request == null || request["2FAsecret"] == null || request["2FA"] == null || request.username == null || request.email_encrypted == null)
-            return res.status(400).json({message: "User not found"})
+        if (request == null) return res.status(400).json({message: "User not found"})
 
         if (request["2FA"] == true) return res.status(400).json({message: "2FA already enabled"})
         if (request["2FAsecret"] == "") return res.status(400).json({message: "Invalid request"})

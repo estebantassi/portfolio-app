@@ -4,16 +4,17 @@ const db = require('../../../config/database')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
 const { v4: uuidv4 } = require('uuid')
 const transporter = require('../../../config/mailsender').transporter
-const { decrypt, hash, validateemail } = require('../../../tools/tools')
+const { decrypt, hash, validateemail, validatetoken } = require('../../../tools/tools')
 
 const RequestEmailChange = async (req, res) => {
 
     try {
-        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Wrong request"})
-        if (req.body == null || req.body.newemail == null || req.body.newemailcheck == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+        const sensitivedatatoken = req?.cookies?.sensitivedatatoken
+        const data2 = await GetTokenData(req, sensitivedatatoken, "sensitivedata")
+        if (data2 == null || data2.step < 1 || data2.step > 2) return res.status(400).json({message: "Invalid token"})
 
-        const newemail = req.body.newemail
-        const newemailcheck = req.body.newemailcheck
+        const newemail = req?.body?.newemail
+        const newemailcheck = req?.body?.newemailcheck
 
         if (newemail != newemailcheck) return res.status(400).json({message: "Emails don't match"})
 
@@ -22,8 +23,7 @@ const RequestEmailChange = async (req, res) => {
 
         const data = req.accesstokendata
         if (data == null) return res.status(401).json({ message: "Authentication required" })
-        const data2 = await GetTokenData(req, req.cookies.sensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step < 1 || data2.step > 2) return res.status(400).json({message: "Invalid token"})
+
     
         const hashednewemail = hash(newemail, process.env.EMAIL_HASH_KEY)
         const [[request]] = await db.query(`
@@ -40,7 +40,7 @@ const RequestEmailChange = async (req, res) => {
             WHERE id=?
         `, [data.id])
 
-        if (request2 == null || request2.email_encrypted == null || request2.username == null || request2["2FA"] == null) return res.status(400).json({message: "User not found"})
+        if (request2 == null) return res.status(400).json({message: "User not found"})
         if (data2.step == 1 && request2["2FA"] == 1) return res.status(400).json({message: "Forbidden"})
 
         const decryptedemail = decrypt(request2.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)

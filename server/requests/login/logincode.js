@@ -14,18 +14,13 @@ const { GetImage } = require('../../tools/helper functions/getimage')
 const LoginCode = async (req, res) => {
     let connection
     try {
-        if (req.cookies == null || req.cookies.logintoken == null) return res.status(400).json({message: "Missing token"})
-        if (req.body == null || req.body.code == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
-
-        const logintoken = req.cookies.logintoken
-        const code = req.body.code
-
-        if (!validatecode(code)) return res.status(400).json({message: "Invalid code format"})
-        if (!validatetoken(logintoken)) return res.status(400).json({ message: "Invalid token format" })
-
-        const data = await GetTokenData(req, req.cookies.logintoken, "logintoken")
+        const logintoken = req?.cookies?.logintoken
+        const data = await GetTokenData(req, logintoken, "logintoken")
         if (data == null || data.step == null || data.step != 1) return res.status(400).json({message: "Invalid token"})
-
+        
+        const code = req?.body?.code
+        if (!validatecode(code)) return res.status(400).json({message: "Invalid code format"})
+        
         connection = await db.getConnection()
         await connection.beginTransaction()
         const [[requestuser]] = await connection.query(`
@@ -35,10 +30,7 @@ const LoginCode = async (req, res) => {
             FOR UPDATE
         `, [data.id])
         
-        if (requestuser == null || requestuser["2FA"] == null || requestuser.username == null || requestuser.email_encrypted == null || requestuser.tag == null
-            || requestuser.messagekey_encrypted == null || requestuser.messagesalt == null || requestuser['2FAsecret'] == null || requestuser.avatar == null || requestuser.banner == null)
-            return res.status(400).json({message: "User not found"})
-
+        if (requestuser == null) return res.status(400).json({message: "User not found"})
 
         let request
         if (requestuser['2FA'] == 0)
@@ -50,10 +42,11 @@ const LoginCode = async (req, res) => {
                 LIMIT 1
             `, [data.id, req.body.code, 'logincode'])
 
-            if (request == null || request.id == null || request.expires_at == null) {
+            if (request == null) {
                 connection.rollback()
                 return res.status(400).json({message: "Invalid code"})
             }
+
         } else if (requestuser['2FA'] == 1)
         {
             const is2FAvalid = await Check2FAcode(data.id, req.body.code)
@@ -94,7 +87,7 @@ const LoginCode = async (req, res) => {
             VALUES (?, ?, ?, ?, ?)
         `, [data.id, 'access', accesstokenjti, accessdate.toISOString(), cryptedip])
 
-        if (tokenrequest == null || tokenrequest.insertId == null) {
+        if (tokenrequest == null) {
             await connection.rollback()
             return res.status(400).json({message: "Error"})
         }

@@ -5,10 +5,8 @@ require('dotenv').config()
 
 const GetBlockState = async (req, res) => {
     try {
-        if (req.query == null || req.query.user1 == null || req.query.user2 == null) return res.status(400).json({message: "Missing data"})
-        
-        const user1 = parseInt(req.query.user1, 10)
-        const user2 = parseInt(req.query.user2, 10)
+        const user1 = parseInt(req?.query?.user1, 10)
+        const user2 = parseInt(req?.query?.user2, 10)
         if (!validateid(user1)) return res.status(400).json({message: "Invalid id format"})
         if (!validateid(user2)) return res.status(400).json({message: "Invalid id format"})
 

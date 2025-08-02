@@ -3,15 +3,14 @@ const db = require('../../../config/database')
 const { setCachedValue, getCachedValue } = require('../../../config/redis')
 const { getIO } = require('../../../config/socketio')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const { validateid, validatetoken } = require('../../../tools/tools')
+const { validateid, validatetoken, validateanswer } = require('../../../tools/tools')
 const { GetFollowStateServer } = require('../../profile/follow/getfollowstateserver')
 
 const AcceptCall = async (req, res) => {
     try {
-        if (req.body == null || req.body.callerid == null || req.body.answer == null) return res.status(400).json({message: "Missing data"})
-        
-        const answer = req.body.answer
-        const callerid = req.body.callerid
+        const answer = req?.body?.answer
+        const callerid = req?.body?.callerid
+        if (!validateanswer(answer) == null) return res.status(400).json({message: "Invalid answer format"})
         if (!validateid(callerid)) return res.status(400).json({message: "Invalid id format"})
 
         const data = req.accesstokendata

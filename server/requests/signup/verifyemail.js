@@ -8,11 +8,7 @@ const VerifyEmail = async (req, res) => {
 
     let connection
     try {
-        if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
-
-        const token = req.body.token
-        if (!validatetoken(token)) return res.status(400).json({message: "Invalid token format"})
-
+        const token = req?.body?.token
         const data = await GetTokenData(req, token, "signup")
         if (data == null || data.email == null) return res.status(400).json({message: "Invalid link"})
 

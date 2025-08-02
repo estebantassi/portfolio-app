@@ -9,11 +9,7 @@ const transporter = require('../../../config/mailsender').transporter
 const OldEmailCheck = async (req, res) => {
 
     try {
-        if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
-
-        const token = req.body.token
-        if (!validatetoken(token)) return res.status(400).json({message: "Invalid token format"})
-
+        const token = req?.body?.token
         const data = await GetTokenData(req, token, "oldemailcheck")
         if (data == null || data.oldemail == null || data.newemail == null || data.username == null) return res.status(400).json({message: "Invalid link"})
 

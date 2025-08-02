@@ -8,21 +8,19 @@ const { deleteCachedValue } = require('../../config/redis')
 
 const DeleteMessage = async (req, res) => {
     try {
-        if (req.body == null || req.body.messageid == null) return res.status(400).json({message: "Missing data"})
-        
-        const messageid = req.body.messageid
+        const messageid = req?.body?.messageid
         if (!validateid(messageid)) return res.status(400).json({message: "Invalid id format"})
 
         const data = req.accesstokendata
         if (data == null) return res.status(401).json({ message: "Authentication required" })
             
         const [[message]] = await db.query(`
-            SELECT *
+            SELECT image, receiverid
             FROM messages
             WHERE id=? AND senderid=?
         `, [messageid, data.id])
 
-        if (message == null || message.image == null || message.receiverid == null) return res.status(400).json({message: "Message not deleted"})
+        if (message == null) return res.status(400).json({message: "Message not deleted"})
 
         await db.query(`
             DELETE FROM messages

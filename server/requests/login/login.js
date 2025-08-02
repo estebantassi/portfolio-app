@@ -12,23 +12,19 @@ const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 const Login = async (req, res) => {
     let connection
     try {
-        if (req.cookies == null || req.cookies.logintoken == null) return res.status(400).json({message: "Missing token"})
-        if (req.body == null || req.body.email == null || req.body.srpProof == null || req.body.srpClientEphemeral == null) return res.status(400).json({message: "Missing data"})
+        const logintoken = req?.cookies?.logintoken
+        const data = await GetTokenData(req, logintoken, "logintoken")
+        if (data == null || data.step == null || data.step != 0) return res.status(400).json({message: "Invalid token"})
 
-        const logintoken = req.cookies.logintoken
-        const email = req.body.email
-        const srpProof = req.body.srpProof
-        const srpClientEphemeral = req.body.srpClientEphemeral
-
+        const email = req?.body?.email
+        const srpProof = req?.body?.srpProof
+        const srpClientEphemeral = req?.body?.srpClientEphemeral
+        
         if (!validatehex(srpProof)) return res.status(400).json({ message: "Invalid proof format" })
         if (!validatehex(srpClientEphemeral)) return res.status(400).json({ message: "Invalid ephemeral format" })
-        if (!validatetoken(logintoken)) return res.status(400).json({ message: "Invalid token format" })
 
         const emailtest = validateemail(email)
         if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
-
-        const data = await GetTokenData(req, logintoken, "logintoken")
-        if (data == null || data.step == null || data.step != 0) return res.status(400).json({message: "Invalid token"})
 
         const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
 

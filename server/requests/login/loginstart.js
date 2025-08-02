@@ -8,9 +8,7 @@ const { setCachedValue } = require('../../config/redis')
 
 const LoginStart = async (req, res) => {
     try {
-        if (req.body == null || req.body.email == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
-
-        const email = req.body.email
+        const email = req?.body?.email
         const emailtest = validateemail(email)
         if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
         const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
@@ -21,7 +19,7 @@ const LoginStart = async (req, res) => {
             WHERE email_hash=?
         `, [hashedemail])
 
-        if (request == null || request.id == null || request.verified == null || request.srpsalt == null || request.srpverifier == null) return res.status(400).json({message: "User not found"})
+        if (request == null) return res.status(400).json({message: "User not found"})
         if (request.verified === 0) return res.status(400).json({message: "Your email isn't verified, please check your inbox"})
         const srpSalt = request.srpsalt
         const srpVerifier = request.srpverifier

@@ -8,19 +8,16 @@ const { Check2FAcode } = require('../../../tools/helper functions/check2facode')
 
 const Check2FA = async (req, res) => {
     try {
-        if (req.cookies == null || req.cookies.sensitivedatatoken == null) return res.status(400).json({message: "Missing token"})
-        if (req.body == null || req.body.code == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
+        //CHANGE ALLAT
+        const oldsensitivedatatoken = req?.cookies?.sensitivedatatoken
+        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
+        if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
 
-        const oldsensitivedatatoken = req.cookies.sensitivedatatoken
-        const code = req.body.code
-
+        const code = req?.body?.code
         if (!validatecode(code)) return res.status(400).json({ message: "Invalid code format" })
-        if (!validatetoken(oldsensitivedatatoken)) return res.status(400).json({ message: "Invalid token format" })
 
         const data = req.accesstokendata
         if (data == null) return res.status(401).json({ message: "Authentication required" })
-        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
 
         const is2FAvalid = await Check2FAcode(data.id, code)
         if (!is2FAvalid) return res.status(400).json({message: "Invalid code"})
@@ -31,7 +28,7 @@ const Check2FA = async (req, res) => {
             WHERE id=?
         `, [data.id])
 
-        if (request == null || request.email_encrypted == null || request["2FAsecret"] == null) return res.status(400).json({message: "User not found"})
+        if (request == null) return res.status(400).json({message: "User not found"})
         const encryptedemail = request.email_encrypted
         const decryptedemail = decrypt(encryptedemail, process.env.EMAIL_ENCRYPTION_KEY)
 

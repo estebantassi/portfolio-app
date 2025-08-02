@@ -10,11 +10,9 @@ const sharp = require('sharp')
 
 const EditProfile = async (req, res) => {
     try {
-        if (req.body == null || req.body.bio == null || req.body.username == null || req.body.tag == null) return res.status(400).json({message: "Missing data"})
-        
-        let bio = req.body.bio
-        let username = req.body.username
-        let tag = req.body.tag
+        let bio = req?.body?.bio
+        let username = req?.body?.username
+        let tag = req?.body?.tag
         let avatar = req?.files?.avatar?.data
         let banner = req?.files?.banner?.data
 

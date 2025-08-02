@@ -11,9 +11,6 @@ const Like = async (req, res) => {
     let connection
     try {
         const postid = req?.body?.postid
-
-        if (postid == null) return res.status(400).json({message: "Missing data"})
-        
         if (!validateid(postid)) return res.status(400).json({message: "Invalid id format"})
 
         const data = req.accesstokendata

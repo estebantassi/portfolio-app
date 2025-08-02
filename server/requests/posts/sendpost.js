@@ -13,9 +13,6 @@ const SendPost = async (req, res) => {
         const repliedto = req?.body?.repliedto
         const text = req?.body?.text
         const image = req?.files?.image
-        
-        if (repliedto == null || text == null || text == null) return res.status(400).json({message: "Please fill out all the necessary fields"})
-
         if (!validateid(repliedto) && repliedto != 0) return res.status(400).json({message: "Invalid id format"})
         if (!validateposttext(text)) return res.status(400).json({message: "Invalid text format"})
         //VALIDATE IMAGE

@@ -8,19 +8,14 @@ const { decrypt, validatetoken, validatesalt, validateprivatekey, validatesrpsal
 const ConfirmPasswordChange = async (req, res) => {
 
     try {
-        if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
-        
-        const token = req.body.token
-        if (!validatetoken(token))  return res.status(400).json({message: "Invalid token format"})
-
-        const data = await GetTokenData(req, req.body.token, "passwordemailcheck")
+        const token = req?.body?.token
+        const data = await GetTokenData(req, token, "passwordemailcheck")
         if (data == null || data.salt == null || data.privatekey == null || data.srpSalt == null || data.srpVerifier == null) return res.status(400).json({message: "Invalid token"})
 
         const salt = data.salt
         const privatekey = data.privatekey
         const srpsalt = data.srpSalt
         const srpverifier = data.srpVerifier
-
         if (!validatesalt(salt)) return res.status(400).json({message: "Invalid salt format"})
         if (!validateprivatekey(privatekey)) return res.status(400).json({message: "Invalid key format"})
         if (!validatesrpsalt(srpsalt)) return res.status(400).json({message: "Invalid salt format"})
@@ -32,7 +27,7 @@ const ConfirmPasswordChange = async (req, res) => {
             WHERE id=?
         `, [data.id])
 
-        if (request == null || request.email_encrypted == null || request.username == null) return res.status(400).json({message: "User not found"})
+        if (request == null) return res.status(400).json({message: "User not found"})
 
         const decryptedemail = decrypt(request.email_encrypted, process.env.EMAIL_ENCRYPTION_KEY)
         
@@ -41,11 +36,6 @@ const ConfirmPasswordChange = async (req, res) => {
             SET messagekey_encrypted=?, messagesalt=?, srpsalt=?, srpverifier=?
             WHERE id=?
             `, [data.privatekey, data.salt, data.srpSalt, data.srpVerifier, data.id])
-
-        // await db.query(`
-        //     DELETE FROM tokens
-        //     WHERE type=? AND value=? AND userid=?
-        // `, ["passwordemailcheck", data.jti, data.id])
 
         await db.query(`
             DELETE FROM tokens

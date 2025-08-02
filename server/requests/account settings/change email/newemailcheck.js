@@ -8,12 +8,8 @@ const NewEmailCheck = async (req, res) => {
 
     let connection
     try {
-        if (req.body == null || req.body.token == null) return res.status(400).json({message: "Missing token"})
-
-        const token = req.body.token
-        if (!validatetoken(token)) return res.status(400).json({message: "Invalid token format"})
-
-        const data = await GetTokenData(req, req.body.token, "newemailcheck")
+        const token = req?.body?.token
+        const data = await GetTokenData(req, token, "newemailcheck")
         if (data == null || data.oldemail == null || data.newemail == null) return res.status(400).json({message: "Invalid link"})
 
         const oldemailtest = validateemail(data.oldemail)
@@ -44,7 +40,7 @@ const NewEmailCheck = async (req, res) => {
             FOR UPDATE
         `, [data.id])
 
-        if (request2 == null || request2.email_encrypted == null || request2.username == null) {
+        if (request2 == null) {
             await connection.rollback()
             return res.status(400).json({message: "User not found"})
         }
