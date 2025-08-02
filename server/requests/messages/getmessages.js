@@ -7,8 +7,8 @@ const { GetImage } = require('../../tools/helper functions/getimage')
 
 const GetMessages = async (req, res) => {
     try {
-        const offset = req?.body?.offset
-        const receiverid = req?.body?.receiverid
+        const offset = parseInt(req?.query?.offset, 10)
+        const receiverid = parseInt(req?.query?.receiverid)
         const date = new Date(req?.query?.date)
         if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})

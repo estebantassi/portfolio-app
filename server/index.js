@@ -58,7 +58,7 @@ app.post('/auth/sensitivedata/disable2fa', require('./requests/account settings/
 
 //MESSAGES
 app.post('/auth/sendmessage', require ("./requests/messages/sendmessage").SendMessage)
-app.post('/auth/getmessages', require ("./requests/messages/getmessages").GetMessages)
+app.get('/auth/getmessages', require ("./requests/messages/getmessages").GetMessages)
 app.post('/auth/deletemessage', require ("./requests/messages/deletemessage").DeleteMessage)
 
 //CALL

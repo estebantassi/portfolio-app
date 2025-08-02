@@ -6,7 +6,7 @@ const { validateid } = require('../../tools/tools')
 
 const GetUserProfile = async (req, res) => {
     try {
-        const id = req?.query?.id
+        const id = parseInt(req?.query?.id, 10)
         if (!validateid(id)) return res.status(400).json({message: "Invalid id format"})
         let cacheduser = JSON.parse(await getCachedValue(`profile/${id}`))
         if (cacheduser == null)

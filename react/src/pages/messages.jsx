@@ -190,14 +190,12 @@ function Messages() {
         canLoadMessagesRef.current = false
 
         try {
-            const response = await axios.post('/auth/getmessages', {
-                receiverid: link, offset: messages.length, date
-            }, {
+            const response = await axios.get(`/auth/getmessages?receiverid=${link}&offset=${messages.length}&date=${date}`, {
                 withCredentials: true
             })
 
-            if (response == null || response.data == null || response.data.data == null) throw 'Error'
-            if (response.data.data.length == 0) return
+            //FIX THIS TO REQUEST END OF MESSAGES
+            if (response?.data?.data?.length == 0) return
 
             const encryptedMessages = response.data.data
             const decryptedMessages = await Promise.all(
