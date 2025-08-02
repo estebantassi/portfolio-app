@@ -8,9 +8,8 @@ const NewEmailCheck = async (req, res) => {
 
     let connection
     try {
-        const token = req?.body?.token
-        const data = await GetTokenData(req, token, "newemailcheck")
-        if (data == null || data.oldemail == null || data.newemail == null) return res.status(400).json({message: "Invalid link"})
+        const data = await GetTokenData(req, req?.body?.token, "newemailcheck")
+        if (data?.oldemail == null || data?.newemail == null) return res.status(400).json({message: "Invalid link"})
 
         const oldemailtest = validateemail(data.oldemail)
         if (oldemailtest.valid == false) return res.status(400).json({ message: oldemailtest.message })

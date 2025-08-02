@@ -16,7 +16,7 @@ const EditProfile = async (req, res) => {
         let avatar = req?.files?.avatar?.data
         let banner = req?.files?.banner?.data
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const [[request]] = await db.query(`
@@ -28,21 +28,21 @@ const EditProfile = async (req, res) => {
         let updateFields = []
         let updateValues = [];
 
-        if (request.tag != tag)
+        if (request?.tag != tag)
         {
             if (!validatetag(tag, data.id)) return res.status(400).json({message: "Invalid tag format"})
             updateFields.push(`tag = ?`)
             updateValues.push(tag)
         } else tag = request.tag
 
-        if (request.username != username)
+        if (request?.username != username)
         {
             if (!validateusername(username)) return res.status(400).json({message: "Invalid username format"})
             updateFields.push(`username = ?`)
             updateValues.push(username)
         } else username = request.username
 
-        if (request.bio != bio)
+        if (request?.bio != bio)
         {
             if (!validatebio(bio)) return res.status(400).json({message: "Invalid bio format"})
             updateFields.push(`bio = ?`)

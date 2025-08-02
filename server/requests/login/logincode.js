@@ -14,13 +14,12 @@ const { GetImage } = require('../../tools/helper functions/getimage')
 const LoginCode = async (req, res) => {
     let connection
     try {
-        const logintoken = req?.cookies?.logintoken
-        const data = await GetTokenData(req, logintoken, "logintoken")
-        if (data == null || data.step == null || data.step != 1) return res.status(400).json({message: "Invalid token"})
-        
         const code = req?.body?.code
         if (!validatecode(code)) return res.status(400).json({message: "Invalid code format"})
         
+        const data = await GetTokenData(req, req?.cookies?.logintoken, "logintoken")
+        if (data?.step != 1) return res.status(400).json({message: "Invalid token"})
+
         connection = await db.getConnection()
         await connection.beginTransaction()
         const [[requestuser]] = await connection.query(`

@@ -8,20 +8,20 @@ const { GetFollowStateServer } = require('../../profile/follow/getfollowstateser
 
 const GetCallState = async (req, res) => {
     try {
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         let state = true
         const call1 = JSON.parse(await getCachedValue(`call/${data.id}`))
-        if (!call1) state = false
+        if (call1 == null) state = false
 
         if (call1 && call1.status == "online")
         {
             const call2 = JSON.parse(await getCachedValue(`call/${call1.id}`))
-            if (!call2) state = false
+            if (call2 == null) state = false
         }
 
-        if (state && call1.status == "online") {
+        if (state && call1?.status == "online") {
             await setCachedValue(`call/${data.id}`, process.env.CALL_TIMEOUT_DURATION, JSON.stringify(call1))
         }
 

@@ -9,10 +9,6 @@ const { decrypt, hash, validateemail, validatetoken } = require('../../../tools/
 const RequestEmailChange = async (req, res) => {
 
     try {
-        const sensitivedatatoken = req?.cookies?.sensitivedatatoken
-        const data2 = await GetTokenData(req, sensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step < 1 || data2.step > 2) return res.status(400).json({message: "Invalid token"})
-
         const newemail = req?.body?.newemail
         const newemailcheck = req?.body?.newemailcheck
 
@@ -21,9 +17,11 @@ const RequestEmailChange = async (req, res) => {
         const emailtest = validateemail(newemail)
         if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
+        const data2 = await GetTokenData(req, req?.cookies?.sensitivedatatoken, "sensitivedata")
+        if (data2?.step != 1 && data2?.step != 2) return res.status(401).json({ message: "Authentication required" })
     
         const hashednewemail = hash(newemail, process.env.EMAIL_HASH_KEY)
         const [[request]] = await db.query(`

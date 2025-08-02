@@ -9,13 +9,11 @@ const Request2FA = async (req, res) => {
 
     let connection
     try {
-        //CHANGE ALLAT
-        const sensitivedatatoken = req?.cookies?.sensitivedatatoken
-        const data2 = await GetTokenData(req, sensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
-
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
+
+        const data2 = await GetTokenData(req, req?.cookies?.sensitivedatatoken, "sensitivedata")
+        if (data2?.step != 1) return res.status(401).json({ message: "Authentication required" })
 
         const secret = speakeasy.generateSecret({ name: 'Portfolio' })
         let cryptedsecret = encrypt(secret.base32, process.env.SECRET_ENCRYPTION_KEY)

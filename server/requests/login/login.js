@@ -12,16 +12,15 @@ const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 const Login = async (req, res) => {
     let connection
     try {
-        const logintoken = req?.cookies?.logintoken
-        const data = await GetTokenData(req, logintoken, "logintoken")
-        if (data == null || data.step == null || data.step != 0) return res.status(400).json({message: "Invalid token"})
-
         const email = req?.body?.email
         const srpProof = req?.body?.srpProof
         const srpClientEphemeral = req?.body?.srpClientEphemeral
         
         if (!validatehex(srpProof)) return res.status(400).json({ message: "Invalid proof format" })
         if (!validatehex(srpClientEphemeral)) return res.status(400).json({ message: "Invalid ephemeral format" })
+
+        const data = await GetTokenData(req, req?.cookies?.logintoken, "logintoken")
+        if (data?.step != 0) return res.status(400).json({message: "Invalid token"})
 
         const emailtest = validateemail(email)
         if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })

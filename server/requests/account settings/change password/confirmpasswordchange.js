@@ -7,15 +7,14 @@ const { decrypt, validatetoken, validatesalt, validateprivatekey, validatesrpsal
 
 const ConfirmPasswordChange = async (req, res) => {
 
-    try {
-        const token = req?.body?.token
-        const data = await GetTokenData(req, token, "passwordemailcheck")
-        if (data == null || data.salt == null || data.privatekey == null || data.srpSalt == null || data.srpVerifier == null) return res.status(400).json({message: "Invalid token"})
+    try { 
+        const data = await GetTokenData(req, req?.body?.token, "passwordemailcheck")
+        if (data == null) return res.status(400).json({message: "Invalid token"})
 
-        const salt = data.salt
-        const privatekey = data.privatekey
-        const srpsalt = data.srpSalt
-        const srpverifier = data.srpVerifier
+        const salt = data?.salt
+        const privatekey = data?.privatekey
+        const srpsalt = data?.srpSalt
+        const srpverifier = data?.srpVerifier
         if (!validatesalt(salt)) return res.status(400).json({message: "Invalid salt format"})
         if (!validateprivatekey(privatekey)) return res.status(400).json({message: "Invalid key format"})
         if (!validatesrpsalt(srpsalt)) return res.status(400).json({message: "Invalid salt format"})

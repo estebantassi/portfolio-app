@@ -11,7 +11,7 @@ const DeleteMessage = async (req, res) => {
         const messageid = req?.body?.messageid
         if (!validateid(messageid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
             
         const [[message]] = await db.query(`
@@ -27,7 +27,7 @@ const DeleteMessage = async (req, res) => {
             WHERE id=? AND senderid=?
         `, [messageid, data.id])
 
-        if (message.image == 1) {
+        if (message?.image == 1) {
             try {
                 await bucket.file(`messages/${messageid}`).delete();
             } catch (err) {

@@ -9,7 +9,7 @@ const GetUserProfile = async (req, res) => {
         const id = req?.query?.id
         if (!validateid(id)) return res.status(400).json({message: "Invalid id format"})
         let cacheduser = JSON.parse(await getCachedValue(`profile/${id}`))
-        if (!cacheduser)
+        if (cacheduser == null)
         {
             const [[request]] = await db.query(`
                 SELECT username, avatar, banner, tag, messagekey_public, bio

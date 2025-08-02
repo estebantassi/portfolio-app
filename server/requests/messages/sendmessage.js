@@ -18,7 +18,7 @@ const SendMessage = async (req, res) => {
         if (!validatemessage(text)) return res.status(400).json({message: "Invalid text format"})
         //VALIDATE IMAGE
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         if (data.id == receiverid) return res.status(400).json({message: "Can't send a message to yourself"})
@@ -27,7 +27,7 @@ const SendMessage = async (req, res) => {
         if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
 
         let hasimage = 0
-        if (image != null && image.data != null) hasimage = 1
+        if (image?.data != null) hasimage = 1
 
         const date = new Date()
         const [message] = await db.query(`

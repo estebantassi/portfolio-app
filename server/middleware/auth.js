@@ -5,10 +5,6 @@ require('dotenv').config()
 const AccessMiddleware = async (req, res, next) => {
     try {
         const token = req?.cookies?.accesstoken
-        if (!token) return res.status(400).json({ message: "Missing token" })
-
-        if (!validatetoken(token)) return res.status(400).json({ message: "Invalid token format" })
-
         req.accesstokendata = await GetTokenData(req, token, "access")
 
         next()

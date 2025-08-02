@@ -43,7 +43,7 @@ const Signup = async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [username, hashedemail, encryptedemail, date.toISOString(), privatekey, salt, publickey, srpsalt, srpverifier, messagekey_decrypter])
 
-        if (request == null || request.insertId == null) {
+        if (request == null) {
             await connection.rollback()
             return res.status(400).json({ message: "Couldn't create account" })
         }

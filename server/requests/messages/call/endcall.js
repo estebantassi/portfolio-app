@@ -8,11 +8,11 @@ const { GetFollowStateServer } = require('../../profile/follow/getfollowstateser
 
 const EndCall = async (req, res) => {
     try {
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const call1 = JSON.parse(await getCachedValue(`call/${data.id}`))
-        if (!call1 || call1.status != "online") return res.status(400).json({message: "Not in call"})
+        if (call1?.status != "online") return res.status(400).json({message: "Not in call"})
 
         await deleteCachedValue(`call/${call1.id}`)
         await deleteCachedValue(`call/${data.id}`)

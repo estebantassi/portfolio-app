@@ -9,7 +9,7 @@ const { CheckUserExpirations } = require("../../tools/helper functions/checkuser
 const UpdateAccessToken = async (req, res) => {
     let connection
     try {
-        const data = req.refreshtokendata
+        const data = await GetTokenData(req, req?.cookies?.refreshtoken, "refresh")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         connection = await db.getConnection()

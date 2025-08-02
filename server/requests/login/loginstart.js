@@ -20,7 +20,7 @@ const LoginStart = async (req, res) => {
         `, [hashedemail])
 
         if (request == null) return res.status(400).json({message: "User not found"})
-        if (request.verified === 0) return res.status(400).json({message: "Your email isn't verified, please check your inbox"})
+        if (request?.verified === 0) return res.status(400).json({message: "Your email isn't verified, please check your inbox"})
         const srpSalt = request.srpsalt
         const srpVerifier = request.srpverifier
 

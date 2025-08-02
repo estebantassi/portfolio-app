@@ -15,7 +15,7 @@ const GetPosts = async (req, res) => {
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
         if (!validateid(repliedto)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
         let [request] = await db.query(`
             SELECT *

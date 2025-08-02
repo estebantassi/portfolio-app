@@ -8,16 +8,14 @@ const { Check2FAcode } = require('../../../tools/helper functions/check2facode')
 
 const Check2FA = async (req, res) => {
     try {
-        //CHANGE ALLAT
-        const oldsensitivedatatoken = req?.cookies?.sensitivedatatoken
-        const data2 = await GetTokenData(req, oldsensitivedatatoken, "sensitivedata")
-        if (data2 == null || data2.step == null || data2.step != 1) return res.status(400).json({message: "Invalid token"})
-
         const code = req?.body?.code
         if (!validatecode(code)) return res.status(400).json({ message: "Invalid code format" })
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
+
+        const data2 = await GetTokenData(req, req?.cookies?.sensitivedatatoken, "sensitivedata")
+        if (data2?.step != 1) return res.status(401).json({ message: "Authentication required" })
 
         const is2FAvalid = await Check2FAcode(data.id, code)
         if (!is2FAvalid) return res.status(400).json({message: "Invalid code"})

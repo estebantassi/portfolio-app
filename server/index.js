@@ -28,6 +28,7 @@ app.use(bodyParser.json({ limit: '10mb' }))
 
 app.use(fileUpload())
 
+//REMOVE THIS BECAUSE ITS CLEARER TO NOT USE IT
 const { AccessMiddleware, RefreshMiddleware } = require('./middleware/auth')
 app.use('/auth', AccessMiddleware)
 app.use('/refreshtoken', RefreshMiddleware)

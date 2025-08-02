@@ -10,11 +10,11 @@ require('dotenv').config()
 const Follow = async (req, res) => {
     let connection
     try {
-        const data = req.accesstokendata
-        if (data == null) return res.status(401).json({ message: "Authentication required" })
-
         const followeeid = req?.body?.followeeid
         if (!validateid(followeeid)) return res.status(400).json({message: "Invalid id format"})
+
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
+        if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const anyblocked = await GetBlockStateServer(data.id, followeeid)
         if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
@@ -26,7 +26,7 @@ const Follow = async (req, res) => {
             WHERE id=?
         `, [followeeid])
 
-        if (!user) return res.status(400).json({message: "This user doesn't exist"})
+        if (user == null) return res.status(400).json({message: "This user doesn't exist"})
 
         connection = await db.getConnection()
         await connection.beginTransaction()

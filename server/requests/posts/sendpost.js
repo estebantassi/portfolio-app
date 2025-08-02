@@ -17,7 +17,7 @@ const SendPost = async (req, res) => {
         if (!validateposttext(text)) return res.status(400).json({message: "Invalid text format"})
         //VALIDATE IMAGE
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         let hasimage = 0

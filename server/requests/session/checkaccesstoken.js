@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const CheckAccessToken = async (req, res) => {
     try {
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
         return res.status(200).json({message: "Token is valid"})
     } catch (err) {

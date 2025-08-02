@@ -11,7 +11,7 @@ const Block = async (req, res) => {
         const blockedid = req?.body?.blockedid
         if (!validateid(blockedid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const [[user]] = await db.query(`
@@ -20,7 +20,7 @@ const Block = async (req, res) => {
             WHERE id=?
         `, [blockedid])
 
-        if (!user) return res.status(400).json({message: "This user doesn't exist"})
+        if (user == null) return res.status(400).json({message: "This user doesn't exist"})
 
         connection = await db.getConnection()
         await connection.beginTransaction()

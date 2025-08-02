@@ -9,7 +9,7 @@ const GetPostsAbove = async (req, res) => {
         const postid = parseInt(req?.query?.postid, 10)
         if (!validateid(postid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
         let currentid = postid
         let posts = []
@@ -21,7 +21,7 @@ const GetPostsAbove = async (req, res) => {
             `, [currentid])
 
             request.liked = false
-            if (data?.id && request?.id)
+            if (data.id && request?.id)
             {
                 const [[liked]] = await db.query(`
                     SELECT *
@@ -36,7 +36,7 @@ const GetPostsAbove = async (req, res) => {
             else request.image = null
 
             posts.unshift(request)
-            if (request.replied_to != 0) currentid = request.replied_to
+            if (request?.replied_to != 0) currentid = request.replied_to
             else break
         }
 

@@ -13,11 +13,11 @@ const AcceptCall = async (req, res) => {
         if (!validateanswer(answer) == null) return res.status(400).json({message: "Invalid answer format"})
         if (!validateid(callerid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const call1 = JSON.parse(await getCachedValue(`call/${callerid}`))
-        if (!call1 || call1.status != "pending" || call1.id != data.id) return res.status(400).json({message: "Call ended"})
+        if (call1?.status != "pending" || call1?.id != data.id) return res.status(400).json({message: "Call ended"})
 
         await setCachedValue(`call/${callerid}`, process.env.CALL_TIMEOUT_DURATION, JSON.stringify({status: "online", id: data.id}))
         await setCachedValue(`call/${data.id}`, process.env.CALL_TIMEOUT_DURATION, JSON.stringify({status: "online", id: callerid}))

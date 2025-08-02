@@ -13,7 +13,7 @@ const Like = async (req, res) => {
         const postid = req?.body?.postid
         if (!validateid(postid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const anyblocked = await GetBlockStateServer(data.id, post.poster_id)
@@ -26,7 +26,7 @@ const Like = async (req, res) => {
             WHERE id=?
         `, [postid])
 
-        if (!post) return res.status(400).json({message: "This post doesn't exist"})
+        if (post == null) return res.status(400).json({message: "This post doesn't exist"})
 
         connection = await db.getConnection()
         await connection.beginTransaction()

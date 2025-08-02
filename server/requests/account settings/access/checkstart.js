@@ -9,7 +9,7 @@ const { setCachedValue } = require('../../../config/redis')
 
 const CheckStart = async (req, res) => {
     try {
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const [[request]] = await db.query(`

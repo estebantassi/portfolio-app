@@ -10,8 +10,8 @@ const Logout = async (req, res) => {
         res.clearCookie("refreshtoken", { path: "/auth/refreshtoken" })
         res.clearCookie("accesstoken", { path: "/auth" })
         
-        const data = req.accesstokendata
-        const data2 = req.refreshtokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
+        const data2 = await GetTokenData(req, req?.cookies?.refreshtoken, "refresh")
 
         if (data2 != null)
         {

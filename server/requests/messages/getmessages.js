@@ -9,12 +9,12 @@ const GetMessages = async (req, res) => {
     try {
         const offset = req?.body?.offset
         const receiverid = req?.body?.receiverid
-        const date = new Date(req?.body?.date)
+        const date = new Date(req?.query?.date)
         if (!(date instanceof Date) || isNaN(date.getTime())) return res.status(400).json({message: "Invalid date format"})
         if (isNaN(offset) || offset < 0) return res.status(400).json({message: "Invalid offset format"})
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
         
         const anyblocked = await GetBlockStateServer(data.id, receiverid)
@@ -35,7 +35,7 @@ const GetMessages = async (req, res) => {
         `, [data.id, receiverid, receiverid, data.id, date.toISOString(), offset])
 
         for (const message of request) {
-            if (message.image == 1) message.image = await GetImage(`messages/${message.id}`)
+            if (message?.image == 1) message.image = await GetImage(`messages/${message.id}`)
         }
 
         return res.status(200).json({message: "Message sent", data: request})

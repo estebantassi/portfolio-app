@@ -13,7 +13,7 @@ const RequestCall = async (req, res) => {
         if (!validateoffer(offer)) return res.status(400).json({message: "Invalid offer format"})
         if (!validateid(calleeid)) return res.status(400).json({message: "Invalid id format"})
 
-        const data = req.accesstokendata
+        const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
         
         const followstate = await GetFollowStateServer(data.id, calleeid)
