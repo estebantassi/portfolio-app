@@ -6,7 +6,6 @@ import { useNavigate } from "react-router"
 import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64, fetchbase64image } from "../tools/tools"
 import srp from "secure-remote-password/client"
 import { io } from 'socket.io-client'
-import { useMemo } from "react"
 
 export const AuthContext = createContext()
 
@@ -22,7 +21,6 @@ export const AuthProvider = ({ children }) => {
     const [isNetworkButtonDisabled, setIsNetworkButtonDisabled] = useState(true)
     const networkTimeoutRef = useRef(null)
     const networkControllerRef = useRef(null)
-    const audioContextRef = useRef(null)
 
     const socketioRef = useRef(null)
     const socketTimeoutRef = useRef(null)
@@ -44,7 +42,7 @@ export const AuthProvider = ({ children }) => {
                 })
 
                 socketioRef.current.on('error', (data) => {
-                    addToast(data?.message || "Error with websocket", "red")
+                    console.log(data?.message)
                 })
 
                 socketioRef.current.on('profileupdate', async (data) => {
@@ -141,16 +139,19 @@ export const AuthProvider = ({ children }) => {
 
         networkTimeoutRef.current = setTimeout(() => {
             setIsNetworkButtonDisabled(false)
-        }, 3000)
+        }, 1500)
     }
 
     const login = async (data) => {
+        startnetworkrequest()
+
         try {
             const firstResponse = await axios.post('/loginstart',
                 {
                     email: data.email
                 }, {
-                withCredentials: true
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
             })
 
             if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemeral == null) throw "Error"
@@ -164,7 +165,8 @@ export const AuthProvider = ({ children }) => {
             const response = await axios.post('/logintoken/login', {
                 email: data.email, srpProof: srpClientSession.proof, srpClientEphemeral: srpClientEphemeral.public
             }, {
-                withCredentials: true
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
             })
             if (response == null || response.data == null || response.data.srpProof == null) throw "Error"
 
@@ -180,11 +182,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     const logincode = async (code, password) => {
+        startnetworkrequest()
+
         try {
             const response = await axios.post('/logintoken/logincode', {
                 code
             }, {
-                withCredentials: true
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
             })
 
             const encrypted2FAsecret = response.data.has2FA == 1 ? response.data.encrypted2FAsecret : ""
@@ -204,12 +209,13 @@ export const AuthProvider = ({ children }) => {
             navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
     const signup = async (data) => {
+        startnetworkrequest()
+
         try {
             const rawsalt = crypto.getRandomValues(new Uint8Array(16))
             const salt = btoa(String.fromCharCode(...rawsalt))
@@ -227,6 +233,8 @@ export const AuthProvider = ({ children }) => {
 
             const response = await axios.post('/signup', {
                 username: data.username, email: data.email, emailcheck: data.emailcheck, salt, privatekey, publickey: publickeybase64, srpSalt, srpVerifier
+            }, {
+                signal: networkControllerRef.current.signal
             })
 
             navigate("/login")
@@ -237,6 +245,8 @@ export const AuthProvider = ({ children }) => {
     }
 
     const logout = async () => {
+        startnetworkrequest()
+
         setUser(null)
         Cookies.remove("user")
         localStorage.removeItem("avatar")
@@ -248,7 +258,8 @@ export const AuthProvider = ({ children }) => {
 
         try {
             const response = await axios.get('/auth/refreshtoken/logout', {
-                withCredentials: true
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
             })
 
             addToast(response?.data?.message || "Success", "green")

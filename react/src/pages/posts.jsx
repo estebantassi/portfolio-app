@@ -9,6 +9,7 @@ import getuserprofile from '../tools/getuserprofile'
 import { useEffect } from 'react'
 import { useCallback } from 'react'
 import PostSender from '../components/postsender'
+import { useRef } from 'react'
 
 const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost }) => {
     const created_at = new Date(post.created_at)
@@ -18,7 +19,7 @@ const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isC
             {poster?.avatar && poster?.id && <NavLink to={`/profile/${poster.id}`}><img src={poster.avatar} alt="avatar" /></NavLink>}
             {post?.text && <h2>{post.text}</h2>}
             {post?.image && <img src={post.image} alt=""/>}
-            <p>{post?.id} {created_at.toLocaleString()}</p>
+            <p>{post?.id} {created_at.toLocaleString()} {"Likes : " + post?.like_count} {"Replies : " + post?.reply_count}</p>
             <button onClick={(e) => likePost(e, post.id)}>{post?.liked ? "Unlike" : "Like"}</button>
             {isConnected && <button onClick={(e) => {
                 e.stopPropagation()
@@ -33,11 +34,12 @@ const PostsAbove = memo(({ post, poster, navigate, setRepliedto, setShowPoster, 
     const created_at = new Date(post.created_at)
 
     return (
+        post.id == 0 ? null :
         <div className='postsabove-wrapper' onClick={() => navigate(`/posts/${post.id}`)}>
             {poster?.avatar && poster?.id && <NavLink to={`/profile/${poster.id}`}><img src={poster.avatar} alt="avatar" /></NavLink>}
             {post?.text && <h2>{post.text}</h2>}
             {post?.image && <img src={post.image} alt=""/>}
-            <p>{post?.id} {created_at.toLocaleString()}</p>
+            <p>{post?.id} {created_at.toLocaleString()} {"Likes : " + post?.like_count} {"Replies : " + post?.reply_count}</p>
             <button onClick={(e) => likePost(e, post.id)}>{post?.liked ? "Unlike" : "Like"}</button>
             {isConnected && <button onClick={(e) => {
                 e.stopPropagation()
@@ -48,9 +50,10 @@ const PostsAbove = memo(({ post, poster, navigate, setRepliedto, setShowPoster, 
     )
 })
 
-function Posts() {
-    const { link } = useParams()
+function Posts({ overrideLink }) {
     const navigate = useNavigate()
+    let { link } = useParams()
+    if (overrideLink != null) link = overrideLink
 
     const { user, avatar, banner } = useAuth()
     const { addToast } = useContext(ToastContext)
@@ -59,11 +62,14 @@ function Posts() {
     const [postsAbove, setPostsAbove] = useState([])
     const [replies, setReplies] = useState([])
     const [canLoadMoreReplies, setCanLoadMoreReplies] = useState(true)
+    const canLoadMoreRepliesRef = useRef(true)
+    const [canLoadMorePostsAbove, setCanLoadMorePostsAbove] = useState(true)
+    const canLoadMorePostsAboveRef = useRef(true)
     const [showPoster, setShowPoster] = useState(false)
     const [repliedto, setRepliedto] = useState(null)
 
     useEffect(() => {
-        if (isNaN(link) || !(link > 0)) {
+        if (isNaN(link) || !(link >= 0)) {
             addToast("This post doesn't exist", "red")
             return navigate("/home")
         }
@@ -72,38 +78,50 @@ function Posts() {
         setCanLoadMoreReplies(true)
         setPostsAbove([])
         setReplies([])
-        getPostsAbove()
+        getPostsAbove(link)
         getReplies(0)
     }, [link])
 
-    const getPostsAbove = async () => {
+    const getPostsAbove = async (id) => {
+        if (!canLoadMorePostsAboveRef.current) return
+        canLoadMorePostsAboveRef.current = false
+
         try {
-            const response = await axios.get(`/auth/getpostsabove?postid=${link}`, { withCredentials: true })
+            const response = await axios.get(`/auth/getpostsabove?postid=${id}`, { withCredentials: true })
 
             for (const post of response.data.posts) {
                 const poster = await getuserprofile(post.poster_id)
-                setPostsAbove(prev => [...prev, { poster, post }])
+                setPostsAbove(prev => [{ poster, post }, ...prev])
             }
+
+            setCanLoadMorePostsAbove(response.data.end)
 
         } catch (err) {
             if (err?.response?.status == 404) navigate("/home")
             addToast(err.response?.data?.message || "An error occurred", "red")
+        } finally {
+            canLoadMorePostsAboveRef.current = true
         }
     }
 
-    const getReplies = async (offset = replies.length) => {
+    const getReplies = async (offset) => {
+        if (!canLoadMoreRepliesRef.current) return
+        canLoadMoreRepliesRef.current = false
+
         try {
             const response = await axios.get(`/auth/getposts?date=${date}&repliedto=${link}&offset=${offset}`, { withCredentials: true })
 
             for (const post of response.data.posts) {
                 const poster = await getuserprofile(post.poster_id)
                 setReplies(prev => [...prev, { poster, post }])
-            }
+            }   
 
-            if (response.data.end) setCanLoadMoreReplies(false)
+            setCanLoadMoreReplies(response.data.end)
 
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
+        } finally {
+            canLoadMoreRepliesRef.current = true
         }
     }
 
@@ -118,7 +136,7 @@ function Posts() {
             setReplies(prev =>
                 prev.map(item =>
                     item.post.id === postid
-                    ? { ...item, post: { ...item.post, liked: response.data.liked } }
+                    ? { ...item, post: { ...item.post, liked: response.data.liked, like_count: item.post.like_count + (response.data.liked == true ? 1 : -1) } }
                     : item
                 )
             )
@@ -126,7 +144,7 @@ function Posts() {
             setPostsAbove(prev =>
                 prev.map(item =>
                     item.post.id === postid
-                    ? { ...item, post: { ...item.post, liked: response.data.liked } }
+                    ? { ...item, post: { ...item.post, liked: response.data.liked, like_count: item.post.like_count + (response.data.liked == true ? 1 : -1) } }
                     : item
                 )
             )
@@ -137,6 +155,8 @@ function Posts() {
 
     return (
         <>
+            {canLoadMorePostsAbove && <button onClick={() => getPostsAbove(postsAbove[0].post.replied_to)}>Load More</button>}
+
             {postsAbove.map((data) => (
                 <PostsAbove
                     key={data.post.id}
@@ -163,11 +183,9 @@ function Posts() {
                 />
             ))}
 
-            {showPoster && <PostSender setPosts={repliedto == link ? setReplies : null} repliedto={repliedto} setShowPoster={setShowPoster}/>}
+            {showPoster && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={repliedto} setShowPoster={setShowPoster} link={link}/>}
 
-            {canLoadMoreReplies && <button onClick={() => getReplies()}>Load More</button>}
-
-        {/* <button onClick={() => getPostsAbove()}>Load more posts</button> */}
+            {canLoadMoreReplies && <button onClick={() => getReplies(replies.length)}>Load More</button>}
         </>
     )
 }

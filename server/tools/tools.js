@@ -202,10 +202,12 @@ function validateposttext(text) {
 
 function validateanswer(answer) {
   if (answer == null) return false
+  return true
 }
 
 function validateoffer(offer) {
   if (offer == null) return false
+  return true
 }
 
 

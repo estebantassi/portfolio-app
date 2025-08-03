@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react"
 import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 
-function PostSender({ setPosts, repliedto, setShowPoster }) {
+function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
     const { user, avatar, banner } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
 
@@ -39,7 +39,24 @@ function PostSender({ setPosts, repliedto, setShowPoster }) {
             setImage("")
             setImagePreview("")
 
-            setPosts(prev => [{post: response.data.postdata, poster}, ...prev])
+            if (repliedto == link || repliedto == 0) setReplies(prev => [{post: response.data.postdata, poster}, ...prev])
+
+            setReplies(prev =>
+                prev.map(item =>
+                    item.post.id === repliedto
+                    ? { ...item, post: { ...item.post, reply_count: item.post.reply_count + 1 } }
+                    : item
+                )
+            )
+
+            setPosts(prev =>
+                prev.map(item =>
+                    item.post.id === repliedto
+                    ? { ...item, post: { ...item.post, reply_count: item.post.reply_count + 1 } }
+                    : item
+                )
+            )
+            
 
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {

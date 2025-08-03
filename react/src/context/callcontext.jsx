@@ -64,7 +64,7 @@ export const CallProvider = ({ children }) => {
                         console.error("Failed to add ICE candidate", err)
                     }
                 } else {
-                iceCandidateQueue.current.push(new RTCIceCandidate(data))
+                    iceCandidateQueue.current.push(new RTCIceCandidate(data))
                 }
             }
         })
@@ -149,7 +149,7 @@ export const CallProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            if (response.data.end) endCall()
+            if (response.data.end) endCall(false)
 
             startCallTimeout()
 
@@ -157,6 +157,7 @@ export const CallProvider = ({ children }) => {
             isInCallRef.current = {data: userdata, online: false}
             setIsInCall({data: userdata, online: false})
         } catch (err) {
+            endCall(false)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
@@ -181,7 +182,6 @@ export const CallProvider = ({ children }) => {
     }
 
     const endCall = async (share = true) => {
-        if (!isInCallRef.current) return
 
         if (share)
         {

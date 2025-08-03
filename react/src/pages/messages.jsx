@@ -258,7 +258,7 @@ function Messages() {
 
             <button onClick={() => { getmessages() }}>Get Messages</button>
 
-            <button onClick={() => { startCall(userdata) }}>Call</button>
+            <button disabled={socket ? false : true} onClick={() => { startCall(userdata) }}>Call</button>
 
             {messages.map((msg) => (
                 <MessageItem

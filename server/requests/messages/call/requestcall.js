@@ -19,7 +19,7 @@ const RequestCall = async (req, res) => {
         const followstate = await GetFollowStateServer(data.id, calleeid)
         if (followstate == null) followstate = 0
 
-        if (followstate != 2) return res.status(400).json({message: "Call failed, are you following each other ?"})
+        if (followstate != 2) return res.status(400).json({message: "You're not following each other"})
 
         let end = false
 

@@ -11,7 +11,6 @@ import { ToastProvider } from './context/toastcontext.jsx'
 import { AuthProvider } from './context/authcontext.jsx'
 import { CallProvider } from './context/callcontext.jsx'
 
-import Home from './pages/home.jsx'
 import Signup from './pages/signup.jsx'
 import Login from './pages/login.jsx'
 import Logout from './pages/logout.jsx'
@@ -37,7 +36,7 @@ createRoot(document.getElementById('root')).render(
               <Route path="*" element={<Navigate to='/home' />} />
 
               <Route element={<Anyroute />}>
-                <Route path="/home" element={<Home />} />
+                <Route path="/home" element={<Posts overrideLink={0} />} />
                 <Route path="/profile/:link" element={<Profile />} />
                 <Route path="/oldemailcheck/:link" element={<OldEmailCheck />} />
                 <Route path="/newemailcheck/:link" element={<NewEmailCheck />} />

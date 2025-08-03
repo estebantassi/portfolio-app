@@ -16,10 +16,6 @@ const Like = async (req, res) => {
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
-        const anyblocked = await GetBlockStateServer(data.id, post.poster_id)
-        if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
-        if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
-
         const [[post]] = await db.query(`
             SELECT poster_id
             FROM posts
@@ -27,6 +23,10 @@ const Like = async (req, res) => {
         `, [postid])
 
         if (post == null) return res.status(400).json({message: "This post doesn't exist"})
+
+        const anyblocked = await GetBlockStateServer(data.id, post.poster_id)
+        if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
+        if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
 
         connection = await db.getConnection()
         await connection.beginTransaction()

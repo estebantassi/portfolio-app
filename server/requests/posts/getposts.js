@@ -17,36 +17,41 @@ const GetPosts = async (req, res) => {
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
-        let [request] = await db.query(`
-            SELECT *
+        let sql = `
+            SELECT 
+                posts.*, 
+                COALESCE(likes_count.count, 0) AS like_count,
+                COALESCE(replies_count.count, 0) AS reply_count,
+                ${data?.id ? "CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END AS liked" : "false AS liked"}
             FROM posts
-            WHERE created_at <= ? AND replied_to=?
-            ORDER BY id DESC
+            LEFT JOIN (
+                SELECT replied_to, COUNT(*) AS count
+                FROM posts
+                GROUP BY replied_to
+            ) AS replies_count ON posts.id = replies_count.replied_to
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS count
+                FROM likes
+                GROUP BY post_id
+            ) AS likes_count ON posts.id = likes_count.post_id
+            ${data?.id ? "LEFT JOIN likes AS user_likes ON posts.id = user_likes.post_id AND user_likes.user_id = ?" : ""}
+            WHERE posts.created_at <= ? AND posts.replied_to = ?
+            ORDER BY posts.id DESC
             LIMIT 3
             OFFSET ?
-        `, [date.toISOString(), repliedto, offset])
+        `
+
+        let params = data?.id ? [data.id, date.toISOString(), repliedto, offset] : [date.toISOString(), repliedto, offset]
+        let [request] = await db.query(sql, params)
 
         const hasMore = request.length > 2
         request = request.slice(0, 2)
 
         for (const post of request) {
-            post.liked = false
-            if (data?.id && request?.id)
-            {
-                const [[liked]] = await db.query(`
-                    SELECT *
-                    FROM likes
-                    WHERE post_id=? AND user_id=?
-                `, [request.id, data.id])
-
-                if (liked) request.liked = true
-            }
-
-            if (post?.image) post.image = await GetImage(`posts/${post.id}`)
-            else post.image = null
+            post.image = post.image ? await GetImage(`posts/${post.id}`) : null
         }
 
-        return res.status(200).json({message: "Data retrieved", posts: request, end: !hasMore})
+        return res.status(200).json({message: "Data retrieved", posts: request, end: hasMore})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

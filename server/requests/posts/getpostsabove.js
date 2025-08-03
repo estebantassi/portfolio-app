@@ -7,45 +7,62 @@ const { validateid, validatetoken } = require('../../tools/tools')
 const GetPostsAbove = async (req, res) => {
     try {
         const postid = parseInt(req?.query?.postid, 10)
-        if (!validateid(postid)) return res.status(400).json({message: "Invalid id format"})
+        if (!validateid(postid)) return res.status(400).json({ message: "Invalid id format" })
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
         let currentid = postid
-        let posts = []
-        for (let i = 0; i < 5; i++) {
-            const [[request]] = await db.query(`
-                SELECT *
+        let postIds = []
+
+        while (true) {
+            const [[post]] = await db.query(`
+                SELECT id, replied_to
                 FROM posts
-                WHERE id=?
-            `, [currentid])
+                WHERE id=?`,
+            [currentid])
 
-            request.liked = false
-            if (data.id && request?.id)
-            {
-                const [[liked]] = await db.query(`
-                    SELECT *
-                    FROM likes
-                    WHERE post_id=? AND user_id=?
-                `, [request.id, data.id])
-
-                if (liked) request.liked = true
-            }
+            if (!post) break
             
-            if (request?.image == 1) request.image = await GetImage(`posts/${currentid}`)
-            else request.image = null
+            postIds.unshift(post.id)
+            if (post?.replied_to == 0) break
 
-            posts.unshift(request)
-            if (request?.replied_to != 0) currentid = request.replied_to
-            else break
+            currentid = post.replied_to
+
+            if (postIds.length > 2) break
         }
 
-        if (posts.length == 0) return res.status(404).json({message: "This post doesn't exist"})
+        const hasMore = postIds.length > 2
+        postIds.slice(0, 2)
 
-        return res.status(200).json({message: "Data retrieved", posts})
+        let sql = `
+            SELECT 
+                posts.*, 
+                COALESCE(likes_count.count, 0) AS like_count,
+                COALESCE(replies_count.count, 0) AS reply_count,
+                ${data?.id ? "CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END AS liked" : "false AS liked"}
+            FROM posts
+            LEFT JOIN (
+                SELECT replied_to, COUNT(*) AS count
+                FROM posts
+                GROUP BY replied_to
+            ) AS replies_count ON posts.id = replies_count.replied_to
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS count
+                FROM likes
+                GROUP BY post_id
+            ) AS likes_count ON posts.id = likes_count.post_id
+            ${data?.id ? "LEFT JOIN likes AS user_likes ON posts.id = user_likes.post_id AND user_likes.user_id = ?" : ""}
+            WHERE posts.id IN (?)
+        `
+        let params = data?.id ? [data.id, postIds] : [postIds]
+        const [posts] = await db.query(sql, params)
+
+        posts.reverse()
+
+        return res.status(200).json({ message: "Data retrieved", posts, end: hasMore})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
-        return res.status(500).json({message: "An error occured, please try again later"})
+        return res.status(500).json({ message: "An error occured, please try again later" })
     }
 }
 
