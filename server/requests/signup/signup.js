@@ -18,7 +18,7 @@ const Signup = async (req, res) => {
         const email = req?.body?.email
         const emailcheck = req?.body?.emailcheck
 
-        if (!validateusername(username))
+        if (!validateusername(username)) return res.status(400).json({ message: "Invalid username format" })
         if (!validatesalt(salt)) return res.status(400).json({ message: "Invalid salt format" })
         if (!validatepublickey(publickey)) return res.status(400).json({ message: "Invalid key format" })
         if (!validateprivatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
@@ -32,27 +32,24 @@ const Signup = async (req, res) => {
         const encryptedemail = encrypt(email, process.env.EMAIL_ENCRYPTION_KEY)
         const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
 
-        const messagekey_decrypter = generateRandomString(64)
-
         connection = await db.getConnection()
         await connection.beginTransaction()
 
         const date = new Date()
         const [request] = await connection.query(`
-            INSERT INTO users (username, email_hash, email_encrypted, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier, messagekey_decrypter)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [username, hashedemail, encryptedemail, date.toISOString(), privatekey, salt, publickey, srpsalt, srpverifier, messagekey_decrypter])
+            INSERT INTO users (username, email_hash, email_encrypted, created_at, messagekey_encrypted, messagesalt, messagekey_public, srpsalt, srpverifier)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [username, hashedemail, encryptedemail, date.toISOString(), privatekey, salt, publickey, srpsalt, srpverifier])
 
         if (request == null) {
             await connection.rollback()
             return res.status(400).json({ message: "Couldn't create account" })
         }
 
+        const verificationDurationMs = process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000
+        const verificationdate = new Date(Date.now() + verificationDurationMs)
         const verifyjti = uuidv4()
         const verifytoken = jwt.sign({ email, id: request.insertId, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
-
-        const verificationDurationMs = process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000
-        const verificationdate = new Date(date + verificationDurationMs)
 
         await connection.query(`
             INSERT INTO tokens (type, value, userid, expires_at)

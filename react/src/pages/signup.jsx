@@ -1,11 +1,17 @@
-import { useEffect, useState, useContext } from 'react'
+import { useEffect, useState, useContext, useRef } from 'react'
 import { ToastContext } from '../context/toastcontext'
 import { useAuth } from '../context/authcontext'
+import { EmailInput, PasswordInput, UsernameInput } from '../components/inputs'
+import { useNavigate } from 'react-router'
+import { arrayBufferToBase64, deriveKey, encryptDataKey } from '../tools/tools'
+import srp from "secure-remote-password/client"
+import axios from '../api/axios'
 
 function Signup() {
 
   const { addToast } = useContext(ToastContext)
-  const { signup } = useAuth()
+  const navigate = useNavigate()
+  const { startnetworkrequest, isNetworkButtonDisabled, networkControllerRef } = useAuth()
 
   const [data, setData] = useState({
     username: "",
@@ -14,63 +20,65 @@ function Signup() {
     password: "",
     passwordcheck: ""
   })
-  const [isbuttondisabled, setIsbuttondisabled] = useState(true)
-
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
-
-    return () => clearTimeout(timeout)
-  }, [])
 
   const signupform = async (e) => {
     e.preventDefault()
+    startnetworkrequest()
 
-    setIsbuttondisabled(true)
-    setTimeout(() => {
-      setIsbuttondisabled(false)
-    }, 3000)
+    try {
+      //Generate the private key for encryption and its values
+      const rawsalt = crypto.getRandomValues(new Uint8Array(16))
+      const salt = btoa(String.fromCharCode(...rawsalt))
+      const passwordKey = await deriveKey(data.password, "", salt)
 
-    for (const [key, value] of Object.entries(data)) if (value == "") return addToast("Please fill in all the fields", "red")
+      const keypair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"])
+      const privatekey = await encryptDataKey(keypair.privateKey, passwordKey)
 
-    if (data.username.length > 15) return addToast("Username is too long", "red")
-    if (data.username.length < 3) return addToast("Username is too short", "red")
+      const publickey = await crypto.subtle.exportKey('raw', keypair.publicKey)
+      const publickeybase64 = arrayBufferToBase64(publickey)
 
-    if (data.password.length > 30) return addToast("Password is too long", "red")
-    if (data.password.length < 8) return addToast("Password is too short", "red")
+      //Generate SRP values
+      const srpSalt = srp.generateSalt()
+      const srpPrivatekey = srp.derivePrivateKey(srpSalt, data.email, data.password)
+      const srpVerifier = srp.deriveVerifier(srpPrivatekey)
 
-    if (data.password != data.passwordcheck) return addToast("Passwords don't match", "red")
-    if (data.email != data.emailcheck) return addToast("Emails don't match", "red")
+      //Request account creation
+      const response = await axios.post('/signup', {
+          username: data.username, email: data.email, emailcheck: data.emailcheck, salt, privatekey, publickey: publickeybase64, srpSalt, srpVerifier
+      }, {
+          signal: networkControllerRef.current.signal
+      })
 
-    const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-    if (!emailRegexp.test(data.email)) return addToast("Email isn't valid", "red")
-
-    signup(data)
+      navigate("/login")
+      addToast(response?.data?.message || "Success", "green")
+    } catch (err) {
+        addToast(err.response?.data?.message || "An error occurred", "red")
+    }
   }
 
   return (
     <>
-      <h1>Sign Up</h1>
+      <h1>Signup</h1>
 
       <form onSubmit={(e) => signupform(e)}>
         <label>Username</label>
-        <input value={data.username} onChange={(e) => setData({ ...data, username: e.target.value })} />
+        <UsernameInput value={data.username} onChange={(e) => setData({ ...data, username: e.target.value })} />
 
         <label>Email</label>
-        <input value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
+        <EmailInput value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
 
         <label>Email Check</label>
-        <input value={data.emailcheck} onChange={(e) => setData({ ...data, emailcheck: e.target.value })} />
+        <EmailInput value={data.emailcheck} onChange={(e) => setData({ ...data, emailcheck: e.target.value })} />
 
         <label>Password</label>
-        <input value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
+        <PasswordInput value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
 
         <label>Password Check</label>
-        <input value={data.passwordcheck} onChange={(e) => setData({ ...data, passwordcheck: e.target.value })} />
+        <PasswordInput value={data.passwordcheck} onChange={(e) => setData({ ...data, passwordcheck: e.target.value })} />
         
-        <button disabled={isbuttondisabled}>SIGNUP</button>
+        <button disabled={isNetworkButtonDisabled}>
+          SIGNUP
+        </button>
       </form>
     </>
   )

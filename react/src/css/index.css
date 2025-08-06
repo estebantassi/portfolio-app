@@ -16,6 +16,18 @@ img{
     height: 50px;
 }
 
+input{
+    color: black;
+}
+
+input:valid{
+    background-color: palegreen;
+}
+
+input:invalid{
+    background-color: lightpink;
+}
+
 .avatar{
     border-radius: 100%;
 }

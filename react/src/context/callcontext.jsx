@@ -170,8 +170,7 @@ export const CallProvider = ({ children }) => {
                     withCredentials: true
                 })
 
-                if (response.data == null || response.data.state == null) throw "Error"
-                if (response.data.state == false) return endCall(false)
+                if (response?.data?.state == false) return endCall(false)
 
             } catch (err) {
                 return endCall(false)
@@ -182,11 +181,10 @@ export const CallProvider = ({ children }) => {
     }
 
     const endCall = async (share = true) => {
-
         if (share)
         {
             try {
-                const response = await axios.post('/auth/endcall', {}, {
+                await axios.post('/auth/endcall', {}, {
                     withCredentials: true
                 })
             } catch (err) {

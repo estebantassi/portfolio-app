@@ -7,8 +7,6 @@ const getuserprofile = async (id) => {
 
     try {
         let response = await axios.get('/getuserprofile?id=' + id)
-
-        if (response == null || response.data == null) throw 'Error'
         delete response.data.message
 
         response.data.expires = new Date(Date.now() + 60 * 1000)

@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useRef } from 'react'
 import { ToastContext } from '../context/toastcontext'
 import { useAuth } from '../context/authcontext'
 import axios from '../api/axios'
@@ -6,13 +6,14 @@ import { useState } from 'react'
 import { useNavigate } from "react-router"
 import { decryptDataKey, deriveKey, encryptDataKey, arrayBufferToBase64, base64ToArrayBuffer } from "../tools/tools"
 import srp from "secure-remote-password/client"
+import { CodeInput, EmailInput, PasswordInput } from '../components/inputs'
 
 function AccountSettings() {
 
   const navigate = useNavigate()
 
   const { addToast } = useContext(ToastContext)
-  const { user, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled } = useAuth()
+  const { logout, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled } = useAuth()
   const [isauth, setIsauth] = useState(false)
   const [password, setPassword] = useState("")
   const [showaccesscode2FA, setShowaccesscode2FA] = useState(false)
@@ -32,8 +33,6 @@ function AccountSettings() {
   const [encrypted2FAsecret, setEncrypted2FAsecret] = useState("")
 
   useEffect(() => {
-    startnetworkrequest()
-    
     const leavepagetimeout = setTimeout(() => {
       navigate('/home')
     }, 10 * 60 * 1000)
@@ -41,7 +40,6 @@ function AccountSettings() {
     return () => {
       clearTimeout(leavepagetimeout)
     }
-
   }, [])
 
   const accesssettings = async (e) => {
@@ -112,7 +110,7 @@ function AccountSettings() {
     startnetworkrequest()
 
     try {
-      const request = await axios.post('/auth/sensitivedata/requestemailchange', {
+      const request = await axios.post('/auth/sensitivedata/accountsettings/requestemailchange', {
         newemail, newemailcheck
       }, {
         withCredentials: true,
@@ -136,7 +134,8 @@ function AccountSettings() {
       const rawsalt = crypto.getRandomValues(new Uint8Array(16))
       const salt = btoa(String.fromCharCode(...rawsalt))
 
-      const rawKey = base64ToArrayBuffer(user.key)
+      const userkey = localStorage.getItem("messagekey")
+      const rawKey = base64ToArrayBuffer(userkey)
       const dataKey = await crypto.subtle.importKey(
         'pkcs8',
         rawKey,
@@ -172,6 +171,7 @@ function AccountSettings() {
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
+      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
@@ -181,7 +181,7 @@ function AccountSettings() {
     startnetworkrequest()
 
     try {
-      const request = await axios.post('/auth/sensitivedata/request2fa', {}, {
+      const request = await axios.post('/auth/sensitivedata/accountsettings/request2fa', {}, {
         withCredentials: true,
         signal: networkControllerRef.current.signal
       })
@@ -201,7 +201,8 @@ function AccountSettings() {
     const rawsalt = crypto.getRandomValues(new Uint8Array(16))
     const salt = btoa(String.fromCharCode(...rawsalt))
 
-    const rawKey = base64ToArrayBuffer(user.key)
+    const userkey = localStorage.getItem("messagekey")
+    const rawKey = base64ToArrayBuffer(userkey)
     const dataKey = await crypto.subtle.importKey(
       'pkcs8',
       rawKey,
@@ -221,7 +222,7 @@ function AccountSettings() {
     const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
 
     try {
-      const request = await axios.post('/auth/sensitivedata/enable2FA', {
+      const request = await axios.post('/auth/sensitivedata/accountsettings/enable2FA', {
         code: code2FA,
         salt,
         privatekey
@@ -248,7 +249,8 @@ function AccountSettings() {
       const rawsalt = crypto.getRandomValues(new Uint8Array(16))
       const salt = btoa(String.fromCharCode(...rawsalt))
 
-      const rawKey = base64ToArrayBuffer(user.key)
+      const userkey = localStorage.getItem("messagekey")
+      const rawKey = base64ToArrayBuffer(userkey)
       const dataKey = await crypto.subtle.importKey(
         'pkcs8',
         rawKey,
@@ -267,7 +269,7 @@ function AccountSettings() {
       const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', decryptedkey)
       const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
 
-      const request = await axios.post('/auth/sensitivedata/disable2fa', {
+      const request = await axios.post('/auth/sensitivedata/accountsettings/disable2fa', {
         salt,
         privatekey
       }, {
@@ -284,27 +286,50 @@ function AccountSettings() {
     }
   }
 
+    const LogoutAllUsers = async () => {
+      startnetworkrequest()
+
+      try {
+        const request = await axios.post('/auth/sensitivedata/accountsettings/logoutallusers', {}, {
+          withCredentials: true,
+          signal: networkControllerRef.current.signal
+        })
+
+        logout()
+        addToast(request?.data?.message || "Success", "green")
+      } catch (err) {
+        addToast(err.response?.data?.message || "An error occurred", "red")
+      }
+    }
+
   return (
 
     isauth ? <>
 
       <p>Email: {email}</p>
+      <button onClick={() => {LogoutAllUsers()}} disabled={isNetworkButtonDisabled}>Logout all sessions</button>
+
+{/*//////////////////// CHANGE EMAIL ////////////////////*/}
 
       <form onSubmit={(e) => requestnewemail(e)}>
         <label>New email</label>
-        <input value={newemail} onChange={(e) => setNewemail(e.target.value)} />
-        <input value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} />
+        <EmailInput value={newemail} onChange={(e) => setNewemail(e.target.value)} />
+        <EmailInput value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} />
 
         <button disabled={isNetworkButtonDisabled}>Change email</button>
       </form>
 
+{/*//////////////////// CHANGE PASSWORD ////////////////////*/}
+
       <form onSubmit={(e) => requestnewpassword(e)}>
         <label>New password</label>
-        <input value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
-        <input value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)} />
+        <PasswordInput value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
+        <PasswordInput value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)}/>
 
         <button disabled={isNetworkButtonDisabled}>Change password</button>
       </form>
+
+{/*//////////////////// TOGGLE 2FA ////////////////////*/}
 
       {has2FA ? <>
         <h1>2FA Enabled</h1>
@@ -323,7 +348,7 @@ function AccountSettings() {
       </> : <>
       </>}
 
-
+{/*//////////////////// ENABLE 2FA ////////////////////*/}
       {qrcode && !has2FA ? <>
         <form onSubmit={(e) => {
           e.preventDefault()
@@ -342,12 +367,12 @@ function AccountSettings() {
 
       {isqrcodescanned && !has2FA ? <>
         <form onSubmit={(e) => check2FAcode(e)}>
-          <input value={code2FA} onChange={(e) => setCode2FA(e.target.value)} />
+          <CodeInput value={code2FA} onChange={(e) => setCode2FA(e.target.value)} />
           <button disabled={isNetworkButtonDisabled}>Enable 2FA</button>
         </form>
       </> : <></>}
 
-
+{/*//////////////////// ACCESS THE PAGE ////////////////////*/}
     </>
       :
       <>
@@ -355,12 +380,12 @@ function AccountSettings() {
           {
             showaccesscode2FA ? <>
               <label>Enter 2FA code from Authenticator App</label>
-              <input value={accesscode2FA} onChange={(e) => setAccesscode2FA(e.target.value)} />
+              <CodeInput value={accesscode2FA} onChange={(e) => setAccesscode2FA(e.target.value)} />
             </>
               :
               <>
                 <label>Password</label>
-                <input value={password} onChange={(e) => setPassword(e.target.value)} />
+                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} />
               </>
           }
 

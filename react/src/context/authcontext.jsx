@@ -3,8 +3,7 @@ import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import Cookies from 'js-cookie'
 import { useNavigate } from "react-router"
-import { deriveKey, encryptDataKey, decryptDataKey, arrayBufferToBase64, fetchbase64image } from "../tools/tools"
-import srp from "secure-remote-password/client"
+import { fetchbase64image } from "../tools/tools"
 import { io } from 'socket.io-client'
 
 export const AuthContext = createContext()
@@ -13,15 +12,21 @@ export const AuthProvider = ({ children }) => {
 
     const navigate = useNavigate()
     const { addToast } = useContext(ToastContext)
+
+    //User data
     const [user, setUser] = useState(Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null)
     const [avatar, setAvatar] = useState(localStorage.getItem("avatar"))
     const [banner, setBanner] = useState(localStorage.getItem("banner"))
-    const timeoutRef = useRef(null)
 
+    //TimeoutRef for updating/checking user
+    const authCheckTimeoutRef = useRef(null)
+
+    //Main network pipeline (singular non-stackable requests)
     const [isNetworkButtonDisabled, setIsNetworkButtonDisabled] = useState(true)
     const networkTimeoutRef = useRef(null)
     const networkControllerRef = useRef(null)
 
+    //WebSockets
     const socketioRef = useRef(null)
     const socketTimeoutRef = useRef(null)
     const [socket, setSocket] = useState(null)
@@ -32,19 +37,23 @@ export const AuthProvider = ({ children }) => {
 
         socketTimeoutRef.current = setTimeout(async () => {
             try {
+                //Connect to websockets after 1 second on page reload to prevent spamming
                 socketioRef.current = io('http://localhost:4444', {
                     path: '/auth/socket.io',
                     withCredentials: true,
                 })
 
+                //Initiate socket
                 socketioRef.current.on('connect', () => {
                     setSocket(socketioRef.current)
                 })
 
+                //Log the errors (might not need in release)
                 socketioRef.current.on('error', (data) => {
-                    console.log(data?.message)
+                    console.log(data?.message || "Error with websockets")
                 })
 
+                //Update profile in real-time
                 socketioRef.current.on('profileupdate', async (data) => {
                     setUser(prev => ({...prev, username: data.username, bio: data.bio, tag: data.tag}))
 
@@ -58,22 +67,19 @@ export const AuthProvider = ({ children }) => {
                     }
                 })
 
+                //Fetch profile on page reload to check for changes
                 const response = await axios.get('/getuserprofile?id=' + user.id)
 
                 const avatarBase64 = await fetchbase64image(response.data.avatar)
-                if (avatarBase64){
-                    if (avatar != avatarBase64) {
-                        setAvatar(avatarBase64)
-                        localStorage.setItem("avatar", avatarBase64)
-                    }
+                if (avatarBase64 && avatar != avatarBase64){
+                    setAvatar(avatarBase64)
+                    localStorage.setItem("avatar", avatarBase64)
                 }
 
                 const bannerBase64 = await fetchbase64image(response.data.banner)
-                if (bannerBase64){
-                    if (banner != bannerBase64) {
-                        setBanner(bannerBase64)
-                        localStorage.setItem("banner", bannerBase64)
-                    }
+                if (bannerBase64 && banner != bannerBase64){
+                    setBanner(bannerBase64)
+                    localStorage.setItem("banner", bannerBase64)
                 }
 
                 const newuserdata = {username: response.data.username, tag: response.data.tag, bio: response.data.bio}
@@ -100,20 +106,24 @@ export const AuthProvider = ({ children }) => {
         }
     }, [user?.id])
 
+    //Update user on change and restart the auth logic
     useEffect(() => {
         if (!user) return
-        if (!timeoutRef.current) checkauth()
+        if (!authCheckTimeoutRef.current) checkauth()
         Cookies.set("user", JSON.stringify(user))
 
         return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current)
-                timeoutRef.current = null
+            if (authCheckTimeoutRef.current) {
+                clearTimeout(authCheckTimeoutRef.current)
+                authCheckTimeoutRef.current = null
             }
         }
     }, [user])
     
+    //Check for expired items in localstorage
     useEffect(() => {
+        startnetworkrequest()
+
         const keys = Object.keys(localStorage)
         for (const key of keys) {
             try {
@@ -139,109 +149,7 @@ export const AuthProvider = ({ children }) => {
 
         networkTimeoutRef.current = setTimeout(() => {
             setIsNetworkButtonDisabled(false)
-        }, 1500)
-    }
-
-    const login = async (data) => {
-        startnetworkrequest()
-
-        try {
-            const firstResponse = await axios.post('/loginstart',
-                {
-                    email: data.email
-                }, {
-                withCredentials: true,
-                signal: networkControllerRef.current.signal
-            })
-
-            if (firstResponse == null || firstResponse.data == null || firstResponse.data.srpSalt == null || firstResponse.data.srpServerEphemeral == null) throw "Error"
-            const srpSalt = firstResponse.data.srpSalt
-            const srpServerEphemeral = firstResponse.data.srpServerEphemeral
-
-            const srpClientEphemeral = srp.generateEphemeral()
-            const srpPrivateKey = srp.derivePrivateKey(srpSalt, data.email, data.password)
-            const srpClientSession = srp.deriveSession(srpClientEphemeral.secret, srpServerEphemeral, srpSalt, data.email, srpPrivateKey)
-
-            const response = await axios.post('/logintoken/login', {
-                email: data.email, srpProof: srpClientSession.proof, srpClientEphemeral: srpClientEphemeral.public
-            }, {
-                withCredentials: true,
-                signal: networkControllerRef.current.signal
-            })
-            if (response == null || response.data == null || response.data.srpProof == null) throw "Error"
-
-            try { srp.verifySession(srpClientEphemeral.public, srpClientSession, response.data.srpProof) } catch { throw "Error" }
-
-            addToast(response?.data?.message || "Success", "green")
-            if (response.data["2FA"]) return 2
-            else return 1
-        } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
-            return 0
-        }
-    }
-
-    const logincode = async (code, password) => {
-        startnetworkrequest()
-
-        try {
-            const response = await axios.post('/logintoken/logincode', {
-                code
-            }, {
-                withCredentials: true,
-                signal: networkControllerRef.current.signal
-            })
-
-            const encrypted2FAsecret = response.data.has2FA == 1 ? response.data.encrypted2FAsecret : ""
-            const passwordKey = await deriveKey(password, encrypted2FAsecret, response.data.user.salt)
-            const key = await decryptDataKey(response.data.user.encryptedkey, passwordKey)
-            const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', key)
-            const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
-
-            localStorage.setItem("messagekey", keyBase64)
-            setUser({
-                id: response.data.user.id,
-                username: response.data.user.username,
-                tag: response.data.user.tag,
-                bio: response.data.user.bio
-            })
-
-            navigate("/home")
-            addToast(response?.data?.message || "Success", "green")
-        } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
-        }
-    }
-
-    const signup = async (data) => {
-        startnetworkrequest()
-
-        try {
-            const rawsalt = crypto.getRandomValues(new Uint8Array(16))
-            const salt = btoa(String.fromCharCode(...rawsalt))
-            const passwordKey = await deriveKey(data.password, "", salt)
-
-            const keypair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"])
-            const privatekey = await encryptDataKey(keypair.privateKey, passwordKey)
-
-            const publickey = await crypto.subtle.exportKey('raw', keypair.publicKey)
-            const publickeybase64 = arrayBufferToBase64(publickey)
-
-            const srpSalt = srp.generateSalt()
-            const srpPrivatekey = srp.derivePrivateKey(srpSalt, data.email, data.password)
-            const srpVerifier = srp.deriveVerifier(srpPrivatekey)
-
-            const response = await axios.post('/signup', {
-                username: data.username, email: data.email, emailcheck: data.emailcheck, salt, privatekey, publickey: publickeybase64, srpSalt, srpVerifier
-            }, {
-                signal: networkControllerRef.current.signal
-            })
-
-            navigate("/login")
-            addToast(response?.data?.message || "Success", "green")
-        } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
-        }
+        }, 1000)
     }
 
     const logout = async () => {
@@ -276,9 +184,9 @@ export const AuthProvider = ({ children }) => {
 
         if (now - lastCheck >= 3000) {
             localStorage.setItem("authtimer", now)
-            if (await checktoken()) timeoutRef.current = setTimeout(checkauth, 3000)
+            if (await checktoken()) authCheckTimeoutRef.current = setTimeout(checkauth, 3000)
         } else {
-            timeoutRef.current = setTimeout(checkauth, nextCheckDelay)
+            authCheckTimeoutRef.current = setTimeout(checkauth, nextCheckDelay)
         }
     }
 
@@ -305,9 +213,6 @@ export const AuthProvider = ({ children }) => {
         user,
         setUser,
         logout,
-        login,
-        signup,
-        logincode,
         startnetworkrequest,
         networkControllerRef,
         isNetworkButtonDisabled,

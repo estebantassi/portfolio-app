@@ -42,7 +42,7 @@ const RequestPasswordChange = async (req, res) => {
             salt: salt,
             privatekey: privatekey
         }, process.env.PASSWORDEMAILCHECK_TOKEN_SECRET)
-                    
+
         const verificationDurationMs = process.env.PASSWORDEMAILCHECK_TOKEN_DURATION * 60 * 60 * 1000
         const verificationdate = new Date(Date.now() + verificationDurationMs)
 

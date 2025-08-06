@@ -61,6 +61,7 @@ const GetTokenData = async (req, token, type) => {
 
         if (new Date(cachedtoken.expires_at) < new Date())
         {
+            console.log(cachedtoken)
             if (type == "refresh" && decode.accesstokenid != null)
             {
                 if (isNaN(decode.accesstokenid)) return null

@@ -45,16 +45,19 @@ app.post('/auth/sensitivedata/accountsettings/check2fa', require('./requests/acc
 //CHANGE EMAIL
 app.post('/oldemailcheck', require('./requests/account settings/change email/oldemailcheck').OldEmailCheck)
 app.post('/newemailcheck', require('./requests/account settings/change email/newemailcheck').NewEmailCheck)
-app.post('/auth/sensitivedata/requestemailchange', require('./requests/account settings/change email/requestemailchange').RequestEmailChange)
+app.post('/auth/sensitivedata/accountsettings/requestemailchange', require('./requests/account settings/change email/requestemailchange').RequestEmailChange)
 
 //CHANGE PASSWORD
 app.post('/confirmpasswordchange', require('./requests/account settings/change password/confirmpasswordchange').ConfirmPasswordChange)
 app.post('/auth/sensitivedata/accountsettings/requestpasswordchange', require('./requests/account settings/change password/requestpasswordchange').RequestPasswordChange)
 
+//LOGOUT ALL USERS
+app.post('/auth/sensitivedata/accountsettings/logoutallusers', require('./requests/account settings/logoutallusers').LogoutAllUsers)
+
 //CHANGE 2FA
-app.post('/auth/sensitivedata/request2fa', require('./requests/account settings/change 2FA/request2fa').Request2FA)
-app.post('/auth/sensitivedata/enable2fa', require('./requests/account settings/change 2FA/enable2fa').Enable2FA)
-app.post('/auth/sensitivedata/disable2fa', require('./requests/account settings/change 2FA/disable2fa').Disable2FA)
+app.post('/auth/sensitivedata/accountsettings/request2fa', require('./requests/account settings/change 2FA/request2fa').Request2FA)
+app.post('/auth/sensitivedata/accountsettings/enable2fa', require('./requests/account settings/change 2FA/enable2fa').Enable2FA)
+app.post('/auth/sensitivedata/accountsettings/disable2fa', require('./requests/account settings/change 2FA/disable2fa').Disable2FA)
 
 //MESSAGES
 app.post('/auth/sendmessage', require ("./requests/messages/sendmessage").SendMessage)

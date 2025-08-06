@@ -34,12 +34,7 @@ const ConfirmPasswordChange = async (req, res) => {
             UPDATE users
             SET messagekey_encrypted=?, messagesalt=?, srpsalt=?, srpverifier=?
             WHERE id=?
-            `, [data.privatekey, data.salt, data.srpSalt, data.srpVerifier, data.id])
-
-        await db.query(`
-            DELETE FROM tokens
-            WHERE userid=?
-        `, [data.id])
+        `, [data.privatekey, data.salt, data.srpSalt, data.srpVerifier, data.id])
 
         transporter.sendMail({
             from: '"Portfolio security system" <' + process.env.EMAIL + '>',
