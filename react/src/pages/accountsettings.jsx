@@ -47,8 +47,7 @@ function AccountSettings() {
     startnetworkrequest()
 
     try {
-      if (showaccesscode2FA)
-      {
+      if (showaccesscode2FA) {
         const response = await axios.post('/auth/sensitivedata/accountsettings/check2fa', {
           code: accesscode2FA,
         }, {
@@ -149,7 +148,7 @@ function AccountSettings() {
 
       const passwordKey = await deriveKey(newpassword, encrypted2FAsecret, salt)
       const privatekey = await encryptDataKey(dataKey, passwordKey)
-    
+
       const decryptedkey = await decryptDataKey(privatekey, passwordKey)
       const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', decryptedkey)
       const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
@@ -286,50 +285,66 @@ function AccountSettings() {
     }
   }
 
-    const LogoutAllUsers = async () => {
-      startnetworkrequest()
+  const LogoutAllUsers = async () => {
+    startnetworkrequest()
 
-      try {
-        const request = await axios.post('/auth/sensitivedata/accountsettings/logoutallusers', {}, {
-          withCredentials: true,
-          signal: networkControllerRef.current.signal
-        })
+    try {
+      const request = await axios.post('/auth/sensitivedata/accountsettings/logoutallusers', {}, {
+        withCredentials: true,
+        signal: networkControllerRef.current.signal
+      })
 
-        logout()
-        addToast(request?.data?.message || "Success", "green")
-      } catch (err) {
-        addToast(err.response?.data?.message || "An error occurred", "red")
-      }
+      logout()
+      addToast(request?.data?.message || "Success", "green")
+    } catch (err) {
+      addToast(err.response?.data?.message || "An error occurred", "red")
     }
+  }
+
+  const newemailInputRef = useRef(null)
+  const newemailcheckInputRef = useRef(null)
+  const newemailButtonDisabled = isNetworkButtonDisabled || !newemailInputRef.current?.checkValidity() || !newemailcheckInputRef.current?.checkValidity()
+
+  const newpasswordInputRef = useRef(null)
+  const newpasswordcheckInputRef = useRef(null)
+  const newpasswordButtonDisabled = isNetworkButtonDisabled || !newpasswordInputRef.current?.checkValidity() || !newpasswordcheckInputRef.current?.checkValidity()
+
+  const accesscode2FAInputRef = useRef(null)
+  const passwordInputRef = useRef(null)
+  const accesscode2FAButtonDisabled = isNetworkButtonDisabled || !accesscode2FAInputRef.current?.checkValidity()
+  const passwordButtonDisabled = isNetworkButtonDisabled || !passwordInputRef.current?.checkValidity()
+
+  const code2FAInputRef = useRef(null)
+  const code2FAButtonDisabled = isNetworkButtonDisabled || !code2FAInputRef.current?.checkValidity()
 
   return (
 
     isauth ? <>
 
       <p>Email: {email}</p>
-      <button onClick={() => {LogoutAllUsers()}} disabled={isNetworkButtonDisabled}>Logout all sessions</button>
+      <button onClick={() => { LogoutAllUsers() }} disabled={isNetworkButtonDisabled}>Logout all sessions</button>
 
-{/*//////////////////// CHANGE EMAIL ////////////////////*/}
+      {/*//////////////////// CHANGE EMAIL ////////////////////*/}
 
       <form onSubmit={(e) => requestnewemail(e)}>
         <label>New email</label>
-        <EmailInput value={newemail} onChange={(e) => setNewemail(e.target.value)} />
-        <EmailInput value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} />
+        <EmailInput value={newemail} onChange={(e) => setNewemail(e.target.value)} inputRef={newemailInputRef} />
+        <EmailInput value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} inputRef={newemailcheckInputRef} />
 
-        <button disabled={isNetworkButtonDisabled}>Change email</button>
+        <button disabled={newemailButtonDisabled}>Change email</button>
       </form>
 
-{/*//////////////////// CHANGE PASSWORD ////////////////////*/}
+      {/*//////////////////// CHANGE PASSWORD ////////////////////*/}
 
       <form onSubmit={(e) => requestnewpassword(e)}>
         <label>New password</label>
-        <PasswordInput value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
-        <PasswordInput value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)}/>
+        <PasswordInput value={newpassword} onChange={(e) => setNewpassword(e.target.value)} inputRef={newpasswordInputRef} />
+        <PasswordInput value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)} inputRef={newpasswordcheckInputRef} />
 
-        <button disabled={isNetworkButtonDisabled}>Change password</button>
+        <button disabled={newpasswordButtonDisabled}>Change password</button>
       </form>
 
-{/*//////////////////// TOGGLE 2FA ////////////////////*/}
+      {/*//////////////////// TOGGLE 2FA ////////////////////*/}
 
       {has2FA ? <>
         <h1>2FA Enabled</h1>
@@ -348,7 +363,7 @@ function AccountSettings() {
       </> : <>
       </>}
 
-{/*//////////////////// ENABLE 2FA ////////////////////*/}
+      {/*//////////////////// ENABLE 2FA ////////////////////*/}
       {qrcode && !has2FA ? <>
         <form onSubmit={(e) => {
           e.preventDefault()
@@ -367,12 +382,12 @@ function AccountSettings() {
 
       {isqrcodescanned && !has2FA ? <>
         <form onSubmit={(e) => check2FAcode(e)}>
-          <CodeInput value={code2FA} onChange={(e) => setCode2FA(e.target.value)} />
-          <button disabled={isNetworkButtonDisabled}>Enable 2FA</button>
+          <CodeInput value={code2FA} onChange={(e) => setCode2FA(e.target.value)} inputRef={code2FAInputRef} />
+          <button disabled={code2FAButtonDisabled}>Enable 2FA</button>
         </form>
       </> : <></>}
 
-{/*//////////////////// ACCESS THE PAGE ////////////////////*/}
+      {/*//////////////////// ACCESS THE PAGE ////////////////////*/}
     </>
       :
       <>
@@ -380,16 +395,16 @@ function AccountSettings() {
           {
             showaccesscode2FA ? <>
               <label>Enter 2FA code from Authenticator App</label>
-              <CodeInput value={accesscode2FA} onChange={(e) => setAccesscode2FA(e.target.value)} />
+              <CodeInput value={accesscode2FA} onChange={(e) => setAccesscode2FA(e.target.value)} inputRef={accesscode2FAInputRef} />
             </>
               :
               <>
                 <label>Password</label>
-                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} />
+                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} inputRef={passwordInputRef} />
               </>
           }
 
-          <button disabled={isNetworkButtonDisabled}>Verify password</button>
+          <button disabled={showaccesscode2FA ? accesscode2FAButtonDisabled : passwordButtonDisabled}>Verify password</button>
         </form>
       </>
   )

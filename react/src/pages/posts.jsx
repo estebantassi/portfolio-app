@@ -11,7 +11,7 @@ import { useCallback } from 'react'
 import PostSender from '../components/postsender'
 import { useRef } from 'react'
 
-const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost }) => {
+const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost }) => {
     const created_at = new Date(post.created_at)
 
     return (
@@ -21,6 +21,7 @@ const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isC
             {post?.image && <img src={post.image} alt=""/>}
             <p>{post?.id} {created_at.toLocaleString()} {"Likes : " + post?.like_count} {"Replies : " + post?.reply_count}</p>
             <button onClick={(e) => likePost(e, post.id)}>{post?.liked ? "Unlike" : "Like"}</button>
+            {isConnected && poster.id == isConnected.id && <button onClick={(e) => deletepost(e, post.id, "replies")}>{"Delete"}</button>}
             {isConnected && <button onClick={(e) => {
                 e.stopPropagation()
                 setRepliedto(post.id)
@@ -30,7 +31,7 @@ const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isC
     )
 })
 
-const PostsAbove = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost }) => {
+const PostsAbove = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost }) => {
     const created_at = new Date(post.created_at)
 
     return (
@@ -41,6 +42,7 @@ const PostsAbove = memo(({ post, poster, navigate, setRepliedto, setShowPoster, 
             {post?.image && <img src={post.image} alt=""/>}
             <p>{post?.id} {created_at.toLocaleString()} {"Likes : " + post?.like_count} {"Replies : " + post?.reply_count}</p>
             <button onClick={(e) => likePost(e, post.id)}>{post?.liked ? "Unlike" : "Like"}</button>
+            {isConnected && poster.id == isConnected.id && <button onClick={(e) => deletepost(e, post.id, "above")}>{"Delete"}</button>}
             {isConnected && <button onClick={(e) => {
                 e.stopPropagation()
                 setRepliedto(post.id)
@@ -55,7 +57,7 @@ function Posts({ overrideLink }) {
     let { link } = useParams()
     if (overrideLink != null) link = overrideLink
 
-    const { user, avatar, banner } = useAuth()
+    const { user, avatar, banner, startnetworkrequest, networkControllerRef } = useAuth()
     const { addToast } = useContext(ToastContext)
 
     const [date, setDate] = useState(new Date())
@@ -153,6 +155,26 @@ function Posts({ overrideLink }) {
         }
     }, [])
 
+    const deletepost = useCallback(async (e, id, list) => {
+        startnetworkrequest()
+        e.stopPropagation()
+
+        try {
+            const response = await axios.post('/auth/deletepost', {
+                postid: id
+            }, {
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
+            })
+
+            list == "above" ? setPostsAbove(prev => prev.filter(prev => prev.post.id !== id)) : setReplies(prev => prev.filter(prev => prev.post.id !== id))
+            list == "above" && navigate("/home")
+            addToast(response?.data?.message || "Success", "green")
+        } catch (err) {
+            addToast(err.response?.data?.message || "An error occurred", "red")
+        }
+    }, [])
+
     return (
         <>
             {canLoadMorePostsAbove && <button onClick={() => getPostsAbove(postsAbove[0].post.replied_to)}>Load More</button>}
@@ -167,6 +189,7 @@ function Posts({ overrideLink }) {
                     setShowPoster={setShowPoster}
                     isConnected={user}
                     likePost={likePost}
+                    deletepost={deletepost}
                 />
             ))}
 
@@ -180,6 +203,7 @@ function Posts({ overrideLink }) {
                     setShowPoster={setShowPoster}
                     isConnected={user}
                     likePost={likePost}
+                    deletepost={deletepost}
                 />
             ))}
 

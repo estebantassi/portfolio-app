@@ -56,27 +56,34 @@ function Signup() {
     }
   }
 
+  const usernameInputRef = useRef(null)
+  const emailInputRef = useRef(null)
+  const emailcheckInputRef = useRef(null)
+  const passwordInputRef = useRef(null)
+  const passwordcheckInputRef = useRef(null)
+  const signupButtonDisabled = isNetworkButtonDisabled || !usernameInputRef.current?.checkValidity() || !emailInputRef.current?.checkValidity() || !emailcheckInputRef.current?.checkValidity() || !passwordInputRef.current?.checkValidity() || !passwordcheckInputRef.current?.checkValidity()
+
   return (
     <>
       <h1>Signup</h1>
 
       <form onSubmit={(e) => signupform(e)}>
         <label>Username</label>
-        <UsernameInput value={data.username} onChange={(e) => setData({ ...data, username: e.target.value })} />
+        <UsernameInput value={data.username} onChange={(e) => setData({ ...data, username: e.target.value })} inputRef={usernameInputRef} />
 
         <label>Email</label>
-        <EmailInput value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
+        <EmailInput value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} inputRef={emailInputRef} />
 
         <label>Email Check</label>
-        <EmailInput value={data.emailcheck} onChange={(e) => setData({ ...data, emailcheck: e.target.value })} />
+        <EmailInput value={data.emailcheck} onChange={(e) => setData({ ...data, emailcheck: e.target.value })} inputRef={emailcheckInputRef} />
 
         <label>Password</label>
-        <PasswordInput value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
+        <PasswordInput value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} inputRef={passwordInputRef} />
 
         <label>Password Check</label>
-        <PasswordInput value={data.passwordcheck} onChange={(e) => setData({ ...data, passwordcheck: e.target.value })} />
+        <PasswordInput value={data.passwordcheck} onChange={(e) => setData({ ...data, passwordcheck: e.target.value })} inputRef={passwordcheckInputRef} />
         
-        <button disabled={isNetworkButtonDisabled}>
+        <button disabled={signupButtonDisabled}>
           SIGNUP
         </button>
       </form>

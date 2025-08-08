@@ -99,6 +99,13 @@ function Login() {
     }
   }
 
+  const codeInputRef = useRef(null)
+  const isCodeButtonDisabled = isNetworkButtonDisabled || !codeInputRef.current?.checkValidity()
+
+  const emailInputRef = useRef(null)
+  const passwordInputRef = useRef(null)
+  const isLoginButtonDisabled = isNetworkButtonDisabled || !emailInputRef.current?.checkValidity() || !passwordInputRef.current?.checkValidity()
+
   return (
     <>
       <h1>Login</h1>
@@ -109,9 +116,9 @@ function Login() {
             <form onSubmit={(e) => logincodeform(e)}>
 
               <label>{isusing2FA ? "Authenticator App Code" : "Email Code"}</label>
-              <CodeInput value={data.code} onChange={(e) => setData({ ...data, code: e.target.value })} />
+              <CodeInput value={data.code} onChange={(e) => setData({ ...data, code: e.target.value })} inputRef={codeInputRef} />
 
-              <button disabled={isNetworkButtonDisabled}>Verify code</button>
+              <button disabled={isCodeButtonDisabled}>Verify code</button>
 
             </form>
           </>
@@ -120,12 +127,12 @@ function Login() {
             <form onSubmit={(e) => loginform(e)}>
 
               <label>Email</label>
-              <EmailInput value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
+              <EmailInput value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} inputRef={emailInputRef} />
 
               <label>Password</label>
-              <PasswordInput value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
+              <PasswordInput value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} inputRef={passwordInputRef} />
 
-              <button disabled={isNetworkButtonDisabled}>LOGIN</button>
+              <button disabled={isLoginButtonDisabled}>LOGIN</button>
             </form>
           </>
       }

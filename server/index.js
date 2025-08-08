@@ -95,6 +95,7 @@ app.post('/auth/sendpost', require('./requests/posts/sendpost').SendPost)
 app.post('/auth/like', require('./requests/posts/likes/like').Like)
 app.get('/auth/getposts', require('./requests/posts/getposts').GetPosts)
 app.get('/auth/getpostsabove', require('./requests/posts/getpostsabove').GetPostsAbove)
+app.post('/auth/deletepost', require('./requests/posts/deletepost').DeletePost)
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 

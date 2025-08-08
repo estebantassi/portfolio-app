@@ -1,6 +1,7 @@
-function CodeInput({value, onChange}) {
+function CodeInput({value, onChange, inputRef}) {
   return (
         <input
+            ref={inputRef}
             title='Code must be 6 characters long and may include letters and digits'
             value={value}
             pattern={'[a-zA-Z0-9]{6}'}
@@ -24,9 +25,10 @@ function UsernameInput({value, onChange}) {
   )
 }
 
-function PasswordInput({value, onChange}) {
+function PasswordInput({value, onChange, inputRef}) {
   return (
         <input
+            ref={inputRef}
             type='password'
             title='Password must be 12 to 32 characters long and may include letters, digits and special characters'
             value={value}
@@ -37,9 +39,10 @@ function PasswordInput({value, onChange}) {
   )
 }
 
-function EmailInput({value, onChange}) {
+function EmailInput({value, onChange, inputRef}) {
   return (
         <input
+            ref={inputRef}
             type='email'
             title='Enter your email address in the format: username@domain.com'
             value={value}

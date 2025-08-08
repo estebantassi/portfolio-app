@@ -33,7 +33,6 @@ const DeleteMessage = async (req, res) => {
             } catch (err) {
                 if (err.code !== 404) throw err
             }
-            await deleteCachedValue(`messages/${messageid}`)
         }
 
         getIO().to(message.receiverid.toString()).emit('deletemessage', {messageid})
