@@ -177,6 +177,8 @@ function Posts({ overrideLink }) {
 
     return (
         <>
+            {user && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={0} setShowPoster={setShowPoster} link={link}/>}
+
             {canLoadMorePostsAbove && <button onClick={() => getPostsAbove(postsAbove[0].post.replied_to)}>Load More</button>}
 
             {postsAbove.map((data) => (

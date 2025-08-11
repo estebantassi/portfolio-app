@@ -17,16 +17,27 @@ const GetNotifications = async (req, res) => {
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
-        const [request] = await db.query(`
-            SELECT *
-            FROM notifications
-            WHERE notified_id=? AND created_at <= ?
-            ORDER BY id DESC
+        const [requests] = await db.query(`
+            SELECT n.*,
+                SUBSTRING_INDEX(
+                    GROUP_CONCAT(nn.notifier_id ORDER BY nn.id DESC),
+                    ',',
+                    10
+                ) AS notifier_ids
+            FROM notifications n
+            JOIN notifications_notifiers nn 
+            ON n.id = nn.notification_id
+            WHERE n.notified_id = ?
+            AND n.created_at <= ?
+            GROUP BY n.id
+            ORDER BY n.id DESC
             LIMIT 2
             OFFSET ?
         `, [data.id, date.toISOString(), offset])
+        
+        for (const request of requests) request.notifier_ids = request.notifier_ids.split(",").map(Number)
 
-        return res.status(200).json({message: "Data retrieved", notifications: request})
+        return res.status(200).json({message: "Data retrieved", notifications: requests})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

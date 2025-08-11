@@ -19,7 +19,7 @@ const DeletePost = async (req, res) => {
             WHERE id=? AND poster_id=?
         `, [postid, data.id])
 
-        if (post.length == 0) return res.status(400).json({message: "Post not found"})
+        if (post == null) return res.status(400).json({message: "Post not found"})
 
         await db.query(`
             DELETE FROM posts

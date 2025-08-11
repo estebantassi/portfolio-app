@@ -81,7 +81,7 @@ app.get('/getblockstate', require ("./requests/profile/block/getblockstate").Get
 //TOKENS
 app.get('/auth/checkaccesstoken', require('./requests/session/checkaccesstoken').CheckAccessToken)
 app.get('/auth/refreshtoken/logout', require('./requests/login/logout').Logout)
-app.get('/refreshtoken/update', require('./requests/session/updateaccesstoken').UpdateAccessToken)
+app.get('/auth/refreshtoken/update', require('./requests/session/updateaccesstoken').UpdateAccessToken)
 
 //PROFILE
 app.post('/auth/editprofile', require("./requests/profile/editprofile").EditProfile)
@@ -105,7 +105,7 @@ setInterval(async () => {
     DELETE FROM users 
     WHERE verified = 0 
     AND created_at < ?
-    `, [new Date(Date.now() - 24 * 60 * 60 * 1000)])
+    `, [new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()])
 }, 60 * 60 * 1000)
 
 //DELETE EXPIRED TOKENS
@@ -113,5 +113,5 @@ setInterval(async () => {
     await db.query(`
     DELETE FROM tokens 
     WHERE expires_at < ?
-    `, [new Date()])
+    `, [new Date().toISOString()])
 }, 60 * 60 * 1000)

@@ -8,30 +8,46 @@ import { NavLink } from 'react-router'
 import { useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
 
-const NotificationItem = memo(({ notification, notifier }) => {
+const NotificationItem = memo(({ notification, notifiers }) => {
 
   const created_at = new Date(notification.created_at)
 
   return (
     <div>
-      {(() => {
+
+      {notifiers.map(notifier => (
+        notifier?.avatar && notifier.id && (
+          <NavLink key={notifier.id} to={`/profile/${notifier.id}`}>
+            <img src={notifier.avatar} alt="avatar" />
+          </NavLink>
+        )
+      ))}
+      <p>{notifiers[0].username} and {notification.total_count} others liked your post</p>
+
+      {/* {(() => {
         switch (notification.type) {
+          case "like": return (
+            <>
+              {notifier?.avatar && notifier.id && <NavLink to={`/profile/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
+              {notifier?.username && <h2>{notifier.username} liked your post</h2>}
+            </>
+          )
           case "follow": return (
             <>
-              {notifier.avatar && notifier.id && <NavLink to={`/profile/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
-              {notifier.username && <h2>{notifier.username} followed you</h2>}
+              {notifier?.avatar && notifier.id && <NavLink to={`/profile/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
+              {notifier?.username && <h2>{notifier.username} followed you</h2>}
             </>
           )
           case "message": return (
             <>
-              {notifier.avatar && notifier.id && <NavLink to={`/messages/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
-              {notifier.username && <h2>{notifier.username} sent you a message</h2>}
+              {notifier?.avatar && notifier.id && <NavLink to={`/messages/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
+              {notifier?.username && <h2>{notifier.username} sent you a message</h2>}
             </>
           )
           default:
             break
         }
-      })()}
+      })()} */}
       <p>{created_at.toLocaleString()}</p>
     </div>
   )
@@ -80,8 +96,14 @@ function Notifications() {
   }
 
   const addNotification = async (notif, reverse=false) => {
-    const notifier = await getuserprofile(notif.notifier_id)
-    setNotifications(prev => reverse ? [{ notifier, notification: notif }, ...prev] : [...prev, { notifier, notification: notif }])
+    let notifiers = []
+    for (const notifierid of notif.notifier_ids)
+    {
+      const profile = await getuserprofile(notifierid)
+      notifiers.push(profile)
+    }
+    
+    setNotifications(prev => reverse ? [{ notifiers, notification: notif }, ...prev] : [...prev, { notifiers, notification: notif }])
   }
 
   return (
@@ -92,7 +114,7 @@ function Notifications() {
         <NotificationItem
           key={data.notification.id}
           notification={data.notification}
-          notifier={data.notifier}
+          notifiers={data.notifiers}
         />
       ))}
 

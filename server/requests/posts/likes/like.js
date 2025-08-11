@@ -57,7 +57,8 @@ const Like = async (req, res) => {
             message = "Liked post"
             liked = true
         }
-        //await Notify("follow", followeeid, data.id)
+        
+        if (!like) await Notify("like", post.poster_id, data.id, postid)
 
         await connection.commit()
         return res.status(200).json({message, liked})
