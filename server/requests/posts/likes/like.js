@@ -46,6 +46,12 @@ const Like = async (req, res) => {
                 WHERE user_id=? AND post_id=?
             `, [data.id, postid])
 
+            await connection.query(`
+                UPDATE posts
+                SET like_count=like_count-1
+                WHERE id = ?
+            `, [postid])
+
             liked = false
             message = "Unliked post"
         } else {
@@ -53,6 +59,12 @@ const Like = async (req, res) => {
                 INSERT INTO likes (user_id, post_id)
                 VALUES (?, ?)
             `, [data.id, postid])
+
+            await connection.query(`
+                UPDATE posts
+                SET like_count=like_count+1
+                WHERE id = ?
+            `, [postid])
 
             message = "Liked post"
             liked = true

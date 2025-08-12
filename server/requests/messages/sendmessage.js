@@ -12,11 +12,11 @@ const SendMessage = async (req, res) => {
     try {
         const receiverid = req?.body?.receiverid
         const text = req?.body?.text
-        const image = req?.files?.image
+        let image = req?.files?.image?.data
 
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
         if (!validatemessage(text)) return res.status(400).json({message: "Invalid text format"})
-        //VALIDATE IMAGE
+        if (image?.length > 500 * 1024) return res.status(400).json({ message: "Your image is too big, its compression is over 500KB" })
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
@@ -26,38 +26,30 @@ const SendMessage = async (req, res) => {
         if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
         if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
 
-        let hasimage = 0
-        if (image?.data != null) hasimage = 1
-
         const date = new Date()
         const [message] = await db.query(`
             INSERT INTO messages (text, receiverid, senderid, created_at, image)
             VALUES (?, ?, ?, ?, ?)
-        `, [text, receiverid, data.id, date.toISOString(), hasimage])
+        `, [text, receiverid, data.id, date.toISOString(), image ? "1" : "0"])
 
-        if (hasimage == 1)
+        if (image)
         {
-            await bucket.file(`messages/${message.insertId}`).save(image.data, {
+            await bucket.file(`messages/${message.insertId}`).save(image, {
                 metadata: {
                     contentType: 'application/octet-stream',
                     cacheControl: 'no-store'
                 }
             })
+            image = await GetImage(`messages/${message.insertId}`)
         }
-
-        if (message == null) return res.status(400).json({message: "Message not sent"})
-
-        if (hasimage == 1) hasimage = await GetImage(`messages/${message.insertId}`)
 
         const messagedata = {
             receiverid,
             id: message.insertId,
             created_at: date.toISOString(),
             senderid: data.id,
-            image: hasimage
+            image
         }
-
-        Notify("message", receiverid, data.id)
 
         getIO().to(receiverid.toString()).emit('newmessage', {...messagedata, text})
         getIO().to(data.id.toString()).emit('newmessage', {...messagedata, text})

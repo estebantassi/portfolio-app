@@ -14,7 +14,7 @@ const DeletePost = async (req, res) => {
         if (data == null) return res.status(401).json({ message: "Authentication required" })
             
         const [[post]] = await db.query(`
-            SELECT image
+            SELECT image, replied_to
             FROM posts
             WHERE id=? AND poster_id=?
         `, [postid, data.id])
@@ -25,6 +25,15 @@ const DeletePost = async (req, res) => {
             DELETE FROM posts
             WHERE id=? AND poster_id=?
         `, [postid, data.id])
+
+        if (post.replied_to != 0)
+        {
+            await db.query(`
+                UPDATE posts
+                SET reply_count=reply_count-1
+                WHERE id = ?
+            `, [post.replied_to])
+        }
 
         if (post.image == 1) {
             try {

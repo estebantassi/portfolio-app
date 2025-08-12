@@ -39,7 +39,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
             setImage("")
             setImagePreview("")
 
-            if (repliedto == link || repliedto == 0) setReplies(prev => [{post: response.data.postdata, poster}, ...prev])
+            if (repliedto == link) setReplies(prev => [{post: response.data.postdata, poster}, ...prev])
 
             setReplies(prev =>
                 prev.map(item =>
@@ -57,10 +57,8 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
                 )
             )
             
-
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            console.log(err)
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
@@ -77,6 +75,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
                         setImage(file)
                         setImagePreview(URL.createObjectURL(file))
                     }
+                     e.target.value = ''
                 }} />
                 {imagePreview && <img src={imagePreview} alt="postimage" />}
 

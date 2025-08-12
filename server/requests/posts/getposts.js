@@ -18,22 +18,9 @@ const GetPosts = async (req, res) => {
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
         let sql = `
-            SELECT 
-                posts.*, 
-                COALESCE(likes_count.count, 0) AS like_count,
-                COALESCE(replies_count.count, 0) AS reply_count,
-                ${data?.id ? "CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END AS liked" : "false AS liked"}
+            SELECT posts.*, 
+            ${data?.id ? "CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END AS liked" : "false AS liked"}
             FROM posts
-            LEFT JOIN (
-                SELECT replied_to, COUNT(*) AS count
-                FROM posts
-                GROUP BY replied_to
-            ) AS replies_count ON posts.id = replies_count.replied_to
-            LEFT JOIN (
-                SELECT post_id, COUNT(*) AS count
-                FROM likes
-                GROUP BY post_id
-            ) AS likes_count ON posts.id = likes_count.post_id
             ${data?.id ? "LEFT JOIN likes AS user_likes ON posts.id = user_likes.post_id AND user_likes.user_id = ?" : ""}
             WHERE posts.created_at <= ? AND posts.replied_to = ?
             ORDER BY posts.id DESC

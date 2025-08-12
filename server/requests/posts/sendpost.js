@@ -7,48 +7,71 @@ const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
 const bucket = require('../../config/gcs')
 const { GetImage } = require('../../tools/helper functions/getimage')
 const { Notify } = require('../../tools/helper functions/notify')
+const sharp = require('sharp')
 
 const SendPost = async (req, res) => {
     try {
         const repliedto = req?.body?.repliedto
         const text = req?.body?.text
-        const image = req?.files?.image
+        let image = req?.files?.image?.data
         if (!validateid(repliedto) && repliedto != 0) return res.status(400).json({message: "Invalid id format"})
         if (!validateposttext(text)) return res.status(400).json({message: "Invalid text format"})
-        //VALIDATE IMAGE
+
+        if (image)
+        {
+            image = sharp(image, { animated: true })
+            const imagemetadata = await image.metadata()
+
+            if (imagemetadata)
+            {
+                image = await image
+                    .resize(300, 300)
+                    .webp()
+                    .toBuffer()
+
+                if (image.length > 500 * 1024) return res.status(400).json({ message: "Your image is too big, its compression is over 500KB" })
+            } else return res.status(400).json({ message: "Invalid image format" })
+        }
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
-
-        let hasimage = 0
-        if (image?.data != null) hasimage = 1
 
         const date = new Date()
         const [post] = await db.query(`
             INSERT INTO posts (text, replied_to, poster_id, created_at, image)
             VALUES (?, ?, ?, ?, ?)
-        `, [text, repliedto, data.id, date.toISOString(), hasimage])
+        `, [text, repliedto, data.id, date.toISOString(), image ? "1" : "0"])
 
-        if (hasimage == 1)
+        if (repliedto != 0)
         {
-            await bucket.file(`posts/${post.insertId}`).save(image.data, {
+            await db.query(`
+                UPDATE posts
+                SET reply_count=reply_count+1
+                WHERE id = ?
+            `, [repliedto])
+        }
+
+        if (image)
+        {
+            await bucket.file(`posts/${post.insertId}`).save(image, {
                 metadata: {
-                    contentType: 'application/octet-stream',
+                    contentType: 'image/webp',
                     cacheControl: 'no-store'
                 }
             })
-        }
 
-        let imageurl
-        if (hasimage == 1) imageurl = await GetImage(`posts/${post.insertId}`)
+            image = await GetImage(`posts/${post.insertId}`)
+        }
 
         const postdata = {
             replied_to: repliedto,
             id: post.insertId,
             created_at: date.toISOString(),
             poster_id: data.id,
-            image: imageurl,
-            text
+            image,
+            text,
+            like_count: 0,
+            reply_count: 0
         }
 
         return res.status(200).json({message: "Posted", postdata })

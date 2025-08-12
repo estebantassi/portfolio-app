@@ -26,7 +26,7 @@ const EditProfile = async (req, res) => {
         `, [data.id])
 
         let updateFields = []
-        let updateValues = [];
+        let updateValues = []
 
         if (request?.tag != tag)
         {
