@@ -201,8 +201,8 @@ function Messages() {
             const decryptedMessages = await Promise.all(
             encryptedMessages.map(async (msg) => {
                 try {
-                const decryptedText = await decryptMessage(secret, msg.text, "text")
-                msg.image = await reconstructImage(msg.image, secret) 
+                    const decryptedText = await decryptMessage(secret, msg.text, "text")
+                    msg.image = await reconstructImage(msg.image, secret) 
 
                     return { ...msg, text: decryptedText }
                 } catch {

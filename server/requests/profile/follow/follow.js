@@ -62,8 +62,8 @@ const Follow = async (req, res) => {
 
         await setCachedValue(`follow/${data.id}/${followeeid}`, process.env.FOLLOW_CACHE_DURATION, followed ? "1" : "0")
 
-        getIO().to(followeeid.toString()).emit('follow', { id: followeeid, from: data.id })
-        getIO().to(data.id.toString()).emit('follow', { id: followeeid, from: data.id })
+        getIO().to(followeeid.toString()).emit(followed ? 'follow' : "unfollow", { id: followeeid, from: data.id })
+        getIO().to(data.id.toString()).emit(followed ? 'follow' : "unfollow", { id: followeeid, from: data.id })
 
         await Notify("follow", followeeid, data.id)
 

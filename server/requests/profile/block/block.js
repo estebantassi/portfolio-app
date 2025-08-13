@@ -64,8 +64,8 @@ const Block = async (req, res) => {
 
         await setCachedValue(`block/${data.id}/${blockedid}`, process.env.BLOCK_CACHE_DURATION, blocked ? "1" : "0")
 
-        getIO().to(blockedid.toString()).emit('block', { id: blockedid, from: data.id })
-        getIO().to(data.id.toString()).emit('block', { id: blockedid, from: data.id })
+        getIO().to(blockedid.toString()).emit(blocked ? 'block' : "unblock", { id: blockedid, from: data.id })
+        getIO().to(data.id.toString()).emit(blocked ? 'block' : "unblock", { id: blockedid, from: data.id })
 
         return res.status(200).json({message, blocked})
     } catch (err) {

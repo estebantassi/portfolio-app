@@ -10,6 +10,8 @@ import { useEffect } from 'react'
 import { useCallback } from 'react'
 import PostSender from '../components/postsender'
 import { useRef } from 'react'
+import "../css/posts.css"
+
 
 const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost }) => {
     const created_at = new Date(post.created_at)

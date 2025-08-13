@@ -3,11 +3,11 @@
 }
 
 .postsabove-wrapper{
-    background-color: rgba(0, 0, 255, 0.05);
+    background-color: rgba(0, 100, 255, 0.05);
 }
 
 .postsabove-wrapper:hover{
-    background-color: rgba(0, 0, 255, 0.1);
+    background-color: rgba(0, 100, 255, 0.1);
 }
 
 .postsreplies-wrapper:hover{
