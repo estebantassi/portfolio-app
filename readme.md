@@ -2,7 +2,6 @@ To-do :
   
 Urgent :  
   
--Check images when sent through messages/posts  
 -Finish validate functions  
 -Put controllers on requests properly  
 -Finish setting database lengths with proper limits  
