@@ -5,7 +5,6 @@ import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import { memo } from 'react'
 import { NavLink, useNavigate, useParams } from 'react-router'
-import getuserprofile from '../tools/getuserprofile'
 import { useEffect } from 'react'
 import { useCallback } from 'react'
 import PostSender from '../components/postsender'
@@ -93,10 +92,7 @@ function Posts({ overrideLink }) {
         try {
             const response = await axios.get(`/auth/getpostsabove?postid=${id}`, { withCredentials: true })
 
-            for (const post of response.data.posts) {
-                const poster = await getuserprofile(post.poster_id)
-                setPostsAbove(prev => [{ poster, post }, ...prev])
-            }
+            setPostsAbove(prev => [...response.data.posts, ...prev])
 
             setCanLoadMorePostsAbove(response.data.end)
 
@@ -115,10 +111,7 @@ function Posts({ overrideLink }) {
         try {
             const response = await axios.get(`/auth/getposts?date=${date}&repliedto=${link}&offset=${offset}`, { withCredentials: true })
 
-            for (const post of response.data.posts) {
-                const poster = await getuserprofile(post.poster_id)
-                setReplies(prev => [...prev, { poster, post }])
-            }   
+            setReplies(prev => [...prev, ...response.data.posts])
 
             setCanLoadMoreReplies(response.data.end)
 
@@ -181,7 +174,8 @@ function Posts({ overrideLink }) {
         <>
             {user && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={0} setShowPoster={setShowPoster} link={link}/>}
 
-            {canLoadMorePostsAbove && <button onClick={() => getPostsAbove(postsAbove[0].post.replied_to)}>Load More</button>}
+            {canLoadMorePostsAbove && <button onClick={() => getPostsAbove(postsAbove[0].post.replied_to)}>Load More</button>
+            }
 
             {postsAbove.map((data) => (
                 <PostsAbove

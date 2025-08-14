@@ -68,8 +68,8 @@ function Profile() {
     useEffect(() => {
         async function inituser () {
             if (user && user.id == link) return setUserdata({...user, avatar, banner})
-            const data = await getuserprofile(link)
-            setUserdata(data)
+            const data = await getuserprofile([parseInt(link, 10)])
+            setUserdata(data[0])
             if (data == null) {
                 addToast("Error loading user", "red")
                 navigate("/home")

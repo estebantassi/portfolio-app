@@ -3,7 +3,8 @@ const db = require('../../config/database')
 const { getCachedValue, setCachedValue } = require('../../config/redis')
 const { GetImage } = require("../../tools/helper functions/getimage")
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const { validatetoken, validateid } = require('../../tools/tools')
+const { validatetoken, validateid, makeFakeReqRes } = require('../../tools/tools')
+const { GetUserProfile } = require('../profile/getuserprofile')
 
 const GetPosts = async (req, res) => {
 
@@ -34,11 +35,32 @@ const GetPosts = async (req, res) => {
         const hasMore = request.length > 2
         request = request.slice(0, 2)
 
+        let ids = []
         for (const post of request) {
+            ids.push(parseInt(post.poster_id, 10))
             post.image = post.image ? await GetImage(`posts/${post.id}`) : null
         }
 
-        return res.status(200).json({message: "Data retrieved", posts: request, end: hasMore})
+        let profiles = []
+        try {
+            const makeRequest = makeFakeReqRes()
+            makeRequest.req.query.id = ids
+            profiles = (await GetUserProfile(makeRequest.req, makeRequest.res))._getStore().body.profiles
+        } catch (err) { 
+            return res.status(400).json({message: "Couldn't fetch user"})
+        }
+
+        const profileMap = new Map()
+        for (const profile of Object.values(profiles)) {
+            profileMap.set(profile.id, profile)
+        }
+
+        const list = request.map(post => ({
+            poster: profileMap.get(post.poster_id) || null,
+            post
+        }))
+
+        return res.status(200).json({message: "Data retrieved", posts: list, end: hasMore})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

@@ -3,7 +3,6 @@ import { useAuth } from '../context/authcontext'
 import axios from '../api/axios'
 import { useState } from 'react'
 import { memo } from 'react'
-import getuserprofile from '../tools/getuserprofile'
 import { NavLink } from 'react-router'
 import { useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
@@ -22,32 +21,31 @@ const NotificationItem = memo(({ notification, notifiers }) => {
           </NavLink>
         )
       ))}
-      <p>{notifiers[0].username} and {notification.total_count} others liked your post</p>
 
-      {/* {(() => {
+      {(() => {
+        let text
         switch (notification.type) {
-          case "like": return (
-            <>
-              {notifier?.avatar && notifier.id && <NavLink to={`/profile/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
-              {notifier?.username && <h2>{notifier.username} liked your post</h2>}
-            </>
-          )
-          case "follow": return (
-            <>
-              {notifier?.avatar && notifier.id && <NavLink to={`/profile/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
-              {notifier?.username && <h2>{notifier.username} followed you</h2>}
-            </>
-          )
-          case "message": return (
-            <>
-              {notifier?.avatar && notifier.id && <NavLink to={`/messages/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>}
-              {notifier?.username && <h2>{notifier.username} sent you a message</h2>}
-            </>
-          )
+          case "like": 
+            text = "liked your post"
+            break
+          case "follow":
+            text = "followed you"
+            break
           default:
             break
         }
-      })()} */}
+
+        
+        return (
+          <>
+            {notification?.total_count == 1 && <p>{notifiers[0]?.username} {text}</p>} 
+            {notification?.total_count == 2 && <p>{notifiers[0]?.username} and {notifiers[1]?.username} {text}</p>}
+            {notification?.total_count > 2 && <p>{notifiers[0]?.username} and {notification?.total_count - 1} others {text}</p>}
+          </>
+        )
+
+
+      })()}
       <p>{created_at.toLocaleString()}</p>
     </div>
   )
@@ -85,25 +83,17 @@ function Notifications() {
 
       if (response.data.notifications.length == 0) return
 
-      for (const notification of response.data.notifications) {
-        await addNotification(notification)
-      }
+      await addNotification(response.data.notifications)
 
       setOffset(prev => prev + 2)
     } catch (err) {
+      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
   }
 
   const addNotification = async (notif, reverse=false) => {
-    let notifiers = []
-    for (const notifierid of notif.notifier_ids)
-    {
-      const profile = await getuserprofile(notifierid)
-      notifiers.push(profile)
-    }
-    
-    setNotifications(prev => reverse ? [{ notifiers, notification: notif }, ...prev] : [...prev, { notifiers, notification: notif }])
+    setNotifications(prev => reverse ? [ ...notif , ...prev] : [...prev, ...notif ])
   }
 
   return (

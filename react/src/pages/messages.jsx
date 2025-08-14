@@ -5,7 +5,7 @@ import { useEffect, useState, memo, useCallback, useRef } from 'react'
 import { useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { useAuth } from '../context/authcontext'
-import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage, encryptDataKey } from '../tools/tools'
+import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage } from '../tools/tools'
 import { useCall } from '../context/callcontext'
 import getuserprofile from '../tools/getuserprofile'
 
@@ -55,7 +55,7 @@ function Messages() {
                 data.image = await reconstructImage(data.image, secret)
 
                 message = { ...data, text: decryptedText }
-            } catch (err){
+            } catch {
                 message = { ...data, text: "[Failed to decrypt]" }
             }
             setMessages(prev => [message, ...prev])
@@ -82,9 +82,9 @@ function Messages() {
     useEffect(() => {
         async function inituser () {
             if (user && user.id == link) return navigate("/home")
-            const data = await getuserprofile(link)
+            const data = await getuserprofile([parseInt(link, 10)])
 
-            setUserdata(data)
+            setUserdata(data[0])
             if (data == null) {
                 addToast("Error loading user", "red")
                 navigate("/home")

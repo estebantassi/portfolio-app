@@ -1,6 +1,24 @@
 const crypto = require('crypto')
 require('dotenv').config()
 
+function makeFakeReqRes() {
+  const store = { statusCode: 200, body: null, headers: {} };
+
+  const req = {
+    query: {}
+  };
+  const res = {
+    status(code) { store.statusCode = code; return this; },
+    set(field, value) { store.headers[field] = value; return this; },
+    json(data) { store.body = data; return this; },
+    send(data) { store.body = data; return this; },
+    end() { return this; },
+    _getStore() { return store; }
+  };
+
+  return { req, res };
+}
+
 function generatelogincode() {
     var result           = '';
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -212,6 +230,7 @@ function validateoffer(offer) {
 
 
 module.exports = {
+  makeFakeReqRes,
   generatelogincode,
   generateRandomString,
   encrypt,

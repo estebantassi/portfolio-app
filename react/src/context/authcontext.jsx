@@ -68,7 +68,10 @@ export const AuthProvider = ({ children }) => {
                 })
 
                 //Fetch profile on page reload to check for changes
-                const response = await axios.get('/getuserprofile?id=' + user.id)
+                let response = await axios.get('/getuserprofile', {
+                    params: { id: user.id }
+                })
+                response.data = response.data.profiles[0]
 
                 const avatarBase64 = await fetchbase64image(response.data.avatar)
                 if (avatarBase64 && avatar != avatarBase64){
@@ -87,6 +90,7 @@ export const AuthProvider = ({ children }) => {
                 JSON.stringify(user) != JSON.stringify({...user, ...newuserdata}) && setUser(prev => ({...prev, ...newuserdata}))
 
             } catch (err) {
+                console.log(err)
                 addToast(err.response?.data?.message || "An error occurred", "red")
             }
         }, 1000)

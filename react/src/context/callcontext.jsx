@@ -26,13 +26,13 @@ export const CallProvider = ({ children }) => {
         if (!socket) return
 
         socket.on("incomingcall", async (data) => {
-            const caller = await getuserprofile(data.from)
+            const caller = await getuserprofile([parseInt(data.from, 10)])
             if (caller == null) return addToast("Error loading user", "red")
 
             const handleAccept = () => acceptCall(data)
             const handleRefuse = () => refuseCall(data)
 
-            addToast(`Incoming call from ${caller.username}`, "green", handleAccept, handleRefuse)
+            addToast(`Incoming call from ${caller[0].username}`, "green", handleAccept, handleRefuse)
         })
 
         socket.on("acceptedcall", async (data) => {
@@ -117,13 +117,13 @@ export const CallProvider = ({ children }) => {
                 withCredentials: true
             })
 
-            const caller = await getuserprofile(data.from)
+            const caller = await getuserprofile([parseInt(data.from, 10)])
             if (caller == null) return addToast("Error loading user", "red")
 
             startCallTimeout()
 
-            isInCallRef.current = {data: caller, online: true}
-            setIsInCall({data: caller, online: true})
+            isInCallRef.current = {data: caller[0], online: true}
+            setIsInCall({data: caller[0], online: true})
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }

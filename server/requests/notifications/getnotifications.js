@@ -3,7 +3,8 @@ const db = require('../../config/database')
 const { getCachedValue, setCachedValue } = require('../../config/redis')
 const { GetImage } = require("../../tools/helper functions/getimage")
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const { validatetoken } = require('../../tools/tools')
+const { validatetoken, makeFakeReqRes } = require('../../tools/tools')
+const { GetUserProfile } = require('../profile/getuserprofile')
 
 const GetNotifications = async (req, res) => {
 
@@ -35,9 +36,42 @@ const GetNotifications = async (req, res) => {
             OFFSET ?
         `, [data.id, date.toISOString(), offset])
         
-        for (const request of requests) request.notifier_ids = request.notifier_ids.split(",").map(Number)
+        let ids = []
+        for (const request of requests) {
+            request.notifier_ids = request.notifier_ids.split(",").map(Number)
+            for (const userid of request.notifier_ids) ids.push(userid)
+        }
 
-        return res.status(200).json({message: "Data retrieved", notifications: requests})
+        let profiles = []
+        try {
+            const makeRequest = makeFakeReqRes()
+            makeRequest.req.query.id = ids
+            profiles = (await GetUserProfile(makeRequest.req, makeRequest.res))._getStore().body.profiles
+        } catch (err) { 
+            return res.status(400).json({message: "Couldn't fetch user"})
+        }
+
+        const profileMap = new Map()
+        for (const profile of Object.values(profiles)) {
+            profileMap.set(profile.id, profile)
+        }
+
+        const finalNotifications = []
+        for (const notification of requests)
+        {
+            const notifiers = notification.notifier_ids
+                .map(id => profileMap.get(id))
+                .filter(Boolean)
+
+            const notif = {
+                notification,
+                notifiers
+            }
+
+            finalNotifications.push(notif)
+        }
+
+        return res.status(200).json({message: "Data retrieved", notifications: finalNotifications})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})
