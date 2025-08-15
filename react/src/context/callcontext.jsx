@@ -30,7 +30,7 @@ export const CallProvider = ({ children }) => {
             if (caller == null) return addToast("Error loading user", "red")
 
             const handleAccept = () => acceptCall(data)
-            const handleRefuse = () => refuseCall(data)
+            const handleRefuse = () => rejectCall(data.from)
 
             addToast(`Incoming call from ${caller[0].username}`, "green", handleAccept, handleRefuse)
         })
@@ -180,6 +180,20 @@ export const CallProvider = ({ children }) => {
         }, 5000)
     }
 
+    const rejectCall = async (from) => {
+        try {
+
+            const response = await axios.post('/auth/rejectcall', {
+                from
+            }, {
+                withCredentials: true
+            })
+
+        } catch (err) {
+            addToast(err.response?.data?.message || "An error occurred", "red")
+        }
+    }
+
     const endCall = async (share = true) => {
         if (share)
         {
@@ -215,10 +229,6 @@ export const CallProvider = ({ children }) => {
         }
 
         addToast("Call ended", "red")
-    }
-
-    const refuseCall = (data) => {
-        console.log("do refuse call logic")
     }
 
     let contextData = {

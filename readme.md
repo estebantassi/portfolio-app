@@ -5,7 +5,6 @@ Urgent :
 -Finish validate functions  
 -Put controllers on requests properly  
 -Finish setting database lengths with proper limits  
--Reject calls  
 -Load with intersect  
 -CSS (DO LAST)  
   
