@@ -1,7 +1,7 @@
 require('dotenv').config()
 const db = require('../../config/database')
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
-const { validateid, validatetoken, validatemessage } = require('../../tools/tools')
+const { validateid, validatetoken, validatemessage, getmessagelength } = require('../../tools/tools')
 const { getIO } = require('../../config/socketio')
 const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
 const bucket = require('../../config/gcs')
@@ -11,11 +11,16 @@ const { Notify } = require('../../tools/helper functions/notify')
 const SendMessage = async (req, res) => {
     try {
         const receiverid = req?.body?.receiverid
-        const text = req?.body?.text
+        let text = req?.body?.text
         let image = req?.files?.image?.data
 
         if (!validateid(receiverid)) return res.status(400).json({message: "Invalid id format"})
         if (!validatemessage(text)) return res.status(400).json({message: "Invalid text format"})
+        if (getmessagelength(text) == 0)
+        {
+            if (image == null) return res.status(400).json({message: "Can't send empty message"})
+            text = ""
+        }
         if (image?.length > 500 * 1024) return res.status(400).json({ message: "Your image is too big, its compression is over 500KB" })
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")

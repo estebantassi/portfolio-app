@@ -9,8 +9,7 @@ const { setCachedValue } = require('../../config/redis')
 const LoginStart = async (req, res) => {
     try {
         const email = req?.body?.email
-        const emailtest = validateemail(email)
-        if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
+        if (!validateemail(email)) return res.status(400).json({ message: "Invalid email format" })
         const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
 
         const [[request]] = await db.query(`

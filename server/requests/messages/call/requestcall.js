@@ -3,14 +3,14 @@ const db = require('../../../config/database')
 const { setCachedValue, getCachedValue, deleteCachedValue } = require('../../../config/redis')
 const { getIO } = require('../../../config/socketio')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const { validateid, validatetoken, validateoffer } = require('../../../tools/tools')
+const { validateid, validatesessiondescription } = require('../../../tools/tools')
 const { GetFollowStateServer } = require('../../profile/follow/getfollowstateserver')
 
 const RequestCall = async (req, res) => {
     try {
         const offer = req?.body?.offer
         const calleeid = req?.body?.calleeid
-        if (!validateoffer(offer)) return res.status(400).json({message: "Invalid offer format"})
+        if (!validatesessiondescription(offer)) return res.status(400).json({message: "Invalid offer format"})
         if (!validateid(calleeid)) return res.status(400).json({message: "Invalid id format"})
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")

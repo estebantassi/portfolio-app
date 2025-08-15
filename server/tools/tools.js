@@ -112,33 +112,33 @@ function validatecode(value) {
 }
 
 function validateemail(email) {
-    if (email == null) return { valid: false, message: "Email is empty" }
+    if (email == null) return false
     const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-    if (typeof email !== "string" || !emailRegexp.test(email)) return { valid: false, message: "Invalid email format" }
+    if (typeof email !== "string" || !emailRegexp.test(email)) return false
 
-    if (email.length < process.env.MIN_EMAIL_LENGTH) return { valid: false, message: "Email is too short" }
-    if (email.length > process.env.MAX_EMAIL_LENGTH) return { valid: false, message: "Email is too long" }
+    if (email.length < parseInt(process.env.MIN_EMAIL_LENGTH, 10)) return false
+    if (email.length > parseInt(process.env.MAX_EMAIL_LENGTH, 10)) return false
 
-    return { valid: true }
+    return true
 }
 
 function validateusername(username) {
     return username != null && typeof username === "string"
-    && username.length >= process.env.MIN_USERNAME_LENGTH
-    && username.length <= process.env.MAX_USERNAME_LENGTH
+    && username.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
+    && username.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatetag(tag, id) {
     return tag != null && typeof tag === "string"
     && (isNaN(tag) || tag == id)
-    && tag.length >= process.env.MIN_USERNAME_LENGTH
-    && tag.length <= process.env.MAX_USERNAME_LENGTH
+    && tag.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
+    && tag.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatebio(bio) {
     return bio != null && typeof bio === "string"
-    && bio.length >= process.env.MIN_BIO_LENGTH
-    && bio.length <= process.env.MAX_BIO_LENGTH
+    && bio.length >= parseInt(process.env.MIN_BIO_LENGTH, 10)
+    && bio.length <= parseInt(process.env.MAX_BIO_LENGTH, 10)
 }
 
 function validateid(id) {
@@ -208,24 +208,33 @@ function validatemessage(message) {
   const base64Regex = /^[A-Za-z0-9+/=]+$/
   if (!base64Regex.test(ivBase64) || !base64Regex.test(ciphertextBase64)) return false
 
-  const maxCiphertextLength = Math.ceil((process.env.MAX_MESSAGE_LENGTH + 16) / 3) * 4
-  if (ciphertextBase64.length > maxCiphertextLength || ivBase64.length != 16) return false
+  const rawtextlength = Buffer.from(ciphertextBase64, 'base64').length - 16
+
+  if (rawtextlength > parseInt(process.env.MAX_MESSAGE_LENGTH, 10) || ivBase64.length != 16) return false
 
   return true
+}
+
+function getmessagelength(message)
+{
+  const parts = message.split(":")
+  const [ivBase64, ciphertextBase64] = parts
+  return Buffer.from(ciphertextBase64, 'base64').length - 16
 }
 
 function validateposttext(text) {
-  return text != null && typeof text === "string" && text.length <= 500 && text.length > 0
+  return text != null && typeof text === "string" && text.length <= parseInt(process.env.MAX_POST_LENGTH, 10)
 }
 
-function validateanswer(answer) {
-  if (answer == null) return false
-  return true
-}
+function validatesessiondescription(desc) {
+  if (!desc || typeof desc !== "object") return false;
 
-function validateoffer(offer) {
-  if (offer == null) return false
-  return true
+  const { type, sdp } = desc;
+
+  if ((type !== "offer" && type !== "answer")) return false;
+  if (typeof sdp !== "string" || !sdp.trim()) return false;
+
+  return true;
 }
 
 
@@ -252,6 +261,6 @@ module.exports = {
   validatetag,
   validatebio,
   validateposttext,
-  validateanswer,
-  validateoffer
+  validatesessiondescription,
+  getmessagelength
 }

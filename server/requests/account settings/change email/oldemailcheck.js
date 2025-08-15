@@ -12,10 +12,8 @@ const OldEmailCheck = async (req, res) => {
         const data = await GetTokenData(req, req?.body?.token, "oldemailcheck")
         if (data?.oldemail == null || data?.newemail == null || data?.username == null) return res.status(400).json({message: "Invalid link"})
 
-        const oldemailtest = validateemail(data.oldemail)
-        if (oldemailtest.valid == false) return res.status(400).json({ message: oldemailtest.message })
-        const newemailtest = validateemail(data.newemail)
-        if (newemailtest.valid == false) return res.status(400).json({ message: newemailtest.message })
+        if (!validateemail(data.oldemail)) return res.status(400).json({ message: "Invalid email format" })
+        if (!validateemail(data.newemail)) return res.status(400).json({ message: "Invalid email format" })
 
         if (!validateusername(data.username)) return res.status(400).json({message: "Invalid username format"})
     

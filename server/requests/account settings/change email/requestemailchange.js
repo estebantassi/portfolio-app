@@ -14,8 +14,7 @@ const RequestEmailChange = async (req, res) => {
 
         if (newemail != newemailcheck) return res.status(400).json({message: "Emails don't match"})
 
-        const emailtest = validateemail(newemail)
-        if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
+        if (!validateemail(newemail)) return res.status(400).json({ message: "Invalid email format" })
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })

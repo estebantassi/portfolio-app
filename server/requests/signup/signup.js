@@ -24,10 +24,8 @@ const Signup = async (req, res) => {
         if (!validateprivatekey(privatekey)) return res.status(400).json({ message: "Invalid key format" })
         if (!validatesrpsalt(srpsalt)) return res.status(400).json({ message: "Invalid salt format" })
         if (!validatesrpverifier(srpverifier)) return res.status(400).json({ message: "Invalid verifier format" })
-
+        if (!validateemail(email)) return res.status(400).json({ message: "Invalid email format" })
         if (email != emailcheck) return res.status(400).json({ message: "Emails don't match" })
-        const emailtest = validateemail(email)
-        if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
 
         const encryptedemail = encrypt(email, process.env.EMAIL_ENCRYPTION_KEY)
         const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)

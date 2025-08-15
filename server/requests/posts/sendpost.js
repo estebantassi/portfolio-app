@@ -16,6 +16,7 @@ const SendPost = async (req, res) => {
         let image = req?.files?.image?.data
         if (!validateid(repliedto) && repliedto != 0) return res.status(400).json({message: "Invalid id format"})
         if (!validateposttext(text)) return res.status(400).json({message: "Invalid text format"})
+        if (text.length == 0 && image == null) return res.status(400).json({message: "Can't send empty post"})
 
         if (image)
         {
@@ -25,11 +26,16 @@ const SendPost = async (req, res) => {
             if (imagemetadata)
             {
                 image = await image
-                    .resize(300, 300)
+                    .resize({
+                        width: 1920,
+                        height: 1920,
+                        fit: 'inside',
+                        withoutEnlargement: true
+                    })
                     .webp()
                     .toBuffer()
 
-                if (image.length > 500 * 1024) return res.status(400).json({ message: "Your image is too big, its compression is over 500KB" })
+                if (image.length > 1000 * 1024) return res.status(400).json({ message: "Your image is too big, its compression is over 1MB" })
             } else return res.status(400).json({ message: "Invalid image format" })
         }
 

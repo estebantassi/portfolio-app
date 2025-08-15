@@ -11,8 +11,7 @@ const VerifyEmail = async (req, res) => {
         const data = await GetTokenData(req, req?.body?.token, "signup")
         if (data?.email == null) return res.status(400).json({message: "Invalid link"})
 
-        const emailtest = validateemail(data.email)
-        if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
+        if (!validateemail(data.email)) return res.status(400).json({ message: "Invalid email format" })
 
         connection = await db.getConnection()
         await connection.beginTransaction()

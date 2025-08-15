@@ -3,14 +3,14 @@ const db = require('../../../config/database')
 const { setCachedValue, getCachedValue } = require('../../../config/redis')
 const { getIO } = require('../../../config/socketio')
 const { GetTokenData } = require('../../../tools/helper functions/gettokendata')
-const { validateid, validatetoken, validateanswer } = require('../../../tools/tools')
+const { validateid, validatesessiondescription } = require('../../../tools/tools')
 const { GetFollowStateServer } = require('../../profile/follow/getfollowstateserver')
 
 const AcceptCall = async (req, res) => {
     try {
         const answer = req?.body?.answer
         const callerid = req?.body?.callerid
-        if (!validateanswer(answer) == null) return res.status(400).json({message: "Invalid answer format"})
+        if (!validatesessiondescription(answer) == null) return res.status(400).json({message: "Invalid answer format"})
         if (!validateid(callerid)) return res.status(400).json({message: "Invalid id format"})
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")

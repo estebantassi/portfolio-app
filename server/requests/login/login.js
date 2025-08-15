@@ -22,8 +22,7 @@ const Login = async (req, res) => {
         const data = await GetTokenData(req, req?.cookies?.logintoken, "logintoken")
         if (data?.step != 0) return res.status(400).json({message: "Invalid token"})
 
-        const emailtest = validateemail(email)
-        if (emailtest.valid == false) return res.status(400).json({ message: emailtest.message })
+        if (!validateemail(email)) return res.status(400).json({ message: "Invalid email format" })
 
         const hashedemail = hash(email, process.env.EMAIL_HASH_KEY)
 
