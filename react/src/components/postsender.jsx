@@ -2,9 +2,12 @@ import { AuthContext } from '../context/authcontext'
 import { useContext, useEffect, useState } from "react"
 import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
+import { PostInput } from './inputs'
+import { useRef } from 'react'
+import { ImageUp, CircleX } from 'lucide-react';
 
 function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
-    const { user, avatar, banner } = useContext(AuthContext)
+    const { user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
 
     const [text, setText] = useState("")
@@ -13,6 +16,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
 
     const sendPost = async (e) => {
         e.preventDefault()
+        startnetworkrequest()
 
         const formdata = new FormData()
         formdata.append("text", text)
@@ -23,7 +27,8 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
             const response = await axios.post('/auth/sendpost',
                 formdata
                 , {
-                withCredentials: true
+                withCredentials: true,
+                signal: networkControllerRef.current.signal
             })
 
             const poster = {
@@ -63,13 +68,21 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
         }
     }
 
+    const postInputRef = useRef(null)
+    const postButtonDisabled = isNetworkButtonDisabled || (!postInputRef.current?.checkValidity() && !image)
+
     return (
         <div>
             <h1>SEND A POST</h1>
 
             <form onSubmit={(e) => sendPost(e)}>
-                <input value={text} placeholder='Write something...' onChange={(e) => setText(e.target.value)} />
-                <input type="file" accept="image/*" onChange={(e) => {
+                <PostInput value={text} onChange={(e) => setText(e.target.value)} inputRef={postInputRef}  />
+
+                <label htmlFor="post-image-upload">
+                    <ImageUp />
+                </label>
+
+                <input hidden id="post-image-upload" type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files[0]
                     if (file) {
                         setImage(file)
@@ -79,7 +92,13 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
                 }} />
                 {imagePreview && <img src={imagePreview} alt="postimage" />}
 
-                <button>Send</button>
+                {image && <CircleX onClick={() => {
+                    setImage("")
+                    setImagePreview("")
+                }}/>}
+
+
+                <button disabled={postButtonDisabled}>Send</button>
             </form>
             <button onClick={() => setShowPoster(false)}>Close</button>
         </div>

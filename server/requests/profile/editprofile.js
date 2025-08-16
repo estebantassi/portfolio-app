@@ -20,7 +20,7 @@ const EditProfile = async (req, res) => {
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const [[request]] = await db.query(`
-            SELECT username, avatar, banner, tag, messagekey_public, bio
+            SELECT username, avatar, banner, tag, bio
             FROM users
             WHERE id=?
         `, [data.id])
@@ -116,8 +116,7 @@ const EditProfile = async (req, res) => {
         let newuser = {
             username,
             bio,
-            tag,
-            messagekey_public: request.messagekey_public
+            tag
         }
 
         if (banner) newuser.banner = 1

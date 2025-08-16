@@ -2,7 +2,7 @@ const db = require('../../config/database')
 require('dotenv').config()
 var jwt = require('jsonwebtoken')
 const transporter = require('../../config/mailsender').transporter
-const { v4: uuidv4 } = require('uuid')
+const { v4: uuidv4, parse } = require('uuid')
 const { encrypt, hash, validateemail, validatesalt, validatepublickey, validateprivatekey, validatesrpsalt, validatesrpverifier, validateusername, generateRandomString } = require('../../tools/tools')
 
 const Signup = async (req, res) => {
@@ -46,7 +46,7 @@ const Signup = async (req, res) => {
 
         const verificationDurationMs = process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000
         const verificationdate = new Date(Date.now() + verificationDurationMs)
-        const verifyjti = uuidv4()
+        const verifyjti = parse(uuidv4())
         const verifytoken = jwt.sign({ email, id: request.insertId, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
 
         await connection.query(`
