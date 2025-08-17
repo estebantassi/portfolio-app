@@ -123,20 +123,20 @@ function validateemail(email) {
 }
 
 function validateusername(username) {
-    return username != null && typeof username === "string"
+    return username != null && typeof username === "string" && username.test("[\x20-\x7E]")
     && username.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
     && username.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatetag(tag, id) {
     return tag != null && typeof tag === "string"
-    && (isNaN(tag) || tag == id)
+    && (isNaN(tag) || tag == id) && tag.test("[\x20-\x7E]")
     && tag.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
     && tag.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatebio(bio) {
-    return bio != null && typeof bio === "string"
+    return bio != null && typeof bio === "string" && bio.test("[\x20-\x7E]")
     && bio.length >= parseInt(process.env.MIN_BIO_LENGTH, 10)
     && bio.length <= parseInt(process.env.MAX_BIO_LENGTH, 10)
 }
@@ -223,7 +223,7 @@ function getmessagelength(message)
 }
 
 function validateposttext(text) {
-  return text != null && typeof text === "string" && text.length <= parseInt(process.env.MAX_POST_LENGTH, 10)
+  return text != null && typeof text === "string" && text.test("[\x20-\x7E]") && text.length <= parseInt(process.env.MAX_POST_LENGTH, 10)
 }
 
 function validatesessiondescription(desc) {

@@ -49,7 +49,7 @@ const GetPosts = async (req, res) => {
         } catch (err) { 
             return res.status(400).json({message: "Couldn't fetch user"})
         }
-
+        
         const profileMap = new Map()
         for (const profile of Object.values(profiles)) {
             profileMap.set(profile.id, profile)

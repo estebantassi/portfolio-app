@@ -2,7 +2,6 @@ To-do :
   
 Urgent :  
   
--Put controllers on requests properly  
 -Load with intersect  
 -CSS (DO LAST)  
   

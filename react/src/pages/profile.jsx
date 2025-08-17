@@ -7,6 +7,7 @@ import { useNavigate } from "react-router"
 import { useAuth } from '../context/authcontext'
 import ProfileEditor from '../components/profileeditor'
 import getuserprofile from '../tools/getuserprofile'
+import '../css/profile.css'
 
 function Profile() {
 

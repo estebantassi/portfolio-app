@@ -7,7 +7,7 @@ import { useRef } from 'react'
 import { ImageUp, CircleX } from 'lucide-react';
 
 function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
-    const { user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest } = useContext(AuthContext)
+    const { user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
 
     const [text, setText] = useState("")
@@ -73,8 +73,6 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
 
     return (
         <div>
-            <h1>SEND A POST</h1>
-
             <form onSubmit={(e) => sendPost(e)}>
                 <PostInput value={text} onChange={(e) => setText(e.target.value)} inputRef={postInputRef}  />
 
@@ -88,7 +86,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
                         setImage(file)
                         setImagePreview(URL.createObjectURL(file))
                     }
-                     e.target.value = ''
+                    e.target.value = ''
                 }} />
                 {imagePreview && <img src={imagePreview} alt="postimage" />}
 
@@ -96,7 +94,6 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
                     setImage("")
                     setImagePreview("")
                 }}/>}
-
 
                 <button disabled={postButtonDisabled}>Send</button>
             </form>

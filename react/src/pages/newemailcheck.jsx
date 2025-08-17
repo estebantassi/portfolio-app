@@ -21,12 +21,13 @@ function NewEmailCheck() {
                 token: link
             })
 
-            navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            navigate("/home")
             addToast(err.response?.data?.message || "An error occurred", "red")
+        } finally {
+            navigate("/home")
         }
+        
     }
 
     return (

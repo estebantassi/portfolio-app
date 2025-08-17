@@ -57,7 +57,12 @@ const EditProfile = async (req, res) => {
             if (avatarmetadata)
             {
                 avatar = await avatar
-                    .resize(300, 300)
+                    .resize({
+                        width: 300,
+                        height: 300,
+                        fit: 'cover',
+                        withoutEnlargement: true
+                    })
                     .webp()
                     .toBuffer()
 
@@ -83,7 +88,12 @@ const EditProfile = async (req, res) => {
             if (bannermetadata)
             {
                 banner = await banner
-                    .resize(1500, 500)
+                    .resize({
+                        width: 1500,
+                        height: 500,
+                        fit: 'cover',
+                        withoutEnlargement: true
+                    })
                     .webp()
                     .toBuffer()
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuth } from '../context/authcontext'
 import axios from '../api/axios'
 import { useState } from 'react'
@@ -61,11 +61,36 @@ function Notifications() {
 
   const { addToast } = useContext(ToastContext)
 
+  const canLoadNotificationsRef = useRef(true)
+  const [canLoadNotifications, setCanLoadNotifications] = useState(true)
+
   useEffect(() => {
     if (!socket) return
 
     socket.on('notification', async (data) => {
-      await addNotification(data, true)
+
+      setNotifications(prev =>
+        prev.map(item =>
+          item.notification.id === data.notification.id
+            ? {
+                ...item,
+                notification: {
+                  ...item.notification,
+                  total_count: item.notification.total_count + 1,
+                  notifier_ids: [...item.notification.notifier_ids, data.notifier.id]
+                },
+                notifiers: [...item.notifiers, data.notifier]
+              }
+            : item
+        ).concat(
+          prev.every(item => item.notification.id !== data.notification.id)
+            ? [{
+                notification: { ...data.notification, notifier_ids: [data.notifier.id], total_count: 1 },
+                notifiers: [data.notifier]
+              }]
+            : []
+        )
+      )
     })
 
     return () => {
@@ -78,22 +103,24 @@ function Notifications() {
   }, [])
 
   const GetNotifications = async () => {
+    if (!canLoadNotificationsRef.current) return
+    canLoadNotificationsRef.current = false
+    setCanLoadNotifications(false)
+
     try {
       const response = await axios.get(`/auth/getnotifications/?offset=${notifications.length}&date=${date}`, { withCredentials: true })
 
-      if (response.data.notifications.length == 0) return
+      if (response.data.end) return
 
-      await addNotification(response.data.notifications)
+      setNotifications(prev => [...prev, ...response.data.notifications ])
 
       setOffset(prev => prev + 2)
     } catch (err) {
-      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
-  }
 
-  const addNotification = async (notif, reverse=false) => {
-    setNotifications(prev => reverse ? [ ...notif , ...prev] : [...prev, ...notif ])
+    canLoadNotificationsRef.current = true
+    setCanLoadNotifications(true)
   }
 
   return (
@@ -108,7 +135,7 @@ function Notifications() {
         />
       ))}
 
-      <button onClick={() => {
+      <button disabled={canLoadNotifications} onClick={() => {
         GetNotifications()
       }}>Get notifications</button>
     </>

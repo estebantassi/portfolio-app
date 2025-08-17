@@ -11,7 +11,7 @@ function Signup() {
 
   const { addToast } = useContext(ToastContext)
   const navigate = useNavigate()
-  const { startnetworkrequest, isNetworkButtonDisabled, networkControllerRef } = useAuth()
+  const { startnetworkrequest, isNetworkButtonDisabled, networkControllerRef, setIsNetworkButtonDisabled } = useAuth()
 
   const [data, setData] = useState({
     username: "",
@@ -23,7 +23,7 @@ function Signup() {
 
   const signupform = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       //Generate the private key for encryption and its values
@@ -54,6 +54,8 @@ function Signup() {
     } catch (err) {
         addToast(err.response?.data?.message || "An error occurred", "red")
     }
+
+    setIsNetworkButtonDisabled(false)
   }
 
   const usernameInputRef = useRef(null)

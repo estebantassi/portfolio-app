@@ -3,6 +3,8 @@ const db = require('../../config/database')
 const bucket = require("../../config/gcs")
 const { getCachedValue, setCachedValue } = require('../../config/redis')
 const { getIO } = require('../../config/socketio')
+const { GetUserProfile } = require('../../requests/profile/getuserprofile')
+const { makeFakeReqRes } = require('../tools')
 
 const Notify = async (type, notifiedid, notifierid, value = 0) => {
 
@@ -54,8 +56,23 @@ const Notify = async (type, notifiedid, notifierid, value = 0) => {
             INSERT INTO notifications_notifiers (notifier_id, notification_id)
             VALUES (?, ?)
         `, [notifierid, notificationid])
-    
-        //getIO().to(notifiedid.toString()).emit('notification', { id: request2.insertId, type, notified_id: parseInt(notifiedid, 10), notifier_id: notifierid, created_at: date.toISOString(), value })
+
+        const makeRequest = makeFakeReqRes()
+        makeRequest.req.query.id = notifierid
+        const notifier = (await GetUserProfile(makeRequest.req, makeRequest.res))._getStore().body.profiles[0]
+
+        const notification = {
+            id: notificationid,
+            notified_id: notifiedid,
+            total_count: 1,
+            value,
+            type,
+            updated_at: date.toISOString(),
+            created_at: date.toISOString(),
+            notifier_ids: [notifierid],
+        }
+
+        getIO().to(notifiedid.toString()).emit('notification', { notifier, notification })
         
         await connection.commit()
     } catch (err) {

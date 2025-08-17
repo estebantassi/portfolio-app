@@ -32,9 +32,12 @@ const GetNotifications = async (req, res) => {
             AND n.created_at <= ?
             GROUP BY n.id
             ORDER BY n.id DESC
-            LIMIT 2
+            LIMIT 3
             OFFSET ?
         `, [data.id, date.toISOString(), offset])
+
+        const hasMore = requests.length > 2
+        requests.splice(2)
         
         let ids = []
         for (const request of requests) {
@@ -71,7 +74,7 @@ const GetNotifications = async (req, res) => {
             finalNotifications.push(notif)
         }
 
-        return res.status(200).json({message: "Data retrieved", notifications: finalNotifications})
+        return res.status(200).json({message: "Data retrieved", notifications: finalNotifications, end: !hasMore})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

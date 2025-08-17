@@ -22,7 +22,7 @@ const GetMessages = async (req, res) => {
         if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
         if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
 
-        const [request] = await db.query(`
+        let [request] = await db.query(`
             SELECT *
             FROM messages
             WHERE (
@@ -31,15 +31,18 @@ const GetMessages = async (req, res) => {
                 (senderid = ? AND receiverid = ?)
             ) AND created_at <= ?
             ORDER BY id DESC
-            LIMIT 2
+            LIMIT 3
             OFFSET ?
         `, [data.id, receiverid, receiverid, data.id, date.toISOString(), offset])
+
+        const hasMore = request.length > 2
+        request = request.slice(0, 2)
 
         for (const message of request) {
             if (message?.image == 1) message.image = await GetImage(`messages/${message.id}`)
         }
 
-        return res.status(200).json({message: "Message sent", data: request})
+        return res.status(200).json({message: "Message sent", data: request, end: !hasMore})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({message: "An error occured, please try again later"})

@@ -144,20 +144,20 @@ export const AuthProvider = ({ children }) => {
         }
     }, [])
 
-    const startnetworkrequest = () => {
+    const startnetworkrequest = (timeout=true) => {
         setIsNetworkButtonDisabled(true)
         if (networkTimeoutRef.current) clearTimeout(networkTimeoutRef.current)
 
         if (networkControllerRef.current) networkControllerRef.current.abort()
         networkControllerRef.current = new AbortController()
 
-        networkTimeoutRef.current = setTimeout(() => {
+        if (timeout) networkTimeoutRef.current = setTimeout(() => {
             setIsNetworkButtonDisabled(false)
         }, 1000)
     }
 
     const logout = async () => {
-        startnetworkrequest()
+        startnetworkrequest(false)
 
         setUser(null)
         Cookies.remove("user")
@@ -179,6 +179,7 @@ export const AuthProvider = ({ children }) => {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
         navigate("/home")
+        setIsNetworkButtonDisabled(false)
     }
 
     const checkauth = async () => {
@@ -218,8 +219,9 @@ export const AuthProvider = ({ children }) => {
         setUser,
         logout,
         startnetworkrequest,
-        networkControllerRef,
+        setIsNetworkButtonDisabled,
         isNetworkButtonDisabled,
+        networkControllerRef,
         socket,
         avatar,
         setAvatar,

@@ -182,7 +182,6 @@ export const CallProvider = ({ children }) => {
 
     const rejectCall = async (from) => {
         try {
-
             const response = await axios.post('/auth/rejectcall', {
                 from
             }, {

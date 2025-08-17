@@ -8,18 +8,17 @@ import { useAuth } from '../context/authcontext'
 import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage } from '../tools/tools'
 import { useCall } from '../context/callcontext'
 import getuserprofile from '../tools/getuserprofile'
+import { MessageInput } from '../components/inputs'
 
 const MessageItem = memo(({ msg, userId, onDelete }) => {
 
-    const created_at = new Date(msg.created_at)
+    const created_at = new Date(msg?.created_at)
 
     return (
         <div>
-            <h2>{msg.text}</h2>
-            {msg.image ? <img src={msg.image} alt="imagesent" /> : null}
-            {msg.senderid === userId ? (
-                <button onClick={() => onDelete(msg.id)}>Delete Message</button>
-            ) : null}
+            {msg?.text && <h2>{msg.text}</h2>}
+            {msg?.image && <img src={msg.image} alt="imagesent" />}
+            {msg?.senderid === userId && <button onClick={() => onDelete(msg.id)}>Delete Message</button>}
             <p>{created_at.toLocaleString()}</p>
         </div>
     )
@@ -28,7 +27,7 @@ const MessageItem = memo(({ msg, userId, onDelete }) => {
 function Messages() {
 
     const { startCall } = useCall()
-    const { user, avatar, banner, startnetworkrequest, networkControllerRef, socket } = useAuth()
+    const { user, startnetworkrequest, networkControllerRef, socket, setIsNetworkButtonDisabled, isNetworkButtonDisabled } = useAuth()
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()
@@ -41,9 +40,9 @@ function Messages() {
     const [imagePreview, setImagePreview] = useState()
 
     const canLoadMessagesRef = useRef(true)
+    const [canLoadMessages, setCanLoadMessages] = useState(true)
 
     const date = new Date()
-
 
     useEffect(() => {
         if (!socket || !secret) return
@@ -92,8 +91,6 @@ function Messages() {
         }
 
         inituser()
-
-
     }, [link])
 
     useEffect(() => {
@@ -152,7 +149,7 @@ function Messages() {
 
     const sendmessage = async (e) => {
         e.preventDefault()
-        startnetworkrequest()
+        startnetworkrequest(false)
 
         try {
             const text = await encryptMessage(secret, messagetext, "text")
@@ -183,11 +180,14 @@ function Messages() {
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
+
+        setIsNetworkButtonDisabled(false)
     }
 
     const getmessages = async () => {
         if (!canLoadMessagesRef.current) return
         canLoadMessagesRef.current = false
+        setCanLoadMessages(false)
 
         try {
             const response = await axios.get(`/auth/getmessages?receiverid=${link}&offset=${messages.length}&date=${date}`, {
@@ -195,7 +195,7 @@ function Messages() {
             })
 
             //FIX THIS TO REQUEST END OF MESSAGES
-            if (response?.data?.data?.length == 0) return
+            if (response.data.end) return
 
             const encryptedMessages = response.data.data
             const decryptedMessages = await Promise.all(
@@ -215,13 +215,14 @@ function Messages() {
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
             if (err?.response?.status == 403) navigate("/profile/" + link)
-        } finally {
-            canLoadMessagesRef.current = true
         }
+
+        setCanLoadMessages(true)
+        canLoadMessagesRef.current = true
     }
 
     const deletemessage = useCallback(async (id) => {
-        startnetworkrequest()
+        startnetworkrequest(false)
 
         try {
             const response = await axios.post('/auth/deletemessage', {
@@ -236,14 +237,20 @@ function Messages() {
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
+
+        setIsNetworkButtonDisabled(false)
     }, [])
+
+    const messageInputRef = useRef(null)
+    const isMessageButtonDisabled = isNetworkButtonDisabled || (!messageInputRef.current?.checkValidity() && !image)
 
     return (
         <>
             {userdata && userdata.username && <h1>Messages with {userdata.username}</h1>}
 
             <form onSubmit={(e) => sendmessage(e)}>
-                <input value={messagetext} placeholder='Write something...' onChange={(e) => setMessagetext(e.target.value)} />
+
+                <MessageInput value={messagetext} onChange={(e) => setMessagetext(e.target.value)} inputRef={messageInputRef}/>
                 <input type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files[0]
                     if (file) {
@@ -253,10 +260,10 @@ function Messages() {
                 }}/>
                 {imagePreview ? <img src={imagePreview} alt="imagetosend"/> : null}
 
-                <button>Send</button>
+                <button disabled={isMessageButtonDisabled} >Send</button>
             </form>
 
-            <button onClick={() => { getmessages() }}>Get Messages</button>
+            <button disabled={!canLoadMessages} onClick={() => { getmessages() }}>Get Messages</button>
 
             <button disabled={socket ? false : true} onClick={() => { startCall(userdata) }}>Call</button>
 

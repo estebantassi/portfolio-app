@@ -11,7 +11,7 @@ function Login() {
 
   const navigate = useNavigate()
   const { addToast } = useContext(ToastContext)
-  const { startnetworkrequest, isNetworkButtonDisabled, networkControllerRef, setUser } = useAuth()
+  const { startnetworkrequest, isNetworkButtonDisabled, networkControllerRef, setUser, setIsNetworkButtonDisabled } = useAuth()
 
   const [data, setData] = useState({
     email: "",
@@ -25,7 +25,7 @@ function Login() {
   //Function to INITIATE login
   const loginform = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       //Fetch semi-public user data
@@ -61,12 +61,13 @@ function Login() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+    setIsNetworkButtonDisabled(false)
   }
 
   //Function to FINISH login
   const logincodeform = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       //Finish the login using the 2FA/email code
@@ -97,6 +98,7 @@ function Login() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+    setIsNetworkButtonDisabled(false)
   }
 
   const codeInputRef = useRef(null)

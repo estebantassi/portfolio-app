@@ -13,7 +13,7 @@ function AccountSettings() {
   const navigate = useNavigate()
 
   const { addToast } = useContext(ToastContext)
-  const { logout, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled } = useAuth()
+  const { logout, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled, setIsNetworkButtonDisabled } = useAuth()
   const [isauth, setIsauth] = useState(false)
   const [password, setPassword] = useState("")
   const [showaccesscode2FA, setShowaccesscode2FA] = useState(false)
@@ -42,9 +42,10 @@ function AccountSettings() {
     }
   }, [])
 
+  //ACCESS THE PAGE
   const accesssettings = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       if (showaccesscode2FA) {
@@ -102,11 +103,14 @@ function AccountSettings() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+
+    setIsNetworkButtonDisabled(false)
   }
 
+  //INITIATE EMAIL CHANGE
   const requestnewemail = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       const request = await axios.post('/auth/sensitivedata/accountsettings/requestemailchange', {
@@ -123,11 +127,13 @@ function AccountSettings() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+    setIsNetworkButtonDisabled(false)
   }
 
+  //INITIATE PASSWORD CHANGE
   const requestnewpassword = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       const rawsalt = crypto.getRandomValues(new Uint8Array(16))
@@ -170,14 +176,15 @@ function AccountSettings() {
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      console.log(err)
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+    setIsNetworkButtonDisabled(false)
   }
 
+  //INITIATE 2FA
   const request2fa = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       const request = await axios.post('/auth/sensitivedata/accountsettings/request2fa', {}, {
@@ -191,15 +198,16 @@ function AccountSettings() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+    setIsNetworkButtonDisabled(false)
   }
 
+  //CHECK 2FA CODE
   const check2FAcode = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
-
+    
     const rawsalt = crypto.getRandomValues(new Uint8Array(16))
     const salt = btoa(String.fromCharCode(...rawsalt))
-
+    
     const userkey = localStorage.getItem("messagekey")
     const rawKey = base64ToArrayBuffer(userkey)
     const dataKey = await crypto.subtle.importKey(
@@ -212,13 +220,15 @@ function AccountSettings() {
       true,
       ['deriveKey', 'deriveBits']
     )
-
+    
     const passwordKey = await deriveKey(password, encrypted2FAsecret, salt)
     const privatekey = await encryptDataKey(dataKey, passwordKey)
-
+    
     const decryptedkey = await decryptDataKey(privatekey, passwordKey)
     const exportedKeyBuffer = await crypto.subtle.exportKey('pkcs8', decryptedkey)
     const keyBase64 = arrayBufferToBase64(exportedKeyBuffer)
+    
+    startnetworkrequest(false)
 
     try {
       const request = await axios.post('/auth/sensitivedata/accountsettings/enable2FA', {
@@ -238,11 +248,13 @@ function AccountSettings() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+    setIsNetworkButtonDisabled(false)
   }
 
+  //DISABLE 2FA
   const disable2FA = async (e) => {
     e.preventDefault()
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       const rawsalt = crypto.getRandomValues(new Uint8Array(16))
@@ -283,10 +295,13 @@ function AccountSettings() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+
+    setIsNetworkButtonDisabled(false)
   }
 
+  //LOGOUT ALL SESSIONS
   const LogoutAllUsers = async () => {
-    startnetworkrequest()
+    startnetworkrequest(false)
 
     try {
       const request = await axios.post('/auth/sensitivedata/accountsettings/logoutallusers', {}, {
@@ -299,6 +314,8 @@ function AccountSettings() {
     } catch (err) {
       addToast(err.response?.data?.message || "An error occurred", "red")
     }
+
+    setIsNetworkButtonDisabled(false)
   }
 
   const newemailInputRef = useRef(null)
