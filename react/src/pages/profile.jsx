@@ -143,33 +143,35 @@ function Profile() {
 
     return (
         <>
-            <h1>{user?.id == link ? user.username : userdata.username}</h1>
-            <img src={user?.id == link ? avatar : userdata.avatar} alt="Avatar" />
-            <h2>{user?.id == link ? user.bio : userdata.bio}</h2>
+            <div>
+                <h1>{user?.id == link ? user.username : userdata.username}</h1>
+                <img src={user?.id == link ? avatar : userdata.avatar} alt="Avatar" />
+                <h2>{user?.id == link ? user.bio : userdata.bio}</h2>
 
 
-            { user && user.id != link ? <>
-                { isBlocked || isBlocking ? <>
+                { user && user.id != link ? <>
+                    { isBlocked || isBlocking ? <>
 
-                    <h2>{isBlocked ? "User blocked you" : "You blocked this user"}</h2>
+                        <h2>{isBlocked ? "User blocked you" : "You blocked this user"}</h2>
+                        
+                        </> : <>
+                        
+                        <button onClick={() => navigate("/messages/" + link)}>Send message</button>
+                        <button onClick={() => processfollow()}>
+                            {isFollowing ? "Unfollow" : (isFollowed ? "Follow back" : "Follow")}
+                        </button>
+                        {isFollowed && <span>Follows you</span>}
+                    </>}
                     
-                    </> : <>
-                    
-                    <button onClick={() => navigate("/messages/" + link)}>Send message</button>
-                    <button onClick={() => processfollow()}>
-                        {isFollowing ? "Unfollow" : (isFollowed ? "Follow back" : "Follow")}
-                    </button>
-                    {isFollowed && <span>Follows you</span>}
-                </>}
+                    <button onClick={() => processblock()}>{isBlocking ? "Unblock" : (isBlocked ? "Block back" : "Block")}</button>
+
+                </> : user ? <>
+
+                    <button onClick={() => setShowProfileEditor(!showProfileEditor)}>Open editor</button>
+                    {showProfileEditor ? <ProfileEditor /> : null}
                 
-                <button onClick={() => processblock()}>{isBlocking ? "Unblock" : (isBlocked ? "Block back" : "Block")}</button>
-
-            </> : user ? <>
-
-                <button onClick={() => setShowProfileEditor(!showProfileEditor)}>Open editor</button>
-                {showProfileEditor ? <ProfileEditor /> : null}
-            
-            </> : null}
+                </> : null}
+            </div>
         </>
     )
 }

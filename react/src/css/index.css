@@ -1,6 +1,5 @@
 *{
-    font-family: "Open Sans", sans-serif;
-    color: white;
+    box-sizing: border-box;
     margin: 0;
 }
 
@@ -8,8 +7,20 @@ button{
     color: black;
 }
 
-body{
+html, body, #root{
+    font-family: "Open Sans", sans-serif;
+    color: white;
     background-color: darkslategrey;
+
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+#root{
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
 img{

@@ -123,22 +123,25 @@ function validateemail(email) {
 }
 
 function validateusername(username) {
-    return username != null && typeof username === "string" && username.test("[\x20-\x7E]")
-    && username.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
-    && username.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
+  const usernameregex = /[\x20-\x7E]/
+  return username != null && typeof username === "string" && usernameregex.test(username)
+  && username.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
+  && username.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatetag(tag, id) {
-    return tag != null && typeof tag === "string"
-    && (isNaN(tag) || tag == id) && tag.test("[\x20-\x7E]")
-    && tag.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
-    && tag.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
+  const tagregex = /[\x20-\x7E]/
+  return tag != null && typeof tag === "string"
+  && (isNaN(tag) || tag == id) && tagregex.test(tag)
+  && tag.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
+  && tag.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatebio(bio) {
-    return bio != null && typeof bio === "string" && bio.test("[\x20-\x7E]")
-    && bio.length >= parseInt(process.env.MIN_BIO_LENGTH, 10)
-    && bio.length <= parseInt(process.env.MAX_BIO_LENGTH, 10)
+  const bioregex = /[\x20-\x7E]/
+  return bio != null && typeof bio === "string" && bioregex.test(bio)
+  && bio.length >= parseInt(process.env.MIN_BIO_LENGTH, 10)
+  && bio.length <= parseInt(process.env.MAX_BIO_LENGTH, 10)
 }
 
 function validateid(id) {
@@ -223,7 +226,8 @@ function getmessagelength(message)
 }
 
 function validateposttext(text) {
-  return text != null && typeof text === "string" && text.test("[\x20-\x7E]") && text.length <= parseInt(process.env.MAX_POST_LENGTH, 10)
+  const regtester = /[\x20-\x7E]/
+  return text != null && typeof text === "string" && regtester.test(text) && text.length <= parseInt(process.env.MAX_POST_LENGTH, 10)
 }
 
 function validatesessiondescription(desc) {

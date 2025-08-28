@@ -65,7 +65,7 @@ const Follow = async (req, res) => {
         getIO().to(followeeid.toString()).emit(followed ? 'follow' : "unfollow", { id: followeeid, from: data.id })
         getIO().to(data.id.toString()).emit(followed ? 'follow' : "unfollow", { id: followeeid, from: data.id })
 
-        await Notify("follow", followeeid, data.id)
+        if (follow) await Notify("follow", followeeid, data.id)
 
         return res.status(200).json({message, followed})
     } catch (err) {

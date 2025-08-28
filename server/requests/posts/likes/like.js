@@ -70,7 +70,7 @@ const Like = async (req, res) => {
             liked = true
         }
         
-        if (!like) await Notify("like", post.poster_id, data.id, postid)
+        if (!like && data.id != post.poster_id) await Notify("like", post.poster_id, data.id, postid)
 
         await connection.commit()
         return res.status(200).json({message, liked})

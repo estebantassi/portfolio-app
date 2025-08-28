@@ -335,95 +335,96 @@ function AccountSettings() {
   const code2FAButtonDisabled = isNetworkButtonDisabled || !code2FAInputRef.current?.checkValidity()
 
   return (
+    <div>
+      {isauth ? <>
+      
+        <p>Email: {email}</p>
+        <button onClick={() => { LogoutAllUsers() }} disabled={isNetworkButtonDisabled}>Logout all sessions</button>
 
-    isauth ? <>
+        {/*//////////////////// CHANGE EMAIL ////////////////////*/}
 
-      <p>Email: {email}</p>
-      <button onClick={() => { LogoutAllUsers() }} disabled={isNetworkButtonDisabled}>Logout all sessions</button>
+        <form onSubmit={(e) => requestnewemail(e)}>
+          <label>New email</label>
+          <EmailInput value={newemail} onChange={(e) => setNewemail(e.target.value)} inputRef={newemailInputRef} />
+          <EmailInput value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} inputRef={newemailcheckInputRef} />
 
-      {/*//////////////////// CHANGE EMAIL ////////////////////*/}
-
-      <form onSubmit={(e) => requestnewemail(e)}>
-        <label>New email</label>
-        <EmailInput value={newemail} onChange={(e) => setNewemail(e.target.value)} inputRef={newemailInputRef} />
-        <EmailInput value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} inputRef={newemailcheckInputRef} />
-
-        <button disabled={newemailButtonDisabled}>Change email</button>
-      </form>
-
-      {/*//////////////////// CHANGE PASSWORD ////////////////////*/}
-
-      <form onSubmit={(e) => requestnewpassword(e)}>
-        <label>New password</label>
-        <PasswordInput value={newpassword} onChange={(e) => setNewpassword(e.target.value)} inputRef={newpasswordInputRef} />
-        <PasswordInput value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)} inputRef={newpasswordcheckInputRef} />
-
-        <button disabled={newpasswordButtonDisabled}>Change password</button>
-      </form>
-
-      {/*//////////////////// TOGGLE 2FA ////////////////////*/}
-
-      {has2FA ? <>
-        <h1>2FA Enabled</h1>
-
-        <form onSubmit={(e) => disable2FA(e)}>
-          <button disabled={isNetworkButtonDisabled}>Disable 2FA</button>
-        </form>
-      </> : <></>}
-
-      {!qrcode && !isqrcodescanned && !has2FA ? <>
-
-        <form onSubmit={(e) => request2fa(e)}>
-          <button disabled={isNetworkButtonDisabled}>Enable 2FA</button>
+          <button disabled={newemailButtonDisabled}>Change email</button>
         </form>
 
-      </> : <>
-      </>}
+        {/*//////////////////// CHANGE PASSWORD ////////////////////*/}
 
-      {/*//////////////////// ENABLE 2FA ////////////////////*/}
-      {qrcode && !has2FA ? <>
-        <form onSubmit={(e) => {
-          e.preventDefault()
-          setIsqrcodescanned(true)
-          setQrcode(null)
-        }}>
-          <img
-            src={qrcode}
-            alt="new"
-          />
-          <button>I scanned the QR code</button>
+        <form onSubmit={(e) => requestnewpassword(e)}>
+          <label>New password</label>
+          <PasswordInput value={newpassword} onChange={(e) => setNewpassword(e.target.value)} inputRef={newpasswordInputRef} />
+          <PasswordInput value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)} inputRef={newpasswordcheckInputRef} />
+
+          <button disabled={newpasswordButtonDisabled}>Change password</button>
         </form>
-      </> : <>
 
-      </>}
+        {/*//////////////////// TOGGLE 2FA ////////////////////*/}
 
-      {isqrcodescanned && !has2FA ? <>
-        <form onSubmit={(e) => check2FAcode(e)}>
-          <CodeInput value={code2FA} onChange={(e) => setCode2FA(e.target.value)} inputRef={code2FAInputRef} />
-          <button disabled={code2FAButtonDisabled}>Enable 2FA</button>
-        </form>
-      </> : <></>}
+        {has2FA ? <>
+          <h1>2FA Enabled</h1>
 
-      {/*//////////////////// ACCESS THE PAGE ////////////////////*/}
-    </>
-      :
-      <>
-        <form onSubmit={(e) => accesssettings(e)}>
-          {
-            showaccesscode2FA ? <>
-              <label>Enter 2FA code from Authenticator App</label>
-              <CodeInput value={accesscode2FA} onChange={(e) => setAccesscode2FA(e.target.value)} inputRef={accesscode2FAInputRef} />
-            </>
-              :
-              <>
-                <label>Password</label>
-                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} inputRef={passwordInputRef} />
-              </>
-          }
+          <form onSubmit={(e) => disable2FA(e)}>
+            <button disabled={isNetworkButtonDisabled}>Disable 2FA</button>
+          </form>
+        </> : <></>}
 
-          <button disabled={showaccesscode2FA ? accesscode2FAButtonDisabled : passwordButtonDisabled}>Verify password</button>
-        </form>
+        {!qrcode && !isqrcodescanned && !has2FA ? <>
+
+          <form onSubmit={(e) => request2fa(e)}>
+            <button disabled={isNetworkButtonDisabled}>Enable 2FA</button>
+          </form>
+
+        </> : <>
+        </>}
+
+        {/*//////////////////// ENABLE 2FA ////////////////////*/}
+        {qrcode && !has2FA ? <>
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            setIsqrcodescanned(true)
+            setQrcode(null)
+          }}>
+            <img
+              src={qrcode}
+              alt="new"
+            />
+            <button>I scanned the QR code</button>
+          </form>
+        </> : <>
+
+        </>}
+
+        {isqrcodescanned && !has2FA ? <>
+          <form onSubmit={(e) => check2FAcode(e)}>
+            <CodeInput value={code2FA} onChange={(e) => setCode2FA(e.target.value)} inputRef={code2FAInputRef} />
+            <button disabled={code2FAButtonDisabled}>Enable 2FA</button>
+          </form>
+        </> : <></>}
+
+        {/*//////////////////// ACCESS THE PAGE ////////////////////*/}
       </>
+        :
+        <>
+          <form onSubmit={(e) => accesssettings(e)}>
+            {
+              showaccesscode2FA ? <>
+                <label>Enter 2FA code from Authenticator App</label>
+                <CodeInput value={accesscode2FA} onChange={(e) => setAccesscode2FA(e.target.value)} inputRef={accesscode2FAInputRef} />
+              </>
+                :
+                <>
+                  <label>Password</label>
+                  <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} inputRef={passwordInputRef} />
+                </>
+            }
+
+            <button disabled={showaccesscode2FA ? accesscode2FAButtonDisabled : passwordButtonDisabled}>Verify password</button>
+          </form>
+        </>}
+      </div>
   )
 }
 

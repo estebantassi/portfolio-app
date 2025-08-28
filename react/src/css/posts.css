@@ -1,3 +1,17 @@
+.posts {
+  min-height: 100vh;        /* fills the whole viewport */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* pushes content to the bottom initially */
+  overflow-y: auto;
+  margin-bottom: 50vh;
+}
+
+.posts-above, .replies {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
 .post-home-wrapper:hover{
     background-color: rgba(0, 0, 255, 0.05);
 }

@@ -42,6 +42,16 @@ const SendPost = async (req, res) => {
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
+        let originalpost
+        if (repliedto != 0)
+        {
+            [[originalpost]] = await db.query(`
+                SELECT poster_id
+                FROM posts
+                WHERE id=?
+            `, [repliedto])
+        }
+
         const date = new Date()
         const [post] = await db.query(`
             INSERT INTO posts (text, replied_to, poster_id, created_at, image)
@@ -50,6 +60,8 @@ const SendPost = async (req, res) => {
 
         if (repliedto != 0)
         {
+            if (!originalpost) return res.status(400).json({ message: "Couldn't find original post" })
+
             await db.query(`
                 UPDATE posts
                 SET reply_count=reply_count+1
@@ -79,6 +91,8 @@ const SendPost = async (req, res) => {
             like_count: 0,
             reply_count: 0
         }
+
+        if (originalpost && data.id != originalpost.poster_id) await Notify("reply", originalpost.poster_id, data.id, post.insertId)
 
         return res.status(200).json({message: "Posted", postdata })
     } catch (err) {

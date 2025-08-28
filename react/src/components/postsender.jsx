@@ -44,7 +44,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
             setImage("")
             setImagePreview("")
 
-            if (repliedto == link) setReplies(prev => [{post: response.data.postdata, poster}, ...prev])
+            if (repliedto == link) setReplies(prev => [...prev, {post: response.data.postdata, poster}])
 
             setReplies(prev =>
                 prev.map(item =>

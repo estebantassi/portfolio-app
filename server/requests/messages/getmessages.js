@@ -22,6 +22,8 @@ const GetMessages = async (req, res) => {
         if (anyblocked == null) return res.status(403).json({message: "Error checking block state"})
         if (anyblocked) return res.status(403).json({message: "This user blocked you or you blocked this user"})
 
+        const batchSize = parseInt(process.env.MESSAGES_FETCH_SIZE, 10)
+
         let [request] = await db.query(`
             SELECT *
             FROM messages
@@ -31,12 +33,12 @@ const GetMessages = async (req, res) => {
                 (senderid = ? AND receiverid = ?)
             ) AND created_at <= ?
             ORDER BY id DESC
-            LIMIT 3
+            LIMIT ?
             OFFSET ?
-        `, [data.id, receiverid, receiverid, data.id, date.toISOString(), offset])
+        `, [data.id, receiverid, receiverid, data.id, date.toISOString(), batchSize + 1, offset])
 
-        const hasMore = request.length > 2
-        request = request.slice(0, 2)
+        const hasMore = request.length > batchSize
+        request = request.slice(0, batchSize)
 
         for (const message of request) {
             if (message?.image == 1) message.image = await GetImage(`messages/${message.id}`)

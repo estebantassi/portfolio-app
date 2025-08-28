@@ -9,6 +9,7 @@ import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage }
 import { useCall } from '../context/callcontext'
 import getuserprofile from '../tools/getuserprofile'
 import { MessageInput } from '../components/inputs'
+import "../css/messages.css"
 
 const MessageItem = memo(({ msg, userId, onDelete }) => {
 
@@ -34,7 +35,7 @@ function Messages() {
     const [userdata, setUserdata] = useState({})
     const [messagetext, setMessagetext] = useState("")
     const [messages, setMessages] = useState([])
-    const [secret, setSecret] = useState()
+    const secretRef = useRef(null)
 
     const [image, setImage] = useState()
     const [imagePreview, setImagePreview] = useState()
@@ -44,14 +45,17 @@ function Messages() {
 
     const date = new Date()
 
+    const messagesWrapperRef = useRef(null)
+    const messagesLengthRef = useRef(0)
+
     useEffect(() => {
-        if (!socket || !secret) return
+        if (!socket) return
 
         socket.on('newmessage', async (data) => {
             let message
             try {
-                const decryptedText = await decryptMessage(secret, data.text, "text")
-                data.image = await reconstructImage(data.image, secret)
+                const decryptedText = await decryptMessage(secretRef.current, data.text, "text")
+                data.image = await reconstructImage(data.image, secretRef.current)
 
                 message = { ...data, text: decryptedText }
             } catch {
@@ -76,7 +80,7 @@ function Messages() {
             socket.off('block')
             socket.off('deletemessage')
         }
-    }, [socket, secret])
+    }, [socket])
 
     useEffect(() => {
         async function inituser () {
@@ -91,7 +95,20 @@ function Messages() {
         }
 
         inituser()
+
+        const box = messagesWrapperRef.current
+        const handleScroll = () => { checkScroll() }
+        box.addEventListener('scroll', handleScroll)
+        return () => {
+            box.removeEventListener('scroll', handleScroll)
+        }
     }, [link])
+
+    const checkScroll = () => {
+        if (messagesWrapperRef.current.clientHeight - messagesWrapperRef.current.scrollTop >= messagesWrapperRef.current.scrollHeight - 200
+            || !(messagesWrapperRef.current.scrollHeight > messagesWrapperRef.current.clientHeight)
+        ) getmessages()
+    }
 
     useEffect(() => {
         if (userdata == null || userdata.messagekey_public == null) return
@@ -136,23 +153,23 @@ function Messages() {
                 false,
                 ["encrypt", "decrypt"]
             )
-            setSecret(sharedSecret)
+            secretRef.current = sharedSecret
+
+            getmessages()
         }
 
         getsecret()
     }, [userdata])
 
     useEffect(() => {
-        if (secret != null)
-        getmessages()
-    }, [secret])
+    }, [])
 
     const sendmessage = async (e) => {
         e.preventDefault()
         startnetworkrequest(false)
 
         try {
-            const text = await encryptMessage(secret, messagetext, "text")
+            const text = await encryptMessage(secretRef.current, messagetext, "text")
             const formdata = new FormData()
             formdata.append('text', text)
             formdata.append('receiverid', link)
@@ -160,7 +177,7 @@ function Messages() {
             if (image)
             {
                 const imageArrayBuffer = await image.arrayBuffer()
-                const encryptedimage = await encryptMessage(secret, imageArrayBuffer, "image")
+                const encryptedimage = await encryptMessage(secretRef.current, imageArrayBuffer, "image")
                 const blob = new Blob([encryptedimage])
                 formdata.append('image', blob)
             }
@@ -190,19 +207,16 @@ function Messages() {
         setCanLoadMessages(false)
 
         try {
-            const response = await axios.get(`/auth/getmessages?receiverid=${link}&offset=${messages.length}&date=${date}`, {
+            const response = await axios.get(`/auth/getmessages?receiverid=${link}&offset=${messagesLengthRef.current}&date=${date}`, {
                 withCredentials: true
             })
-
-            //FIX THIS TO REQUEST END OF MESSAGES
-            if (response.data.end) return
 
             const encryptedMessages = response.data.data
             const decryptedMessages = await Promise.all(
             encryptedMessages.map(async (msg) => {
                 try {
-                    const decryptedText = await decryptMessage(secret, msg.text, "text")
-                    msg.image = await reconstructImage(msg.image, secret) 
+                    const decryptedText = await decryptMessage(secretRef.current, msg.text, "text")
+                    msg.image = await reconstructImage(msg.image, secretRef.current) 
 
                     return { ...msg, text: decryptedText }
                 } catch {
@@ -212,6 +226,10 @@ function Messages() {
             )
 
             setMessages(prev => [...prev, ...decryptedMessages])
+
+            messagesLengthRef.current += decryptedMessages.length
+
+            if (response.data.end) return
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
             if (err?.response?.status == 403) navigate("/profile/" + link)
@@ -219,6 +237,8 @@ function Messages() {
 
         setCanLoadMessages(true)
         canLoadMessagesRef.current = true
+
+        checkScroll()
     }
 
     const deletemessage = useCallback(async (id) => {
@@ -246,35 +266,45 @@ function Messages() {
 
     return (
         <>
-            {userdata && userdata.username && <h1>Messages with {userdata.username}</h1>}
+            <div className='messages'>
+                <div className='messages-page-wrapper'>
+                    {userdata && userdata.username && <h1>Messages with {userdata.username}</h1>}
 
-            <form onSubmit={(e) => sendmessage(e)}>
 
-                <MessageInput value={messagetext} onChange={(e) => setMessagetext(e.target.value)} inputRef={messageInputRef}/>
-                <input type="file" accept="image/*" onChange={(e) => {
-                    const file = e.target.files[0]
-                    if (file) {
-                        setImage(file)
-                        setImagePreview(URL.createObjectURL(file))
-                    }
-                }}/>
-                {imagePreview ? <img src={imagePreview} alt="imagetosend"/> : null}
 
-                <button disabled={isMessageButtonDisabled} >Send</button>
-            </form>
+                    <button disabled={!canLoadMessages} onClick={() => { getmessages() }}>Get Messages</button>
 
-            <button disabled={!canLoadMessages} onClick={() => { getmessages() }}>Get Messages</button>
+                    <button disabled={socket ? false : true} onClick={() => { startCall(userdata) }}>Call</button>
+                </div>
 
-            <button disabled={socket ? false : true} onClick={() => { startCall(userdata) }}>Call</button>
 
-            {messages.map((msg) => (
-                <MessageItem
-                    key={msg.id}
-                    msg={msg}
-                    userId={user.id}
-                    onDelete={deletemessage}
-                />
-            ))}
+                <div className='messages-wrapper' ref={messagesWrapperRef}>
+                    {messages.map((msg) => (
+                        <MessageItem
+                            key={msg.id}
+                            msg={msg}
+                            userId={user.id}
+                            onDelete={deletemessage}
+                        />
+                    ))}
+                </div>
+
+                <form onSubmit={(e) => sendmessage(e)}>
+
+                    <MessageInput value={messagetext} onChange={(e) => setMessagetext(e.target.value)} inputRef={messageInputRef}/>
+                    <input type="file" accept="image/*" onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (file) {
+                            setImage(file)
+                            setImagePreview(URL.createObjectURL(file))
+                        }
+                    }}/>
+                    {imagePreview ? <img src={imagePreview} alt="imagetosend"/> : null}
+
+                    <button disabled={isMessageButtonDisabled} >Send</button>
+                </form>
+
+            </div>
         </>
     )
 }

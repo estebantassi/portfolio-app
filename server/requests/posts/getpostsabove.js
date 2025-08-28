@@ -51,10 +51,12 @@ const GetPostsAbove = async (req, res) => {
         let params = data?.id ? [data.id, postIds] : [postIds]
         const [posts] = await db.query(sql, params)
 
-        
-
         let ids = []
-        for (const post of posts) ids.push(post.poster_id)
+        for (const post of posts) {
+            ids.push(post.poster_id)
+            console.log()
+            post.image = post.image ? await GetImage(`posts/${post.id}`) : null
+        }
 
         let profiles = []
         try {
@@ -73,7 +75,9 @@ const GetPostsAbove = async (req, res) => {
             post
         }))
 
-        return res.status(200).json({ message: "Data retrieved", posts: list, end: hasMore})
+        list.reverse()
+
+        return res.status(200).json({ message: "Data retrieved", posts: list, end: !hasMore})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         return res.status(500).json({ message: "An error occured, please try again later" })

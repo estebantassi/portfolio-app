@@ -46,7 +46,7 @@ const Signup = async (req, res) => {
 
         const verificationDurationMs = process.env.VERIFYEMAIL_TOKEN_DURATION * 60 * 60 * 1000
         const verificationdate = new Date(Date.now() + verificationDurationMs)
-        const verifyjti = parse(uuidv4())
+        const verifyjti = uuidv4()
         const verifytoken = jwt.sign({ email, id: request.insertId, jti: verifyjti }, process.env.VERIFYEMAIL_TOKEN_SECRET)
 
         await connection.query(`
