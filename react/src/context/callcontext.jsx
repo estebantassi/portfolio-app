@@ -236,16 +236,18 @@ export const CallProvider = ({ children }) => {
 
     return (
         <CallContext.Provider value={contextData}>
-            {isInCall && <>
+            <div>
+                {isInCall && <>
 
-            <p>Call with {isInCall.data.username}</p>
-            <img src={isInCall.data.avatar} alt="avatar" className={`avatar ${isInCall.online ? "call-online-avatar" : "call-offline-avatar"}`} />
+                <p>Call with {isInCall.data.username}</p>
+                <img src={isInCall.data.avatar} alt="avatar" className={`avatar ${isInCall.online ? "call-online-avatar" : "call-offline-avatar"}`} />
 
-            <button onClick={() => {isInCall.online ? endCall() : endCall(false)}}>End Call</button>
-            
-            </>
-            }
+                <button onClick={() => {isInCall.online ? endCall() : endCall(false)}}>End Call</button>
+                
+                </>
+                }
             <audio ref={remoteAudioRef} autoPlay />
+            </div>
             {children}
         </CallContext.Provider>
     )

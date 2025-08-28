@@ -8,7 +8,8 @@ export const ToastProvider = ({ children }) => {
     const toastContainerRef = useRef(null)
     const lastToastTimeRef = useRef(0)
 
-    const addToast = (text, color, onAccept=null, onRefuse=null) => {
+    const addToast = (text, color, onAccept=null, onRefuse=null) => { 
+
         const now = Date.now()
         const delay = Math.max(0, lastToastTimeRef.current + 500 - now)
         setTimeout(() => {
