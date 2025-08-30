@@ -66,7 +66,7 @@ const EditProfile = async (req, res) => {
                     .webp()
                     .toBuffer()
 
-                if (avatar.length > 200 * 1024) return res.status(400).json({ message: "Your avatar is too big, its compression is over 200KB" })
+                if (avatar.length > 500 * 1024) return res.status(400).json({ message: "Your avatar is too big, its compression is over 500KB" })
 
                 await bucket.file(`avatar/${data.id}`).save(avatar, {
                     metadata: {
@@ -97,7 +97,7 @@ const EditProfile = async (req, res) => {
                     .webp()
                     .toBuffer()
 
-                if (banner.length > 500 * 1024) return res.status(400).json({ message: "Your banner is too big, its compression is over 500KB" })
+                if (banner.length > 1000 * 1024) return res.status(400).json({ message: "Your banner is too big, its compression is over 1MB" })
 
                 await bucket.file(`banner/${data.id}`).save(banner, {
                     metadata: {

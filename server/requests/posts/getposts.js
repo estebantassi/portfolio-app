@@ -18,6 +18,8 @@ const GetPosts = async (req, res) => {
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
+        const batchSize = parseInt(process.env.REPLIES_FETCH_SIZE, 10)
+        
         let sql = `
             SELECT posts.*, 
             ${data?.id ? "CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END AS liked" : "false AS liked"}
@@ -25,15 +27,15 @@ const GetPosts = async (req, res) => {
             ${data?.id ? "LEFT JOIN likes AS user_likes ON posts.id = user_likes.post_id AND user_likes.user_id = ?" : ""}
             WHERE posts.created_at <= ? AND posts.replied_to = ?
             ORDER BY posts.id DESC
-            LIMIT 5
+            LIMIT ?
             OFFSET ?
         `
 
-        let params = data?.id ? [data.id, date.toISOString(), repliedto, offset] : [date.toISOString(), repliedto, offset]
+        let params = data?.id ? [data.id, date.toISOString(), repliedto, batchSize + 1, offset] : [date.toISOString(), repliedto, batchSize + 1, offset]
         let [request] = await db.query(sql, params)
 
-        const hasMore = request.length > 4
-        request = request.slice(0, 4)
+        const hasMore = request.length > batchSize
+        request = request.slice(0, batchSize)
 
         let ids = []
         for (const post of request) {

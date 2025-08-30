@@ -10,11 +10,53 @@ button{
 html, body, #root{
     font-family: "Open Sans", sans-serif;
     color: white;
-    background-color: darkslategrey;
+    background-color:rgb(40, 40, 40);
 
     height: 100%;
     width: 100%;
     margin: 0;
+}
+
+.clickable-icon{
+    transition: all 0.1s;
+}
+
+.clickable-icon:hover{
+    transition: all 0.1s;
+    cursor: pointer;
+    opacity: 0.75;
+    transform: scale(0.9);
+}
+
+.liked:hover{
+    transition: all 0.1s;
+    fill: rgba(255, 0, 0, 0.25);
+    color: rgba(128, 128, 128, 0.25);
+}
+
+.unliked:hover{
+    transition: all 0.1s;
+    fill: rgba(255, 0, 0, 0.5);
+    color: rgba(255, 0, 0, 0.5);
+}
+
+.unliked{
+    transition: all 0.1s;
+}
+
+.liked{
+    transition: all 0.1s;
+    fill: red;
+    color: red;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.navlink {
+    text-decoration: none;
+    color: inherit;
 }
 
 #root{
@@ -23,8 +65,16 @@ html, body, #root{
     height: 100vh;
 }
 
-img{
+.avatar{
+    transition: all 0.1s;
+    border-radius: 100%;
     height: 50px;
+}
+
+.avatar:hover{
+    transition: all 0.1s;
+    opacity: 0.75;
+    transform: scale(0.9);
 }
 
 input{

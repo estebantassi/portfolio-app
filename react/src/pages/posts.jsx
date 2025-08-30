@@ -10,69 +10,75 @@ import { useCallback } from 'react'
 import PostSender from '../components/postsender'
 import { useRef, forwardRef } from 'react'
 import "../css/posts.css"
-import { StopPropagation } from "../components/utils"
+import { useImageViewer } from '../context/imageviewercontext'
+import { formatNumber, formatTime } from '../tools/tools'
+import { Heart, MessageCircle, Trash } from 'lucide-react'
 
-const Replies = memo(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost }) => {
-    const created_at = new Date(post.created_at)
-
-    return (
-        <div className='postsreplies-wrapper' onClick={() => {
-            if (window.getSelection() && window.getSelection().toString().length > 0) return
-            navigate(`/posts/${post.id}`)
-        }}>
-                {poster?.avatar && poster?.id && <NavLink onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><img src={poster.avatar} alt="avatar" /></NavLink>}
-
-                {post?.text && <h2>{post.text}</h2>}
-                {post?.image && <img src={post.image} alt="image"/>}
-
-                <p>{post?.id} {created_at.toLocaleString()} {"Likes : " + post?.like_count} {"Replies : " + post?.reply_count}</p>
-
-                <button onClick={(e) => {
-                    likePost(post.id)
-                    e.stopPropagation()
-                }}>{post?.liked ? "Unlike" : "Like"}</button>
-
-                {poster?.id == isConnected?.id && <button onClick={(e) => {
-                    deletepost(post.id, "replies")
-                    e.stopPropagation()
-                }}>{"Delete"}</button>}
-
-                {isConnected && <button onClick={(e) => {
-                    e.stopPropagation()
-                    setRepliedto(post.id)
-                    setShowPoster(true)
-                }}>Reply</button>}
-        </div>
-    )
-})
-
-const PostsAbove = memo(forwardRef(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost }, ref) => {
+const Post = memo(forwardRef(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost, showImage, type }, ref) => {
     if (post.id == 0) return null
-    const created_at = new Date(post.created_at)
+    const created_at = new Date(post.created_at).toLocaleString()
+    const formateddate = formatTime(created_at)
 
     return (
-        <div className='postsabove-wrapper' onClick={() => {
+        <div className={(type == "reply" ? 'reply' : 'postabove') + " post"} onClick={() => {
             if (window.getSelection() && window.getSelection().toString().length > 0) return
             navigate(`/posts/${post.id}`)
         }}
-        ref={ref}>
-                {poster?.avatar && poster?.id && <NavLink to={`/profile/${poster.id}`}><img src={poster.avatar} alt="avatar" /></NavLink>}
+            ref={ref}>
 
-                {post?.text && <h2>{post.text}</h2>}
-                {post?.image && <img src={post.image} alt="image"/>}
+            <div className='avatar-wrapper'>
+                {poster?.avatar && poster?.id && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><img className="avatar" src={poster.avatar} alt="avatar" /></NavLink>}
+            </div>
 
-                <p>{post?.id} {created_at.toLocaleString()} {"Likes : " + post?.like_count} {"Replies : " + post?.reply_count}</p>
+            <div className='post-content'>
+                <div className='post-detail'>
+                    {poster?.username && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h3>{poster.username}</h3></NavLink>}
+                    {poster?.tag && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h4>@{poster.tag}</h4></NavLink>}
 
-                <StopPropagation>
-                    <button onClick={() => likePost(post.id)}>{post?.liked ? "Unlike" : "Like"}</button>
+                    <p title={created_at}>• {formateddate}</p>
+                </div>
 
-                    {isConnected && poster.id == isConnected.id && <button onClick={() => deletepost(post.id, "above")}>{"Delete"}</button>}
+                <div className='post-data' >
+                    {post?.text && <h2>{post.text}</h2>}
+                    {post?.image && <img className='clickable' src={post.image} alt="image" onClick={(e) => {
+                        e.stopPropagation()
+                        showImage(post.image, "image")
+                    }} />}
+                </div>
+
+                {/* {"Likes : " + post?.like_count} {"Replies : " + post?.reply_count} */}
+
+                <div className='post-icons'>
                     
-                    {isConnected && <button onClick={() => {
-                        setRepliedto(post.id)
-                        setShowPoster(true)
-                    }}>Reply</button>}
-                </StopPropagation>
+                    <div className='post-icon-wrapper'>
+                        <Heart className={(post?.liked ? "liked" : "unliked") + " clickable-icon"}  onClick={(e) => {
+                            e.stopPropagation() 
+                            likePost(post.id)
+                        }}></Heart>
+
+                       {post?.like_count && <p title={post.like_count}>{formatNumber(post.like_count)}</p>}
+                    </div>
+
+                    <div className='post-icon-wrapper'>
+                        {isConnected && <MessageCircle className='clickable-icon' onClick={(e) => {
+                            e.stopPropagation()
+                            setRepliedto(post.id)
+                            setShowPoster(true)
+                        }}></MessageCircle>}
+
+                        {post?.reply_count && <p title={post.reply_count}>{formatNumber(post.reply_count)}</p>}
+                    </div>
+
+                    <div className='post-icon-wrapper'>
+                        {poster?.id == isConnected?.id && <Trash className='clickable-icon' onClick={(e) => {
+                            e.stopPropagation()
+                            deletepost(post.id, "replies")
+                        }}>{"Delete"}</Trash>}
+                    </div>
+
+                </div>
+
+            </div>
         </div>
     )
 }))
@@ -83,6 +89,7 @@ function Posts({ overrideLink }) {
     if (overrideLink != null) link = overrideLink
 
     const { user, avatar, banner, startnetworkrequest, networkControllerRef } = useAuth()
+    const { showImage } = useImageViewer()
     const { addToast } = useContext(ToastContext)
 
     const [date, setDate] = useState(new Date())
@@ -97,9 +104,14 @@ function Posts({ overrideLink }) {
     const [showPoster, setShowPoster] = useState(false)
     const [repliedto, setRepliedto] = useState(null)
 
+    const [isEndOfReplies, setIsEndOfReplies] = useState(false)
+
     /////////////////////
     // SCROLLING LOGIC //
     /////////////////////
+    const scrollWrapperRef = useRef(null)
+
+
     const firstPostRef = useRef(null)
     useEffect(() => {
         if (firstPostRef.current) {
@@ -125,15 +137,15 @@ function Posts({ overrideLink }) {
     }, [postsAbove[postsAbove.length - 1]?.post?.replied_to])
 
     const RepliesScrollCheck = () => {
-        if (repliesLengthRef.current && loadRepliesButtonRef?.current?.getBoundingClientRect().top < window.innerHeight + 200)
-        {
+        if (repliesLengthRef.current && (scrollWrapperRef.current.clientHeight + scrollWrapperRef.current.scrollTop >= scrollWrapperRef.current.scrollHeight - 200
+            || !(scrollWrapperRef.current.scrollHeight > scrollWrapperRef.current.clientHeight))) {
             getReplies(repliesLengthRef.current)
         }
     }
 
     const PostsAboveScrollCheck = () => {
-        if (postsAboveIDRef.current && loadPostsAboveButtonRef?.current?.getBoundingClientRect().top >= -200)
-        {
+        if (postsAboveIDRef.current && (scrollWrapperRef.current.scrollTop <= 200
+            || !(scrollWrapperRef.current.scrollHeight > scrollWrapperRef.current.clientHeight))) {
             getPostsAbove(postsAboveIDRef.current)
         }
     }
@@ -158,14 +170,15 @@ function Posts({ overrideLink }) {
         getPostsAbove(link)
         getReplies(0)
 
+        const box = scrollWrapperRef.current
         const handleScroll = () => {
             RepliesScrollCheck()
             PostsAboveScrollCheck()
         }
 
-        window.addEventListener('scroll', handleScroll)
+        box.addEventListener('scroll', handleScroll)
         return () => {
-            window.removeEventListener('scroll', handleScroll)
+            box.removeEventListener('scroll', handleScroll)
         }
     }, [link])
 
@@ -177,8 +190,7 @@ function Posts({ overrideLink }) {
         try {
             const response = await axios.get(`/auth/getpostsabove?postid=${id}`, { withCredentials: true })
 
-            if (id == link && response.data.posts.length == 0)
-            {
+            if (id == link && response.data.posts.length == 0) {
                 addToast("This post has been removed", "red")
                 return navigate("/home")
             }
@@ -203,7 +215,7 @@ function Posts({ overrideLink }) {
             const response = await axios.get(`/auth/getposts?date=${date}&repliedto=${link}&offset=${offset}`, { withCredentials: true })
 
             setReplies(prev => [...response.data.posts, ...prev])
-            if (response.data.end) return
+            if (response.data.end) return setIsEndOfReplies(true)
 
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
@@ -213,26 +225,25 @@ function Posts({ overrideLink }) {
         setCanLoadMoreReplies(true)
     }
 
-    const likePost = useCallback(async (postid) =>
-    {
+    const likePost = useCallback(async (postid) => {
         if (!user) return addToast("You are not connected", "red")
 
         try {
-            const response = await axios.post(`/auth/like`, {postid}, { withCredentials: true })
+            const response = await axios.post(`/auth/like`, { postid }, { withCredentials: true })
 
             setReplies(prev =>
                 prev.map(item =>
                     item.post.id === postid
-                    ? { ...item, post: { ...item.post, liked: response.data.liked, like_count: item.post.like_count + (response.data.liked == true ? 1 : -1) } }
-                    : item
+                        ? { ...item, post: { ...item.post, liked: response.data.liked, like_count: item.post.like_count + (response.data.liked == true ? 1 : -1) } }
+                        : item
                 )
             )
 
             setPostsAbove(prev =>
                 prev.map(item =>
                     item.post.id === postid
-                    ? { ...item, post: { ...item.post, liked: response.data.liked, like_count: item.post.like_count + (response.data.liked == true ? 1 : -1) } }
-                    : item
+                        ? { ...item, post: { ...item.post, liked: response.data.liked, like_count: item.post.like_count + (response.data.liked == true ? 1 : -1) } }
+                        : item
                 )
             )
         } catch (err) {
@@ -259,18 +270,21 @@ function Posts({ overrideLink }) {
         }
     }, [])
 
+    const props = {}
+
     return (
         <>
-            {!showPoster && user && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={0} setShowPoster={setShowPoster} link={link}/>}
+            <div className='posts' ref={scrollWrapperRef}>
+                {(user && link==0) && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={0} setShowPoster={setShowPoster} link={link} />}
 
-            <div className='posts'>
-                <button disabled={!canLoadMorePostsAbove} onClick={() => getPostsAbove(postsAbove[postsAbove.length - 1].post.replied_to)} ref={loadPostsAboveButtonRef}>Load More</button>
-                <div className='posts-above'>
+                {(postsAbove.length == 0  && replies.length == 0) && <p>Uh-oh something's wrong, there's nothing here !</p> }
+
+                <div className='postsabove-wrapper'>
                     {postsAbove.map((data, index) => (
-
-                        <PostsAbove
+                        <Post
                             key={data.post.id}
                             ref={index === 0 ? firstPostRef : null}
+                            type="above"
                             post={data.post}
                             poster={data.poster}
                             navigate={navigate}
@@ -279,14 +293,17 @@ function Posts({ overrideLink }) {
                             isConnected={user}
                             likePost={likePost}
                             deletepost={deletepost}
+                            showImage={showImage}
                         />
                     ))}
                 </div>
 
-                <div className='replies'>
+                <div className='replies-wrapper'>
                     {replies.map((data) => (
-                        <Replies
+                        <Post
                             key={data.post.id}
+                            ref={null}
+                            type="reply"
                             post={data.post}
                             poster={data.poster}
                             navigate={navigate}
@@ -295,17 +312,15 @@ function Posts({ overrideLink }) {
                             isConnected={user}
                             likePost={likePost}
                             deletepost={deletepost}
+                            showImage={showImage}
                         />
                     ))}
                 </div>
 
-                {showPoster && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={repliedto} setShowPoster={setShowPoster} link={link}/>}
-                <button disabled={!canLoadMoreReplies} onClick={() => getReplies(replies.length)} ref={loadRepliesButtonRef}>Load More</button>
+                {showPoster && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={repliedto} setShowPoster={setShowPoster} link={link} type="fullscreen" />}
+                
+                {/* {isEndOfReplies && <p>Nothing more to load</p> } */}
             </div>
-
-            
-
-            
         </>
     )
 }

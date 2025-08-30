@@ -15,6 +15,8 @@ const GetPostsAbove = async (req, res) => {
         let currentid = postid
         let postIds = []
 
+        const batchSize = parseInt(process.env.POSTSABOVE_FETCH_SIZE, 10)
+
         while (true) {
             const [[post]] = await db.query(`
                 SELECT id, replied_to
@@ -29,11 +31,11 @@ const GetPostsAbove = async (req, res) => {
 
             currentid = post.replied_to
 
-            if (postIds.length > 2) break
+            if (postIds.length > batchSize) break
         }
 
-        const hasMore = postIds.length > 2
-        postIds = postIds.slice(0, 2)
+        const hasMore = postIds.length > batchSize
+        postIds = postIds.slice(0, batchSize)
 
         if (postIds.length === 0) {
             return res.status(200).json({ message: "No posts found", posts: [], end: true })
@@ -54,7 +56,6 @@ const GetPostsAbove = async (req, res) => {
         let ids = []
         for (const post of posts) {
             ids.push(post.poster_id)
-            console.log()
             post.image = post.image ? await GetImage(`posts/${post.id}`) : null
         }
 

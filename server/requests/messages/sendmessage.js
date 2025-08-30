@@ -21,7 +21,7 @@ const SendMessage = async (req, res) => {
             if (image == null) return res.status(400).json({message: "Can't send empty message"})
             text = ""
         }
-        if (image?.length > 500 * 1024) return res.status(400).json({ message: "Your image is too big, its compression is over 500KB" })
+        if (image?.length > 1000 * 1024) return res.status(400).json({ message: "Your image is too big, its compression is over 1MB" })
 
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })

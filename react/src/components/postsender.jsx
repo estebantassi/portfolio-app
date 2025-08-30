@@ -4,9 +4,11 @@ import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import { PostInput } from './inputs'
 import { useRef } from 'react'
-import { ImageUp, CircleX } from 'lucide-react';
+import { ImageUp, CircleX, Send } from 'lucide-react'
+import "../css/posts.css"
+import { NavLink } from 'react-router'
 
-function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
+function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link, type="inline" }) {
     const { user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
 
@@ -63,6 +65,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
             )
             
             addToast(response?.data?.message || "Success", "green")
+            if (type == "fullscreen") setShowPoster(false)
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
@@ -72,32 +75,36 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link }) {
     const postButtonDisabled = isNetworkButtonDisabled || (!postInputRef.current?.checkValidity() && !image)
 
     return (
-        <div>
-            <form onSubmit={(e) => sendPost(e)}>
-                <PostInput value={text} onChange={(e) => setText(e.target.value)} inputRef={postInputRef}  />
+        <div className={`postsender-wrapper postsender-${type}-wrapper`}>
+                <form onSubmit={(e) => sendPost(e)}>
+                    <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${user.id}`}><img className="avatar" src={avatar} alt="avatar" /></NavLink>
 
-                <label htmlFor="post-image-upload">
-                    <ImageUp />
-                </label>
+                    <div className='post-write'>
+                        <PostInput value={text} onChange={(e) => setText(e.target.value)} inputRef={postInputRef}/>
+                        <label htmlFor="post-image-upload">
+                            <ImageUp className='clickable-icon post-image-insert' />
+                        </label>
 
-                <input hidden id="post-image-upload" type="file" accept="image/*" onChange={(e) => {
-                    const file = e.target.files[0]
-                    if (file) {
-                        setImage(file)
-                        setImagePreview(URL.createObjectURL(file))
-                    }
-                    e.target.value = ''
-                }} />
-                {imagePreview && <img src={imagePreview} alt="postimage" />}
+                        <input hidden id="post-image-upload" type="file" accept="image/*" onChange={(e) => {
+                            const file = e.target.files[0]
+                            if (file) {
+                                setImage(file)
+                                setImagePreview(URL.createObjectURL(file))
+                            }
+                            e.target.value = ''
+                        }} />
+                    </div>
 
-                {image && <CircleX onClick={() => {
-                    setImage("")
-                    setImagePreview("")
-                }}/>}
-
-                <button disabled={postButtonDisabled}>Send</button>
-            </form>
-            <button onClick={() => setShowPoster(false)}>Close</button>
+                    <Send onClick={(e) => sendPost(e)} className='clickable-icon' disabled={postButtonDisabled}/>
+                </form>
+                <div className='posting-image'>
+                    {imagePreview && <img src={imagePreview} alt="postimage" />}
+                    {image && <CircleX className='clickable-icon' onClick={() => {
+                        setImage("")
+                        setImagePreview("")
+                    }}/>}
+                </div>
+                {type == "fullscreen" && <button onClick={() => setShowPoster(false)}>Close</button>}
         </div>
     )
 

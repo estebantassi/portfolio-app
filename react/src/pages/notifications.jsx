@@ -6,6 +6,7 @@ import { memo } from 'react'
 import { NavLink, useNavigate } from 'react-router'
 import { useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
+import "../css/notifications.css"
 
 const NotificationItem = memo(({ navigate, notification, notifiers }) => {
 
@@ -160,20 +161,22 @@ function Notifications() {
 
   return (
     <>
+    <div className='notifications-wrapper'>
       <h1>Notifications</h1>
 
-      {notifications.map((data) => (
-        <NotificationItem
-          key={data.notification.id}
-          navigate={navigate}
-          notification={data.notification}
-          notifiers={data.notifiers}
-        />
-      ))}
+        {notifications.map((data) => (
+          <NotificationItem
+            key={data.notification.id}
+            navigate={navigate}
+            notification={data.notification}
+            notifiers={data.notifiers}
+          />
+        ))}
 
-      <button disabled={!canLoadNotifications} onClick={() => {
-        GetNotifications(notifications.length)
-      }} ref={loadMoreNotificationsButtonRef}>Get notifications</button>
+        <button disabled={!canLoadNotifications} onClick={() => {
+          GetNotifications(notifications.length)
+        }} ref={loadMoreNotificationsButtonRef}>Get notifications</button>
+      </div>
     </>
   )
 }

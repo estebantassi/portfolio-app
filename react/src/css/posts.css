@@ -1,30 +1,211 @@
-.posts {
-  min-height: 100vh;        /* fills the whole viewport */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* pushes content to the bottom initially */
-  overflow-y: auto;
-  margin-bottom: 50vh;
+:root {
+  --wrappers-background-color: rgb(25, 25, 25);
 }
 
-.posts-above, .replies {
+.posts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-y: auto;
+  width: 70vw;
+  margin: auto;
+  background-color: var(--wrappers-background-color);
+}
+
+.post{
+  display: flex;
+  justify-content: flex-start;
+  padding: 10px;
+  border-radius: 10px;
+  width: 100%;
+}
+
+.post .post-icon-wrapper{
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.post .post-icon-wrapper p:hover{
+  color: gray;
+  text-decoration: underline;
+}
+
+
+
+.post .avatar-wrapper{
+  height: 100%;
+}
+
+.post .post-icons{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post .post-detail:hover, .post .post-data:hover{
+  cursor: auto;
+}
+
+.post:hover{
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.10);
+}
+
+.post .post-data h2{
+  word-wrap:break-word;
+  overflow: hidden;
+  font-weight: lighter;
+  padding: 10px;
+}
+
+.post .post-content{
+  flex: 1;
+  min-width: 0;
+}
+
+.post .post-data img{
+  max-width: 100%;
+  height: 400px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 10px;
+}
+
+/* Post header */
+.post .post-detail{
+  padding-left: 5px;
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+}
+
+.post .post-detail p:hover, .post .post-detail .navlink *:hover{
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.post .post-detail .navlink h4, .post .post-detail p{
+  color: gray;
+}
+/*//////////////*/
+
+/* Post wrappers */
+.postsabove-wrapper, .replies-wrapper {
   display: flex;
   flex-direction: column-reverse;
 }
+
+.replies-wrapper {
+  width: 80%;
+}
+.postsabove-wrapper {
+  width: 100%;
+}
+/*//////////////*/
 
 .post-home-wrapper:hover{
     background-color: rgba(0, 0, 255, 0.05);
 }
 
-.postsabove-wrapper{
-    background-color: rgba(0, 100, 255, 0.05);
+.postsender-fullscreen-wrapper{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.25);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.postsabove-wrapper:hover{
-    background-color: rgba(0, 100, 255, 0.1);
+.postsender-fullscreen-wrapper form {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  width: 300px;
 }
 
-.postsreplies-wrapper:hover{
-    background-color: rgba(0, 0, 255, 0.05);
+
+
+.postsender-inline-wrapper{
+  width: 90%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
+.postsender-inline-wrapper .posting-image img{
+  min-width: 40%;
+  max-width: 100%;
+  height: 200px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 20px;
+}
+
+.postsender-inline-wrapper form{
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.postsender-inline-wrapper form > svg{
+  margin: auto;
+}
+
+.postsender-inline-wrapper .posting-image{
+  position: relative;
+}
+
+.postsender-inline-wrapper .posting-image svg{
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  fill: black;
+  color: white;
+}
+
+.postsender-inline-wrapper button{
+  height: 25px;
+}
+
+.postsender-inline-wrapper textarea{
+  border-radius: 10px;
+  width: 100%;
+  height: 150px;
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 0;
+  outline: 0;
+  padding: 10px;
+  color: white;
+  resize: none;
+  font: inherit;
+}
+
+.postsender-inline-wrapper .post-image-insert{
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  color: white;
+}
+
+.postsender-inline-wrapper .post-write{
+  position: relative;
+  width: 100%;
+}
+
+
+
+@media (max-width: 1200px) {
+  .posts{
+    width: 90vw;
+  }
+}

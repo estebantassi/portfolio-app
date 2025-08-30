@@ -1,3 +1,40 @@
+function formatTime(dateString) {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now - date
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHr = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHr / 24)
+
+  if (diffSec < 60) {
+    return `${diffSec}s`
+  } else if (diffMin < 60) {
+    return `${diffMin}m`
+  } else if (diffHr < 24) {
+    return `${diffHr}h`
+  } else if (diffDay < 7) {
+    return `${diffDay}d`
+  } else {
+    return date.toLocaleDateString()
+  }
+}
+
+function formatNumber(num) {
+  if (num < 1000) {
+    return num.toString();
+  } else if (num < 1_000_000) {
+    let k = num / 1000;
+    return (k % 1 === 0 ? k : k.toFixed(1)) + "k";
+  } else if (num < 1_000_000_000) {
+    let m = num / 1_000_000;
+    return (m % 1 === 0 ? m : m.toFixed(1)) + "M";
+  } else {
+    let b = num / 1_000_000_000;
+    return (b % 1 === 0 ? b : b.toFixed(1)) + "B";
+  }
+}
+
 async function deriveKey(password, encrypted2FAsecret, base64Salt) {
   const salt = Uint8Array.from(atob(base64Salt), c => c.charCodeAt(0))
   const encoder = new TextEncoder()
@@ -254,6 +291,8 @@ async function fetchbase64image(url)
 }
 
 export {
+    formatNumber,
+    formatTime,
     deriveKey,
     encryptDataKey,
     decryptDataKey,

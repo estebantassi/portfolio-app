@@ -24,10 +24,11 @@ import OldEmailCheck from './pages/oldemailcheck.jsx'
 import NewEmailCheck from './pages/newemailcheck.jsx'
 import PasswordEmailCheck from './pages/passwordemailcheck.jsx'
 import Posts from './pages/posts.jsx'
-
+import { ImageViewerProvider } from './context/imageviewercontext.jsx'
 
 createRoot(document.getElementById('root')).render(
-    <BrowserRouter>
+  <BrowserRouter>
+    <ImageViewerProvider>
       <ToastProvider>
         <AuthProvider>
           <CallProvider>
@@ -47,7 +48,7 @@ createRoot(document.getElementById('root')).render(
 
               <Route element={<Logoutroute />}>
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/login" element={<Login />} /> 
+                <Route path="/login" element={<Login />} />
               </Route>
 
               <Route element={<Protectedroute />}>
@@ -56,11 +57,11 @@ createRoot(document.getElementById('root')).render(
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/accountsettings" element={<AccountSettings />} />
               </Route>
-
             </Routes>
 
           </CallProvider>
         </AuthProvider>
       </ToastProvider>
-    </BrowserRouter>,
+    </ImageViewerProvider>
+  </BrowserRouter>,
 )
