@@ -81,7 +81,6 @@ function PostInput({value, onChange, inputRef}) {
             maxLength={500}
             pattern="[\x20-\x7E]{0,500}"
             onChange={onChange}
-            required
         />
   )
 }

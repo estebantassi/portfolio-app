@@ -14,7 +14,7 @@ import { useImageViewer } from '../context/imageviewercontext'
 import { formatNumber, formatTime } from '../tools/tools'
 import { Heart, MessageCircle, Trash } from 'lucide-react'
 
-const Post = memo(forwardRef(({ post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost, showImage, type }, ref) => {
+const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost, showImage, type }, ref) => {
     if (post.id == 0) return null
     const created_at = new Date(post.created_at).toLocaleString()
     const formateddate = formatTime(created_at)
@@ -72,7 +72,7 @@ const Post = memo(forwardRef(({ post, poster, navigate, setRepliedto, setShowPos
                     <div className='post-icon-wrapper'>
                         {poster?.id == isConnected?.id && <Trash className='clickable-icon' onClick={(e) => {
                             e.stopPropagation()
-                            deletepost(post.id, "replies")
+                            deletepost(link, post.id, "replies")
                         }}>{"Delete"}</Trash>}
                     </div>
 
@@ -251,7 +251,7 @@ function Posts({ overrideLink }) {
         }
     }, [])
 
-    const deletepost = useCallback(async (id, list) => {
+    const deletepost = useCallback(async (link, id, list) => {
         startnetworkrequest()
 
         try {
@@ -262,8 +262,17 @@ function Posts({ overrideLink }) {
                 signal: networkControllerRef.current.signal
             })
 
-            list == "above" ? setPostsAbove(prev => prev.filter(prev => prev.post.id !== id)) : setReplies(prev => prev.filter(prev => prev.post.id !== id))
-            list == "above" && navigate("/home")
+            console.log(id)
+            console.log(link)
+
+            if (id == link) navigate("/home")
+
+            if (list == "above")
+                setPostsAbove(prev => prev.filter(prev => prev.post.id !== id))
+            else
+                setReplies(prev => prev.filter(prev => prev.post.id !== id))
+
+            if (list == "above") navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
@@ -284,6 +293,7 @@ function Posts({ overrideLink }) {
                         <Post
                             key={data.post.id}
                             ref={index === 0 ? firstPostRef : null}
+                            link={link}
                             type="above"
                             post={data.post}
                             poster={data.poster}
@@ -303,6 +313,7 @@ function Posts({ overrideLink }) {
                         <Post
                             key={data.post.id}
                             ref={null}
+                            link={link}
                             type="reply"
                             post={data.post}
                             poster={data.poster}

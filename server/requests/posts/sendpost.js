@@ -15,7 +15,7 @@ const SendPost = async (req, res) => {
         const text = req?.body?.text
         let image = req?.files?.image?.data
         if (!validateid(repliedto) && repliedto != 0) return res.status(400).json({message: "Invalid id format"})
-        if (!validateposttext(text)) return res.status(400).json({message: "Invalid text format"})
+        if (!validateposttext(text) && image == null) return res.status(400).json({message: "Invalid text format"})
         if (text.length == 0 && image == null) return res.status(400).json({message: "Can't send empty post"})
 
         if (image)

@@ -211,7 +211,33 @@
   width: 100%;
 }
 
+  .posts .postsabove-wrapper{
+    background-color: rgba(0, 0, 0, 0.25);
+  }
+
 @media (max-width: 1200px) {
+
+  .posts{
+    font-size: smaller;
+  }
+
+  .posts .replies-wrapper{
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .posts .replies-wrapper > *{
+    width: 90%;
+  }
+
+  .posts .avatar{
+    height: 40px;
+    width: 40px;
+  }
+
+
+
   .posts{
     width: 100vw;
     align-items: start;
