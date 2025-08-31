@@ -7,14 +7,30 @@ import { useRef } from 'react'
 import { ImageUp, CircleX, Send } from 'lucide-react'
 import "../css/posts.css"
 import { NavLink } from 'react-router'
+import { StopPropagation } from './utils'
 
-function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link, type="inline" }) {
+function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster, link, type="inline" }) {
     const { user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
 
     const [text, setText] = useState("")
     const [image, setImage] = useState("")
     const [imagePreview, setImagePreview] = useState("")
+
+    useEffect(() => {
+        if (!showPoster) return
+
+        const handleKeyDown = (e) => { if (e.key === "Escape") closePostSender() }
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [showPoster])
+
+    const closePostSender = async (e) => {
+        setShowPoster(false)
+        setText("")
+        setImage("")
+        setImagePreview("")
+    }
 
     const sendPost = async (e) => {
         e.preventDefault()
@@ -75,17 +91,20 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link, type
     const postButtonDisabled = isNetworkButtonDisabled || (!postInputRef.current?.checkValidity() && !image)
 
     return (
-        <div className={`postsender-wrapper postsender-${type}-wrapper`}>
-                <form onSubmit={(e) => sendPost(e)}>
+        <div className={`postsender-wrapper postsender-${type}-wrapper`} onClick={() => {
+            if (type == "fullscreen") closePostSender()
+        }}>
+            <StopPropagation>
+                <form onSubmit={(e) =>sendPost(e) }>
                     <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${user.id}`}><img className="avatar" src={avatar} alt="avatar" /></NavLink>
 
                     <div className='post-write'>
                         <PostInput value={text} onChange={(e) => setText(e.target.value)} inputRef={postInputRef}/>
-                        <label htmlFor="post-image-upload">
+                        <label htmlFor={`post-image-upload-${type}`}>
                             <ImageUp className='clickable-icon post-image-insert' />
                         </label>
 
-                        <input hidden id="post-image-upload" type="file" accept="image/*" onChange={(e) => {
+                        <input hidden id={`post-image-upload-${type}`} type="file" accept="image/*" onChange={(e) => {
                             const file = e.target.files[0]
                             if (file) {
                                 setImage(file)
@@ -104,7 +123,8 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, link, type
                         setImagePreview("")
                     }}/>}
                 </div>
-                {type == "fullscreen" && <button onClick={() => setShowPoster(false)}>Close</button>}
+                
+            </StopPropagation>
         </div>
     )
 

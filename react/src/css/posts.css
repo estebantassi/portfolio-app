@@ -34,7 +34,6 @@
 }
 
 
-
 .post .avatar-wrapper{
   height: 100%;
 }
@@ -114,25 +113,27 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100vw!important;
+  height: 100vh!important;
   background-color: rgba(0, 0, 0, 0.25);
 
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: center!important;
 }
 
-.postsender-fullscreen-wrapper form {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  width: 300px;
+.postsender-fullscreen-wrapper > *{
+  width: 70%!important;
+  margin: auto;
+  background-color: rgba(0, 0, 0);
+  padding: 20px;
+  border-radius: 10px;
 }
 
+.postsender-fullscreen-wrapper textarea{
+  background-color: rgba(128, 128, 128, 0.2)!important;
+  height: 200px!important;
+}
 
-
-.postsender-inline-wrapper{
+.postsender-wrapper{
   width: 90%;
   padding: 20px;
   display: flex;
@@ -141,7 +142,15 @@
   gap: 10px;
 }
 
-.postsender-inline-wrapper .posting-image img{
+.postsender-wrapper > *{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.postsender-wrapper .posting-image img{
   min-width: 40%;
   max-width: 100%;
   height: 200px;
@@ -150,22 +159,22 @@
   border-radius: 20px;
 }
 
-.postsender-inline-wrapper form{
+.postsender-wrapper form{
   display: flex;
   justify-content: center;
   gap: 10px;
   width: 100%;
 }
 
-.postsender-inline-wrapper form > svg{
+.postsender-wrapper form > svg{
   margin: auto;
 }
 
-.postsender-inline-wrapper .posting-image{
+.postsender-wrapper .posting-image{
   position: relative;
 }
 
-.postsender-inline-wrapper .posting-image svg{
+.postsender-wrapper .posting-image svg{
   position: absolute;
   top: 8px;
   right: 8px;
@@ -173,11 +182,11 @@
   color: white;
 }
 
-.postsender-inline-wrapper button{
+.postsender-wrapper button{
   height: 25px;
 }
 
-.postsender-inline-wrapper textarea{
+.postsender-wrapper textarea{
   border-radius: 10px;
   width: 100%;
   height: 150px;
@@ -190,22 +199,37 @@
   font: inherit;
 }
 
-.postsender-inline-wrapper .post-image-insert{
+.postsender-wrapper .post-image-insert{
   position: absolute;
   bottom: 8px;
   right: 8px;
   color: white;
 }
 
-.postsender-inline-wrapper .post-write{
+.postsender-wrapper .post-write{
   position: relative;
   width: 100%;
 }
 
-
-
 @media (max-width: 1200px) {
   .posts{
-    width: 90vw;
+    width: 100vw;
+    align-items: start;
+  }
+
+  .posts > *{
+    width: 100%;
+  }
+
+  .post .post-data img{
+    height: 200px;
+  }
+
+  .postsender-wrapper textarea{
+    height: 100px;
+  }
+
+  .postsender-fullscreen-wrapper > *{
+    width: 100%!important;
   }
 }

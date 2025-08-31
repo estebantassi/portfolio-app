@@ -275,7 +275,7 @@ function Posts({ overrideLink }) {
     return (
         <>
             <div className='posts' ref={scrollWrapperRef}>
-                {(user && link==0) && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={0} setShowPoster={setShowPoster} link={link} />}
+                {(user && link==0) && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={0} setShowPoster={setShowPoster} showPoster={showPoster} link={link} />}
 
                 {(postsAbove.length == 0  && replies.length == 0) && <p>Uh-oh something's wrong, there's nothing here !</p> }
 
@@ -317,7 +317,7 @@ function Posts({ overrideLink }) {
                     ))}
                 </div>
 
-                {showPoster && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={repliedto} setShowPoster={setShowPoster} link={link} type="fullscreen" />}
+                {showPoster && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={repliedto} setShowPoster={setShowPoster} showPoster={showPoster} link={link} type="fullscreen" />}
                 
                 {/* {isEndOfReplies && <p>Nothing more to load</p> } */}
             </div>
