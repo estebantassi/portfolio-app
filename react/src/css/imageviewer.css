@@ -13,8 +13,6 @@
 }
 
 .imageviewer img {
-    min-height: 40%;
-    min-width: 40%;
     max-width: 90%;
     max-height: 90%;
     width: auto;

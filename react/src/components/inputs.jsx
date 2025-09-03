@@ -49,6 +49,7 @@ function PasswordInput({value, onChange, inputRef}) {
             ref={inputRef}
             type='password'
             title='Password must be 12 to 32 characters long. Only ASCII characters are allowed.'
+            placeholder="..."
             value={value}
             pattern=".{12,32}"
             onChange={onChange}
@@ -65,6 +66,7 @@ function EmailInput({value, onChange, inputRef}) {
             title='Enter your email address in the format: "username@domain.com".'
             value={value}
             onChange={onChange}
+            placeholder="example@gmail.com"
             required
         />
   )
@@ -107,6 +109,7 @@ function TagInput({value, onChange, inputRef}) {
             ref={inputRef}
             type='text'
             title='Tag must be 1 to 30 characters long. It cannot be a number other than your user ID. Only ASCII characters are allowed.'
+            placeholder="tag"
             value={value}
             pattern={'[\x20-\x7E]{1,30}'}
             maxLength={30}

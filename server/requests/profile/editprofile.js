@@ -56,14 +56,18 @@ const EditProfile = async (req, res) => {
 
             if (avatarmetadata)
             {
+                let newheight = Math.floor(avatarmetadata?.pageHeight)
+                if (!newheight) newheight = Math.floor(avatarmetadata.height)
+                if (newheight > Math.floor(avatarmetadata.width)) newheight = Math.floor(avatarmetadata.width)
+                if (newheight > 300) newheight = 300
+
                 avatar = await avatar
                     .resize({
-                        width: 300,
-                        height: 300,
-                        fit: 'cover',
-                        withoutEnlargement: true
+                        width: newheight,
+                        height: newheight,
+                        fit: 'cover'
                     })
-                    .webp()
+                    .webp({ quality: 75})
                     .toBuffer()
 
                 if (avatar.length > 500 * 1024) return res.status(400).json({ message: "Your avatar is too big, its compression is over 500KB" })
@@ -87,17 +91,26 @@ const EditProfile = async (req, res) => {
 
             if (bannermetadata)
             {
-                banner = await banner
-                    .resize({
-                        width: 1500,
-                        height: 500,
-                        fit: 'cover',
-                        withoutEnlargement: true
-                    })
-                    .webp()
-                    .toBuffer()
+                const targetwidth = Math.floor(bannermetadata.width) - (Math.floor(bannermetadata.width) % 3)
 
-                if (banner.length > 1000 * 1024) return res.status(400).json({ message: "Your banner is too big, its compression is over 1MB" })
+                let newheight = Math.floor(bannermetadata?.pageHeight)
+                if (!newheight) newheight = Math.floor(bannermetadata.height)
+                if (newheight > 1500) newheight = 1500
+
+                if (newheight * 3 > targetwidth) newheight = targetwidth / 3
+
+                banner = await banner
+                .resize({
+                    width: newheight * 3,
+                    height: newheight,
+                    fit: 'cover'
+                })
+                .webp({ quality: 75})
+                .toBuffer()
+            
+
+
+                if (banner.length > 1000 * 1024) return res.status(400).json({ message: `Your banner is too big, its compression is over 1MB (${(banner.length / (1024 * 1024)).toFixed(2)}MB)` })
 
                 await bucket.file(`banner/${data.id}`).save(banner, {
                     metadata: {

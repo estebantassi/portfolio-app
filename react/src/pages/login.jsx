@@ -6,6 +6,7 @@ import { arrayBufferToBase64, decryptDataKey, deriveKey } from '../tools/tools'
 import srp from "secure-remote-password/client"
 import { useNavigate } from "react-router"
 import { CodeInput, EmailInput, PasswordInput } from '../components/inputs'
+import "../css/forms.css"
 
 function Login() {
 
@@ -110,12 +111,14 @@ function Login() {
 
   return (
     <>
-      <h1>Login</h1>
+      
 
       {
         showLoginCode ?
           <>
-            <form onSubmit={(e) => logincodeform(e)}>
+            <form className='form' onSubmit={(e) => logincodeform(e)}>
+
+              <h1>Login</h1>
 
               <label>{isusing2FA ? "Authenticator App Code" : "Email Code"}</label>
               <CodeInput value={data.code} onChange={(e) => setData({ ...data, code: e.target.value })} inputRef={codeInputRef} />
@@ -126,7 +129,9 @@ function Login() {
           </>
           :
           <>
-            <form onSubmit={(e) => loginform(e)}>
+            <form className='form' onSubmit={(e) => loginform(e)}>
+
+              <h1>Login</h1>
 
               <label>Email</label>
               <EmailInput value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} inputRef={emailInputRef} />

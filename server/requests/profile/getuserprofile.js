@@ -27,6 +27,7 @@ const GetUserProfile = async (req, res) => {
         {
             let cacheduser = JSON.parse(await getCachedValue(`profile/${id}`))
             if (cacheduser) {
+                cacheduser.id = id
                 cacheduser.avatar = await GetImage("avatar/" + (cacheduser.avatar == 1 ? id : "0"))
                 cacheduser.banner = await GetImage("banner/" + (cacheduser.banner == 1 ? id : "0"))
                 finalprofiles.push(cacheduser)

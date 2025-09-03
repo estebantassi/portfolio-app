@@ -14,10 +14,11 @@ import { useImageViewer } from '../context/imageviewercontext'
 import { formatNumber, formatTime } from '../tools/tools'
 import { Heart, MessageCircle, Trash } from 'lucide-react'
 
-const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setShowPoster, isConnected, likePost, deletepost, showImage, type }, ref) => {
+const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setShowPoster, user, likePost, deletepost, showImage, type, addToast }, ref) => {
     if (post.id == 0) return null
     const created_at = new Date(post.created_at).toLocaleString()
     const formateddate = formatTime(created_at)
+    console.log(poster)
 
     return (
         <div className={(type == "reply" ? 'reply' : 'postabove') + " post"} onClick={() => {
@@ -27,7 +28,7 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
             ref={ref}>
 
             <div className='avatar-wrapper'>
-                {poster?.avatar && poster?.id && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><img className="avatar" src={poster.avatar} alt="avatar" /></NavLink>}
+                {poster?.id && poster?.avatar && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><img className="avatar clickable-icon" src={poster.avatar} alt="avatar" /></NavLink>}
             </div>
 
             <div className='post-content'>
@@ -60,17 +61,18 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
                     </div>
 
                     <div className='post-icon-wrapper'>
-                        {isConnected && <MessageCircle className='clickable-icon' onClick={(e) => {
+                        <MessageCircle className='clickable-icon' onClick={(e) => {
                             e.stopPropagation()
+                            if (!user) return addToast("You are not connected", "red")
                             setRepliedto(post.id)
                             setShowPoster(true)
-                        }}></MessageCircle>}
+                        }}></MessageCircle>
 
                         {post?.reply_count && <p title={post.reply_count}>{formatNumber(post.reply_count)}</p>}
                     </div>
 
                     <div className='post-icon-wrapper'>
-                        {poster?.id == isConnected?.id && <Trash className='clickable-icon' onClick={(e) => {
+                        {poster?.id == user?.id && <Trash className='clickable-icon' onClick={(e) => {
                             e.stopPropagation()
                             deletepost(link, post.id, "replies")
                         }}>{"Delete"}</Trash>}
@@ -262,9 +264,6 @@ function Posts({ overrideLink }) {
                 signal: networkControllerRef.current.signal
             })
 
-            console.log(id)
-            console.log(link)
-
             if (id == link) navigate("/home")
 
             if (list == "above")
@@ -300,10 +299,11 @@ function Posts({ overrideLink }) {
                             navigate={navigate}
                             setRepliedto={setRepliedto}
                             setShowPoster={setShowPoster}
-                            isConnected={user}
+                            user={user}
                             likePost={likePost}
                             deletepost={deletepost}
                             showImage={showImage}
+                            addToast={addToast}
                         />
                     ))}
                 </div>
@@ -320,10 +320,11 @@ function Posts({ overrideLink }) {
                             navigate={navigate}
                             setRepliedto={setRepliedto}
                             setShowPoster={setShowPoster}
-                            isConnected={user}
+                            user={user}
                             likePost={likePost}
                             deletepost={deletepost}
                             showImage={showImage}
+                            addToast={addToast}
                         />
                     ))}
                 </div>

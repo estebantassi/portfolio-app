@@ -4,7 +4,6 @@ import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import { BiographyInput, TagInput, UsernameInput } from './inputs'
 
-
 function ProfileEditor() {
     const { setUser, user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
@@ -40,9 +39,8 @@ function ProfileEditor() {
             })
             
             setUser(prev => ({...prev, username: data.username, bio: data.bio, tag: data.tag }))
-            
-            addToast(response?.data?.message || "Success", "green")
 
+            addToast(response?.data?.message || "Success", "green")
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
@@ -61,7 +59,7 @@ function ProfileEditor() {
 
                 <form onSubmit={(e) => editprofile(e)}>
                     <label htmlFor="avatar-upload">
-                        {data.avatarurl ? <img src={data.avatarurl} alt="Avatar" className='avatar' /> : data.avatar && <img src={data.avatar} alt="Avatar" className='avatar' />}
+                        <img src={data.avatarurl ? data.avatarurl : data.avatar} alt="Avatar" className='profileeditor-avatar' />
                     </label>
 
                     <input id="avatar-upload" type="file" accept="image/*" hidden onChange={async (e) => {
@@ -77,7 +75,7 @@ function ProfileEditor() {
                     }} />
 
                     <label htmlFor="banner-upload">
-                        {data.bannerurl ? <img src={data.bannerurl} alt="Banner" className='banner' /> : data.banner ? <img src={data.banner} alt="Banner" className='banner' /> : null}
+                        <img src={data.bannerurl ? data.bannerurl : data.banner} alt="Banner" className='profileeditor-banner' />
                     </label>
 
                     <input id="banner-upload" type="file" accept="image/*" hidden onChange={(e) => {

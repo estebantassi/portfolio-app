@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router'
 import { arrayBufferToBase64, deriveKey, encryptDataKey } from '../tools/tools'
 import srp from "secure-remote-password/client"
 import axios from '../api/axios'
+import "../css/forms.css"
 
 function Signup() {
 
@@ -67,9 +68,11 @@ function Signup() {
 
   return (
     <>
-      <h1>Signup</h1>
+      
 
-      <form onSubmit={(e) => signupform(e)}>
+      <form className='form' onSubmit={(e) => signupform(e)}>
+        <h1>Signup</h1>
+        
         <label>Username</label>
         <UsernameInput value={data.username} onChange={(e) => setData({ ...data, username: e.target.value })} inputRef={usernameInputRef} />
 

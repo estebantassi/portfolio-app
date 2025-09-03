@@ -38,6 +38,10 @@
   height: 100%;
 }
 
+.post .avatar-wrapper img{
+  height: 50px;
+}
+
 .post .post-icons{
   display: flex;
   align-items: center;
@@ -142,6 +146,11 @@
   gap: 10px;
 }
 
+.postsender-wrapper .avatar{
+  width: 50px;
+}
+
+
 .postsender-wrapper > *{
   width: 100%;
   display: flex;
@@ -231,8 +240,7 @@
     width: 90%;
   }
 
-  .posts .avatar{
-    height: 40px;
+  .postsender-wrapper .avatar{
     width: 40px;
   }
 

@@ -1,0 +1,67 @@
+:root{
+    --form-border-color: yellow;
+    --form-border-color-opacity: rgba(255, 255, 0, 0.3);
+}
+
+.form{
+    display: flex;
+    flex-direction: column;
+    width: 700px;
+    align-items: center;
+    margin: auto;
+    background-color: rgba(0, 0, 0, 0.25);
+    min-height: 70vh;
+    overflow-y: auto;
+    margin-top: 10vh;
+    margin-bottom: 10vh;
+    border-radius: 50px;
+    padding: 20px;
+    box-shadow: 0px 0px 30px var(--form-border-color-opacity);
+    transition: all 0.3s;
+    border: 1px solid;
+    border-color: var(--form-border-color);
+}
+
+.form:hover{
+    transition: all 0.3s;
+    transform: scale(1.01);
+}
+
+.form input{
+    width: 70%;
+    background-color: transparent;
+    outline: none;
+    border: none;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid;
+    border-color: var(--form-border-color);
+}
+
+.form label{
+    padding: 10px;
+    font-weight: bold;
+}
+
+.form button{
+    background-color: black;
+    color: white;
+    padding: 10px;
+    width: 50%;
+    border-radius: 10px;
+    border: 1px solid;
+    border-color: var(--form-border-color);
+    margin-top: 20px;
+}
+
+.form button:disabled{
+    opacity: 50%;
+}
+
+@media (max-width: 1200px) {
+    .form{
+        width: 90%;
+    }
+}

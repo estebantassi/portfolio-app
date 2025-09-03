@@ -41,6 +41,8 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster
         formdata.append('repliedto', repliedto)
         formdata.append("image", image)
 
+        if (text == "" && image == "") return addToast("You can't post nothing...", "red")
+
         try {
             const response = await axios.post('/auth/sendpost',
                 formdata
@@ -96,7 +98,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster
         }}>
             <StopPropagation>
                 <form onSubmit={(e) =>sendPost(e) }>
-                    <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${user.id}`}><img className="avatar" src={avatar} alt="avatar" /></NavLink>
+                    <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${user.id}`}><img className="avatar clickable-icon" src={avatar} alt="avatar" /></NavLink>
 
                     <div className='post-write'>
                         <PostInput value={text} onChange={(e) => setText(e.target.value)} inputRef={postInputRef}/>

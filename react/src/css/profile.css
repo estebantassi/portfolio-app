@@ -1,11 +1,50 @@
-.avatar{
-  aspect-ratio: 1 / 1;
-  height: 50px;
-  object-fit: cover;
+.profile{
+  display: flex;
+  flex-direction: column;
+  width: 70%;
 }
 
-.banner{
-    aspect-ratio: 3 / 1;
-    height: 50px;
-    object-fit: cover;
+.profile-wrapper{
+  display: flex;
+  justify-content: center;
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: rgb(25, 25, 25);
+}
+
+.profile-banner-wrapper{
+  position: relative;
+}
+
+.profile-banner-wrapper > img{
+  height: 100%;
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  border-radius: 0px 0px 20px 20px;
+}
+
+.profile-avatar-wrapper{
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 50%;
+}
+
+.profile-avatar-wrapper > img{
+  height: 100%;
+  border-radius: 100%;
+}
+
+.profileeditor-avatar{
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 100%;
+}
+
+.profileeditor-banner{
+  width: 150px;
+  height: 50px;
+  object-fit: cover;
 }

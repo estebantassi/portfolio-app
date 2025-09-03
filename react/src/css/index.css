@@ -66,15 +66,7 @@ html, body, #root{
 }
 
 .avatar{
-    transition: all 0.1s;
     border-radius: 100%;
-    height: 50px;
-}
-
-.avatar:hover{
-    transition: all 0.1s;
-    opacity: 0.75;
-    transform: scale(0.9);
 }
 
 input{
