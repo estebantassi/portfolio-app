@@ -2,7 +2,6 @@ To-do :
   
 Urgent :  
   
--Load with intersect  
 -CSS (DO LAST)  
   
 Not urgent :  
