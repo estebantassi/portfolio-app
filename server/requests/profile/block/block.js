@@ -61,6 +61,8 @@ const Block = async (req, res) => {
                 `, [data.id, blockedid, blockedid, data.id])
             } catch (err) {}
         }
+        await setCachedValue(`follow/${data.id}/${blockedid}`, process.env.FOLLOW_CACHE_DURATION, "0")
+        await setCachedValue(`follow/${blockedid}/${data.id}`, process.env.FOLLOW_CACHE_DURATION, "0")
 
         await setCachedValue(`block/${data.id}/${blockedid}`, process.env.BLOCK_CACHE_DURATION, blocked ? "1" : "0")
 

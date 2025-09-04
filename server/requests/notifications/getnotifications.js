@@ -18,12 +18,14 @@ const GetNotifications = async (req, res) => {
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
+        const batchSize = parseInt(process.env.NOTIFICATIONS_FETCH_SIZE, 10)
+
         const [requests] = await db.query(`
             SELECT n.*,
                 SUBSTRING_INDEX(
                     GROUP_CONCAT(nn.notifier_id ORDER BY nn.id DESC),
                     ',',
-                    10
+                    5
                 ) AS notifier_ids
             FROM notifications n
             JOIN notifications_notifiers nn 
@@ -32,12 +34,12 @@ const GetNotifications = async (req, res) => {
             AND n.created_at <= ?
             GROUP BY n.id
             ORDER BY n.id DESC
-            LIMIT 3
+            LIMIT ?
             OFFSET ?
-        `, [data.id, date.toISOString(), offset])
+        `, [data.id, date.toISOString(), batchSize + 1, offset])
 
-        const hasMore = requests.length > 2
-        requests.splice(2)
+        const hasMore = requests.length > batchSize
+        requests.splice(batchSize)
         
         let ids = []
         for (const request of requests) {

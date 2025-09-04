@@ -1,46 +1,47 @@
 .navbar {
-    position: sticky;
-    top: 0; 
-    display: flex;
-    width: 100%;
-    justify-content: center;
-    height: 60px;
-    background-color: black;
-    box-shadow: 0 0 10px black;
+  z-index: 998;
+  position: sticky;
+  top: 0;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  height: 60px;
+  background-color: black;
+  box-shadow: 0 0 10px black;
 }
 
 .navbar .navbar-element {
-    transition: all 0.5s;
-    display: flex;
-    gap: 10px;
-    height: 100%;
-    padding: 15px 30px 15px 30px;
+  transition: all 0.5s;
+  display: flex;
+  gap: 10px;
+  height: 100%;
+  padding: 15px 30px 15px 30px;
 }
 
 .navbar .navbar-element .navbar-text {
-    color: white;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
 }
 
 .navbar .navbar-element:hover {
-    transition: all 0.5s;
-    opacity: 75%;
+  transition: all 0.5s;
+  opacity: 75%;
 }
 
-.navbar > * > * {
-    height: 100%;
-    color: white;
+.navbar>*>* {
+  height: 100%;
+  color: white;
 }
 
 .navbar img {
-    height: 100%;
-    border-radius: 100%;
+  height: 100%;
+  border-radius: 100%;
 }
 
 @media (max-width: 1200px) {
-  .navbar > .navbar-element > .navbar-text {
+  .navbar>.navbar-element>.navbar-text {
     display: none;
   }
 

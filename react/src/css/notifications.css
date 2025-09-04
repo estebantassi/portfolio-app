@@ -1,6 +1,58 @@
+:root{
+    --wrappers-background-color: rgb(25, 25, 25);
+}
+
 .notifications-wrapper{
     flex: 1;
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--wrappers-background-color);
+}
+
+.notifications-wrapper h1{
+    padding: 20px;
+}
+
+.notifications{
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.notifications > .clickable:hover{
+    opacity: 0.7;
+}
+
+.notifications > div{
+    background-color: rgba(0, 0, 0, 0.2);
+    width: 100%;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.notifications .avatars-wrapper .avatar{
+    height: 50px;
+}
+
+.notifications .avatars-wrapper{
+    display: flex;
+    gap: 10px;
+}
+
+@media (max-width: 1200px) {
+    .notifications-wrapper{
+        width: 100%;
+    }
+
+    .notifications{
+        width: 90%;
+        font-size: smaller;
+    }
 }

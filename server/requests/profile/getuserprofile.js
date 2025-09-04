@@ -15,7 +15,7 @@ const GetUserProfile = async (req, res) => {
                 .filter(v => v.length > 0);
         }
 
-        if (ids.length > 10) return res.status(400).json({ message: "Too many users requested" })
+        if (ids.length > 50) return res.status(400).json({ message: "Too many users requested" })
 
         ids = ids.map(v => parseInt(v, 10))
         if (!ids.every(validateid)) return res.status(400).json({ message: "Invalid id format" })

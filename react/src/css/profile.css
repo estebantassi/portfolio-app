@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   width: 70%;
+  min-height: 100vh;
 }
 
 .profile-wrapper{
@@ -11,6 +12,13 @@
   margin-left: auto;
   margin-right: auto;
   background-color: rgb(25, 25, 25);
+}
+
+.profile-buttons{
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .profile-banner-wrapper{
@@ -26,8 +34,8 @@
 
 .profile-avatar-wrapper{
   position: absolute;
-  bottom: 0;
-  left: 0;
+  bottom: 6%;
+  left: 2%;
   height: 50%;
 }
 
@@ -36,15 +44,82 @@
   border-radius: 100%;
 }
 
-.profileeditor-avatar{
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
+.profile .bio{
+  font-weight: lighter;
+}
+
+.profileeditor{
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+.profileeditor-wrapper{
+  z-index: 999;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+
+  background-color: rgba(0, 0, 0, 0.5);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profileeditor .images{
+  position: relative;
+  width: 100%;
+}
+
+.profileeditor .images label{
+  padding: 0;
+}
+
+.profileeditor .images > .avatar-wrapper > img{
+  position: absolute;
+  bottom: 6%;
+  left: 2%;
+  height: 50%;
   border-radius: 100%;
 }
 
-.profileeditor-banner{
-  width: 150px;
-  height: 50px;
-  object-fit: cover;
+.profileeditor .images > .banner-wrapper{
+  display: flex;
+}
+
+.profileeditor .images > .banner-wrapper > img{
+  height: 100%;
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  border-radius: 20px;
+}
+
+.profileeditor .tag{
+  position: relative;
+  width: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profileeditor .tag > input{
+  width: 100%;
+}
+
+.profileeditor .tag > svg{
+  border-radius: 100%;
+  position: absolute;
+  right: 10px;
+}
+
+@media (max-width: 1200px) {
+  .profile{
+    width: 90%;
+  }
+  
+  .profile-wrapper{
+    font-size: smaller;
+    width: 100%;
+  }
 }

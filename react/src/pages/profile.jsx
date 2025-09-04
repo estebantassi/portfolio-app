@@ -9,6 +9,7 @@ import ProfileEditor from '../components/profileeditor'
 import getuserprofile from '../tools/getuserprofile'
 import '../css/profile.css'
 import { useImageViewer } from '../context/imageviewercontext'
+import { Mail, UserRoundPlus, UserRoundMinus, LockOpen, Lock } from 'lucide-react'
 
 function Profile() {
 
@@ -149,36 +150,30 @@ function Profile() {
                 <div className='profile'>
 
                     <div className='profile-banner-wrapper'>
-                        <img onClick={() => showImage(userdata.banner, "Banner")} src={userdata.banner} alt="Banner" />
+                        <img className='clickable' onClick={() => showImage(userdata.banner, "Banner")} src={userdata.banner} alt="Banner" />
                         <div className='profile-avatar-wrapper'>
-                            <img onClick={() => showImage(userdata.avatar, "Avatar")} src={userdata.avatar} alt="Avatar" />
+                            <img className='clickable' onClick={() => showImage(userdata.avatar, "Avatar")} src={userdata.avatar} alt="Avatar" />
                         </div>
                     </div>
 
-                    <h1>{userdata.username}</h1>
-                    <h2>{user?.id == link ? user.bio : userdata.bio}</h2>
-
+                    {userdata.username && <h1>{userdata.username}</h1>}
+                    {userdata.bio && <h2 className='bio'>{userdata.bio}</h2>}
 
                     {user && user.id != link ? <>
-                        {isBlocked || isBlocking ? <>
-
-                            <h2>{isBlocked ? "User blocked you" : "You blocked this user"}</h2>
-
-                        </> : <>
-
-                            <button onClick={() => navigate("/messages/" + link)}>Send message</button>
-                            <button onClick={() => processfollow()}>
-                                {isFollowing ? "Unfollow" : (isFollowed ? "Follow back" : "Follow")}
-                            </button>
-                            {isFollowed && <span>Follows you</span>}
-                        </>}
-
-                        <button onClick={() => processblock()}>{isBlocking ? "Unblock" : (isBlocked ? "Block back" : "Block")}</button>
-
+                        <div className='profile-buttons'>
+                            {(!isBlocked && !isBlocking) && <>
+                                <Mail className='clickable-icon' onClick={() => navigate("/messages/" + link)}/>
+                                {isFollowing ? <UserRoundMinus className='clickable-icon' onClick={() => processfollow()}/> : <UserRoundPlus className='clickable-icon' onClick={() => processfollow()}/>}
+                            </>}
+                            
+                            {(isBlocking || isBlocked) && isBlocking ? <Lock className='clickable-icon' onClick={() => processblock()}/> : <LockOpen className='clickable-icon' onClick={() => processblock()}/>}
+                        </div>
+                        {(!isBlocked && !isBlocking) && isFollowed && <span>Follows you</span>}
+                        {(isBlocked || isBlocking) && <span>{(isBlocked && isBlocking) ? "You're blocking each other" : isBlocked ? "User blocked you" : "You blocked this user"}</span>}
                     </> : user ? <>
 
-                        <button onClick={() => setShowProfileEditor(!showProfileEditor)}>Open editor</button>
-                        {showProfileEditor ? <ProfileEditor /> : null}
+                        
+                        <ProfileEditor setUserdata={setUserdata} />
 
                     </> : null}
                 </div>

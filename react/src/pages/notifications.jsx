@@ -13,16 +13,18 @@ const NotificationItem = memo(({ navigate, notification, notifiers }) => {
   const created_at = new Date(notification.created_at)
 
   return (
-    <div onClick={() => {
+    <div className={notification.type != "follow" ? 'clickable' : ""} onClick={() => {
       if (window.getSelection() && window.getSelection().toString().length > 0) return
       if (notification.type == "like" || notification.type == "reply") navigate(`/posts/${notification.value}`)
     }}>
 
-      {notifiers.map(notifier => (
-        notifier?.avatar && notifier.id && (
-          <NavLink key={notifier.id} onClick={(e) => e.stopPropagation()} to={`/profile/${notifier.id}`}><img src={notifier.avatar} alt="avatar" /></NavLink>
-        )
-      ))}
+      <div className='avatars-wrapper'>
+        {notifiers.map(notifier => (
+          notifier?.avatar && notifier.id && (
+            <NavLink key={notifier.id} onClick={(e) => e.stopPropagation()} to={`/profile/${notifier.id}`}><img className='avatar clickable-icon' src={notifier.avatar} alt="avatar" /></NavLink>
+          )
+        ))}
+      </div>
 
       {(() => {
         let text
@@ -42,9 +44,9 @@ const NotificationItem = memo(({ navigate, notification, notifiers }) => {
 
         return (
           <>
-            {notification?.total_count == 1 && <p>{notifiers[0]?.username} {text}</p>}
-            {notification?.total_count == 2 && <p>{notifiers[0]?.username} and {notifiers[1]?.username} {text}</p>}
-            {notification?.total_count > 2 && <p>{notifiers[0]?.username} and {notification?.total_count - 1} others {text}</p>}
+            {notification?.total_count == 1 && <h2>{notifiers[0]?.username} {text}</h2>}
+            {notification?.total_count == 2 && <h2>{notifiers[0]?.username} and {notifiers[1]?.username} {text}</h2>}
+            {notification?.total_count > 2 && <h2>{notifiers[0]?.username} and {notification?.total_count - 1} others {text}</h2>}
           </>
         )
 
@@ -65,7 +67,6 @@ function Notifications() {
   const { addToast } = useContext(ToastContext)
 
   const canLoadNotificationsRef = useRef(true)
-  const [canLoadNotifications, setCanLoadNotifications] = useState(true)
 
   useEffect(() => {
     if (!socket) return
@@ -111,11 +112,11 @@ function Notifications() {
   }, [socket])
 
   const notificationsLengthRef = useRef(null)
-  const loadMoreNotificationsButtonRef = useRef(null)
+  const notificationsBoxRef = useRef(null)
 
   const NotificationsScrollCheck = () => {
-    if (notificationsLengthRef.current && loadMoreNotificationsButtonRef?.current?.getBoundingClientRect().top < window.innerHeight)
-    {
+    if (notificationsLengthRef.current && (notificationsBoxRef.current.clientHeight + notificationsBoxRef.current.scrollTop >= notificationsBoxRef.current.scrollHeight - 200
+            || !(notificationsBoxRef.current.scrollHeight > notificationsBoxRef.current.clientHeight))) {
       GetNotifications(notificationsLengthRef.current)
     }
   }
@@ -134,21 +135,22 @@ function Notifications() {
       NotificationsScrollCheck()
     }
 
-    window.addEventListener('scroll', handleScroll)
+    const box = notificationsBoxRef.current
+    box.addEventListener('scroll', handleScroll)
     return () => {
-        window.removeEventListener('scroll', handleScroll)
+        box.removeEventListener('scroll', handleScroll)
     }
   }, [])
 
   const GetNotifications = async (offset) => {
     if (!canLoadNotificationsRef.current) return
     canLoadNotificationsRef.current = false
-    setCanLoadNotifications(false)
 
     try {
       const response = await axios.get(`/auth/getnotifications/?offset=${offset}&date=${date}`, { withCredentials: true })
 
       setNotifications(prev => [...prev, ...response.data.notifications])
+      notificationsLengthRef.current += response.data.notifications.length
       if (response.data.end) return
 
     } catch (err) {
@@ -156,26 +158,26 @@ function Notifications() {
     }
 
     canLoadNotificationsRef.current = true
-    setCanLoadNotifications(true)
+
+    NotificationsScrollCheck()
   }
 
   return (
     <>
     <div className='notifications-wrapper'>
-      <h1>Notifications</h1>
+      <div className='notifications' ref={notificationsBoxRef}>
+        <h1>Notifications</h1>
 
-        {notifications.map((data) => (
-          <NotificationItem
-            key={data.notification.id}
-            navigate={navigate}
-            notification={data.notification}
-            notifiers={data.notifiers}
-          />
-        ))}
+          {notifications.map((data) => (
+            <NotificationItem
+              key={data.notification.id}
+              navigate={navigate}
+              notification={data.notification}
+              notifiers={data.notifiers}
+            />
+          ))}
 
-        <button disabled={!canLoadNotifications} onClick={() => {
-          GetNotifications(notifications.length)
-        }} ref={loadMoreNotificationsButtonRef}>Get notifications</button>
+        </div>
       </div>
     </>
   )
