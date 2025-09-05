@@ -2,25 +2,41 @@ import { useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
 import axios from '../api/axios'
 import { useEffect, useState, memo, useCallback, useRef } from 'react'
-import { useParams } from "react-router"
+import { NavLink, useParams } from "react-router"
 import { useNavigate } from "react-router"
 import { useAuth } from '../context/authcontext'
-import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage } from '../tools/tools'
+import { base64ToArrayBuffer, encryptMessage, decryptMessage, reconstructImage, formatTime } from '../tools/tools'
 import { useCall } from '../context/callcontext'
 import getuserprofile from '../tools/getuserprofile'
 import { MessageInput } from '../components/inputs'
 import "../css/messages.css"
+import { Phone, Trash } from 'lucide-react'
+import { useImageViewer } from '../context/imageviewercontext'
+import { ImageUp, CircleX, Send } from 'lucide-react'
 
-const MessageItem = memo(({ msg, userId, onDelete }) => {
-
-    const created_at = new Date(msg?.created_at)
+const MessageItem = memo(({ msg, userId, onDelete, showImage, userdata }) => {
+    const created_at = new Date(msg.created_at).toLocaleString()
+    const formateddate = formatTime(created_at)
 
     return (
-        <div>
-            {msg?.text && <h2>{msg.text}</h2>}
-            {msg?.image && <img src={msg.image} alt="imagesent" />}
-            {msg?.senderid === userId && <button onClick={() => onDelete(msg.id)}>Delete Message</button>}
-            <p>{created_at.toLocaleString()}</p>
+        <div className={(userdata?.id == userId ? "message-right" : "message-left") + " message"}>
+
+            <div className='avatar-wrapper'>
+                {userdata?.id && userdata?.avatar && <NavLink className="navlink" to={`/profile/${userdata?.id}`}><img className="avatar clickable-icon" src={userdata?.avatar} alt="avatar" /></NavLink>}
+            </div>
+
+            <div className='message-data'>
+                <div className='message-content'>
+                    {msg?.text && <h3>{msg.text}</h3>}
+                    {msg?.image && <img className='clickable' src={msg.image} alt="image" onClick={() => showImage(msg.image, "image")} />}
+                </div>
+
+                <p title={created_at}>{formateddate}</p>
+            </div>
+
+            <div className='message-icon'>
+                {userdata?.id == userId && <Trash className='clickable-icon' onClick={() => onDelete(msg.id)}/>}
+            </div>
         </div>
     )
 })
@@ -28,8 +44,9 @@ const MessageItem = memo(({ msg, userId, onDelete }) => {
 function Messages() {
 
     const { startCall } = useCall()
-    const { user, startnetworkrequest, networkControllerRef, socket, setIsNetworkButtonDisabled, isNetworkButtonDisabled } = useAuth()
+    const { user, avatar, banner, startnetworkrequest, networkControllerRef, socket, setIsNetworkButtonDisabled, isNetworkButtonDisabled } = useAuth()
     const { addToast } = useContext(ToastContext)
+    const { showImage } = useImageViewer()
     const { link } = useParams()
     const navigate = useNavigate()
     const [userdata, setUserdata] = useState({})
@@ -174,6 +191,8 @@ function Messages() {
             formdata.append('text', text)
             formdata.append('receiverid', link)
 
+            if (!image && !text) return
+
             if (image)
             {
                 const imageArrayBuffer = await image.arrayBuffer()
@@ -210,6 +229,7 @@ function Messages() {
             const response = await axios.get(`/auth/getmessages?receiverid=${link}&offset=${messagesLengthRef.current}&date=${date}`, {
                 withCredentials: true
             })
+
 
             const encryptedMessages = response.data.data
             const decryptedMessages = await Promise.all(
@@ -261,22 +281,14 @@ function Messages() {
         setIsNetworkButtonDisabled(false)
     }, [])
 
-    const messageInputRef = useRef(null)
-    const isMessageButtonDisabled = isNetworkButtonDisabled || (!messageInputRef.current?.checkValidity() && !image)
-
     return (
         <>
-            <div className='messages'>
+            <div className='wrapper'>
                 <div className='messages-page-wrapper'>
-                    {userdata && userdata.username && <h1>Messages with {userdata.username}</h1>}
+                    {userdata && userdata.username && <h1>{userdata.username}</h1>}
 
-
-
-                    <button disabled={!canLoadMessages} onClick={() => { getmessages() }}>Get Messages</button>
-
-                    <button disabled={socket ? false : true} onClick={() => { startCall(userdata) }}>Call</button>
+                    <Phone className='clickable-icon' onClick={() => { startCall(userdata) }}/>
                 </div>
-
 
                 <div className='messages-wrapper' ref={messagesWrapperRef}>
                     {messages.map((msg) => (
@@ -285,23 +297,39 @@ function Messages() {
                             msg={msg}
                             userId={user.id}
                             onDelete={deletemessage}
-                        />
+                            showImage={showImage}
+                            userdata={msg.senderid == user.id ? {...user, avatar, banner} : userdata}
+                        />  
                     ))}
                 </div>
 
-                <form onSubmit={(e) => sendmessage(e)}>
+                <form className='message-sender'>
 
-                    <MessageInput value={messagetext} onChange={(e) => setMessagetext(e.target.value)} inputRef={messageInputRef}/>
-                    <input type="file" accept="image/*" onChange={(e) => {
+                    {imagePreview && <div className='message-preview-image'>
+                        <img src={imagePreview} alt="imagetosend"/>
+                        <CircleX className='clickable-icon' onClick={() => {
+                            setImagePreview(null)
+                            setImage(null)
+                        }}/>
+                    </div>}
+
+                    <div className='message-content'>
+                        <MessageInput value={messagetext} onChange={(e) => setMessagetext(e.target.value)}/>
+                        <label className='message-image-upload' htmlFor="messageimg">
+                            <ImageUp className='clickable-icon'/>
+                        </label>
+                    </div>
+
+                    <input id='messageimg' hidden type="file" accept="image/*" onChange={(e) => {
                         const file = e.target.files[0]
                         if (file) {
                             setImage(file)
                             setImagePreview(URL.createObjectURL(file))
                         }
                     }}/>
-                    {imagePreview ? <img src={imagePreview} alt="imagetosend"/> : null}
+                    
 
-                    <button disabled={isMessageButtonDisabled} >Send</button>
+                    <Send className="message-send-icon clickable-icon" onClick={(e) => sendmessage(e)}/>
                 </form>
 
             </div>

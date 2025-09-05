@@ -74,7 +74,7 @@ function Profile() {
             if (user && user.id == link) return setUserdata({ ...user, avatar, banner })
             const data = await getuserprofile([parseInt(link, 10)])
             setUserdata(data[0])
-            if (data == null) {
+            if (data.length == 0) {
                 addToast("Error loading user", "red")
                 navigate("/home")
             }
@@ -146,7 +146,7 @@ function Profile() {
 
     return (
         <>
-            <div className='profile-wrapper'>
+            <div className='wrapper'>
                 <div className='profile'>
 
                     <div className='profile-banner-wrapper'>

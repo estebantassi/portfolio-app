@@ -130,6 +130,8 @@ export const CallProvider = ({ children }) => {
     }
 
     const startCall = async (userdata) => {
+        if (!socket) return addToast("You're clicking too fast !", "red")
+
         try {
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true })
 

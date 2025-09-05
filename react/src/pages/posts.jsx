@@ -32,8 +32,8 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
 
             <div className='post-content'>
                 <div className='post-detail'>
-                    {poster?.username && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h3>{poster.username}</h3></NavLink>}
-                    {poster?.tag && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h4>@{poster.tag}</h4></NavLink>}
+                    {poster?.id && poster?.username && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h3>{poster.username}</h3></NavLink>}
+                    {poster?.id && poster?.tag && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h4>@{poster.tag}</h4></NavLink>}
 
                     <p title={created_at}>• {formateddate}</p>
                 </div>
@@ -277,11 +277,9 @@ function Posts({ overrideLink }) {
         }
     }, [])
 
-    const props = {}
-
     return (
         <>
-            <div className='posts' ref={scrollWrapperRef}>
+            <div className='wrapper' ref={scrollWrapperRef}>
                 {(user && link==0) && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={0} setShowPoster={setShowPoster} showPoster={showPoster} link={link} />}
 
                 {(postsAbove.length == 0  && replies.length == 0) && <p>Uh-oh something's wrong, there's nothing here !</p> }
@@ -329,8 +327,6 @@ function Posts({ overrideLink }) {
                 </div>
 
                 {showPoster && <PostSender setPosts={setPostsAbove} setReplies={setReplies} repliedto={repliedto} setShowPoster={setShowPoster} showPoster={showPoster} link={link} type="fullscreen" />}
-                
-                {/* {isEndOfReplies && <p>Nothing more to load</p> } */}
             </div>
         </>
     )

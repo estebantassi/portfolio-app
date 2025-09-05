@@ -183,13 +183,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     const checkauth = async () => {
+        const timer = 1000 * 60 * 15
         const now = Date.now()
         const lastCheck = parseInt(localStorage.getItem("authtimer") || "0", 10)
-        const nextCheckDelay = Math.max(3000, lastCheck + 3000 - now)
+        const nextCheckDelay = Math.max(timer, lastCheck + timer - now)
 
-        if (now - lastCheck >= 3000) {
+        if (now - lastCheck >= timer) {
             localStorage.setItem("authtimer", now)
-            if (await checktoken()) authCheckTimeoutRef.current = setTimeout(checkauth, 3000)
+            if (await checktoken()) authCheckTimeoutRef.current = setTimeout(checkauth, timer)
         } else {
             authCheckTimeoutRef.current = setTimeout(checkauth, nextCheckDelay)
         }

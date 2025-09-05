@@ -164,8 +164,8 @@ function Notifications() {
 
   return (
     <>
-    <div className='notifications-wrapper'>
-      <div className='notifications' ref={notificationsBoxRef}>
+    <div className='wrapper' ref={notificationsBoxRef}>
+      <div className='notifications'>
         <h1>Notifications</h1>
 
           {notifications.map((data) => (

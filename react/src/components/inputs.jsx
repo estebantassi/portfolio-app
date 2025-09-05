@@ -90,7 +90,7 @@ function PostInput({value, onChange, inputRef}) {
 
 function MessageInput({value, onChange, inputRef}) {
   return (
-        <input
+        <textarea
             ref={inputRef}
             type='text'
             title='Send a message to your friend ! You can use up to 1000 characters per message. Only ASCII characters are allowed.'

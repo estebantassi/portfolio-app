@@ -34,6 +34,8 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster
 
     const sendPost = async (e) => {
         e.preventDefault()
+        if (postButtonDisabled) return addToast("You're going too fast !", "red")
+
         startnetworkrequest()
 
         const formdata = new FormData()
@@ -97,7 +99,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster
             if (type == "fullscreen") closePostSender()
         }}>
             <StopPropagation>
-                <form onSubmit={(e) =>sendPost(e) }>
+                <form>
                     <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${user.id}`}><img className="avatar clickable-icon" src={avatar} alt="avatar" /></NavLink>
 
                     <div className='post-write'>
@@ -116,7 +118,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster
                         }} />
                     </div>
 
-                    <Send onClick={(e) => sendPost(e)} className='clickable-icon' disabled={postButtonDisabled}/>
+                    <Send onClick={(e) => sendPost(e)} className='clickable-icon'/>
                 </form>
                 <div className='posting-image'>
                     {imagePreview && <img src={imagePreview} alt="postimage" />}
