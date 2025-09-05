@@ -69,7 +69,7 @@
   align-items: baseline;
 }
 
-.post .post-detail p:hover, .post .post-detail .navlink *:hover{
+.post .post-detail .navlink *:hover{
   cursor: pointer;
   text-decoration: underline;
 }
@@ -184,7 +184,6 @@
   border-radius: 10px;
   width: 100%;
   height: 150px;
-
 }
 
 .postsender-wrapper .post-image-insert{

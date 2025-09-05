@@ -47,6 +47,15 @@ textarea{
     background-color: var(--wrapper-background-color);
 }
 
+.date{
+    color: gray;
+}
+
+.date:hover{
+    cursor: pointer;
+    text-decoration: underline;
+}
+
 .wrapper > *{
     margin-left: auto;
     margin-right: auto;

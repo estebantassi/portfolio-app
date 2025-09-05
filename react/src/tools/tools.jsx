@@ -25,7 +25,7 @@ function formatNumber(num) {
     return num.toString();
   } else if (num < 1_000_000) {
     let k = num / 1000;
-    return (k % 1 === 0 ? k : k.toFixed(1)) + "k";
+    return (k % 1 === 0 ? k : k.toFixed(1)) + "K";
   } else if (num < 1_000_000_000) {
     let m = num / 1_000_000;
     return (m % 1 === 0 ? m : m.toFixed(1)) + "M";

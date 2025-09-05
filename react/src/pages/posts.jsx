@@ -16,8 +16,8 @@ import { Heart, MessageCircle, Trash } from 'lucide-react'
 
 const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setShowPoster, user, likePost, deletepost, showImage, type, addToast }, ref) => {
     if (post.id == 0) return null
-    const created_at = new Date(post.created_at).toLocaleString()
-    const formateddate = formatTime(created_at)
+    const created_at = (new Date(post.created_at)).toLocaleString()
+    const formateddate = formatTime(post.created_at)
 
     return (
         <div className={(type == "reply" ? 'reply' : 'postabove') + " post"} onClick={() => {
@@ -35,7 +35,7 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
                     {poster?.id && poster?.username && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h3>{poster.username}</h3></NavLink>}
                     {poster?.id && poster?.tag && <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${poster.id}`}><h4>@{poster.tag}</h4></NavLink>}
 
-                    <p title={created_at}>• {formateddate}</p>
+                    <p className='date' title={created_at}>• {formateddate}</p>
                 </div>
 
                 <div className='post-data' >

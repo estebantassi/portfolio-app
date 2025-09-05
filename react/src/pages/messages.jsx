@@ -16,7 +16,7 @@ import { ImageUp, CircleX, Send } from 'lucide-react'
 
 const MessageItem = memo(({ msg, userId, onDelete, showImage, userdata }) => {
     const created_at = new Date(msg.created_at).toLocaleString()
-    const formateddate = formatTime(created_at)
+    const formateddate = formatTime(msg.created_at)
 
     return (
         <div className={(userdata?.id == userId ? "message-right" : "message-left") + " message"}>
@@ -31,7 +31,7 @@ const MessageItem = memo(({ msg, userId, onDelete, showImage, userdata }) => {
                     {msg?.image && <img className='clickable' src={msg.image} alt="image" onClick={() => showImage(msg.image, "image")} />}
                 </div>
 
-                <p title={created_at}>{formateddate}</p>
+                <p className='date' title={created_at}>{formateddate}</p>
             </div>
 
             <div className='message-icon'>

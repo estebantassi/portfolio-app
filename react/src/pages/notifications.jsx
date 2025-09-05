@@ -7,10 +7,12 @@ import { NavLink, useNavigate } from 'react-router'
 import { useContext } from 'react'
 import { ToastContext } from '../context/toastcontext'
 import "../css/notifications.css"
+import { formatTime } from '../tools/tools'
 
 const NotificationItem = memo(({ navigate, notification, notifiers }) => {
 
-  const created_at = new Date(notification.created_at)
+  const created_at = new Date(notification.created_at).toLocaleString()
+  const formateddate = formatTime(notification.created_at)
 
   return (
     <div className={notification.type != "follow" ? 'clickable' : ""} onClick={() => {
@@ -52,7 +54,7 @@ const NotificationItem = memo(({ navigate, notification, notifiers }) => {
 
 
       })()}
-      <p>{created_at.toLocaleString()}</p>
+      <p className='date' title={created_at}>{formateddate}</p>
     </div>
   )
 })
