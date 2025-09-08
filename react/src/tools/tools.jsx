@@ -35,6 +35,14 @@ function formatNumber(num) {
   }
 }
 
+function shortenUsername(username) {
+  let newusername = username.slice(0, 10)
+
+  if (username.length > 10) newusername += "..."
+
+  return newusername
+}
+
 async function deriveKey(password, encrypted2FAsecret, base64Salt) {
   const salt = Uint8Array.from(atob(base64Salt), c => c.charCodeAt(0))
   const encoder = new TextEncoder()
@@ -293,6 +301,7 @@ async function fetchbase64image(url)
 export {
     formatNumber,
     formatTime,
+    shortenUsername,
     deriveKey,
     encryptDataKey,
     decryptDataKey,

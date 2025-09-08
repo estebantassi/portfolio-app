@@ -20,7 +20,7 @@ const EditProfile = async (req, res) => {
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const [[request]] = await db.query(`
-            SELECT username, avatar, banner, tag, bio
+            SELECT username, avatar, banner, tag, bio, messagekey_public
             FROM users
             WHERE id=?
         `, [data.id])
@@ -136,10 +136,16 @@ const EditProfile = async (req, res) => {
             WHERE id=?
         `, [...updateValues, data.id])
 
+        const latestavatar = await GetImage("avatar/" + (request.avatar == 1 ? request.id : "0"))
+        const latestbanner = await GetImage("banner/" + (request.banner == 1 ? request.id : "0"))
+
         let newuser = {
+            avatar: latestavatar,
+            banner: latestbanner,
             username,
             bio,
-            tag
+            tag,
+            messagekey_public: request.messagekey_public
         }
 
         if (banner) newuser.banner = 1

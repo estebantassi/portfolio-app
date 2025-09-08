@@ -128,6 +128,7 @@ function Messages() {
     }
 
     useEffect(() => {
+        console.log(userdata.messagekey_public)
         if (userdata == null || userdata.messagekey_public == null) return
 
         async function getsecret() {
@@ -178,9 +179,6 @@ function Messages() {
         getsecret()
     }, [userdata])
 
-    useEffect(() => {
-    }, [])
-
     const sendmessage = async (e) => {
         e.preventDefault()
         startnetworkrequest(false)
@@ -229,7 +227,6 @@ function Messages() {
             const response = await axios.get(`/auth/getmessages?receiverid=${link}&offset=${messagesLengthRef.current}&date=${date}`, {
                 withCredentials: true
             })
-
 
             const encryptedMessages = response.data.data
             const decryptedMessages = await Promise.all(

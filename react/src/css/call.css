@@ -5,3 +5,23 @@
 .call-offline-avatar{
     animation: pulse 1.5s infinite ease-in-out;
 }
+
+.call{
+    z-index: 1000;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    background-color: black;
+    padding: 20px;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    border-radius: 20px;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+}
+
+.call img{
+    width: 50px;
+}

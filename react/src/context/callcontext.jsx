@@ -4,6 +4,9 @@ import { ToastContext } from "./toastcontext"
 import axios from "../api/axios"
 import '../css/call.css'
 import getuserprofile from "../tools/getuserprofile"
+import { PhoneOff } from 'lucide-react';
+import { NavLink } from "react-router"
+import { shortenUsername } from "../tools/tools"
 
 export const CallContext = createContext()
 
@@ -37,8 +40,8 @@ export const CallProvider = ({ children }) => {
 
         socket.on("acceptedcall", async (data) => {
             if (data.from == isInCallRef.current.data.id)
-            isInCallRef.current = {...isInCallRef.current, online: true}
-            setIsInCall(prev => ({...prev, online: true}))
+                isInCallRef.current = { ...isInCallRef.current, online: true }
+            setIsInCall(prev => ({ ...prev, online: true }))
             if (peerRef.current) await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.answer))
 
             for (const candidate of iceCandidateQueue.current) {
@@ -100,9 +103,9 @@ export const CallProvider = ({ children }) => {
 
             peerRef.current = createPeerConnection(data.from)
 
-            
+
             await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.offer))
-            
+
             streamRef.current.getTracks().forEach(track =>
                 peerRef.current.addTrack(track, streamRef.current)
             )
@@ -122,8 +125,8 @@ export const CallProvider = ({ children }) => {
 
             startCallTimeout()
 
-            isInCallRef.current = {data: caller[0], online: true}
-            setIsInCall({data: caller[0], online: true})
+            isInCallRef.current = { data: caller[0], online: true }
+            setIsInCall({ data: caller[0], online: true })
         } catch (err) {
             addToast(err.response?.data?.message || "An error occurred", "red")
         }
@@ -131,6 +134,8 @@ export const CallProvider = ({ children }) => {
 
     const startCall = async (userdata) => {
         if (!socket) return addToast("You're clicking too fast !", "red")
+        if (userdata.id == isInCallRef?.current?.data?.id) return
+        else if (isInCallRef.current) await endCall()
 
         try {
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -140,7 +145,7 @@ export const CallProvider = ({ children }) => {
             streamRef.current.getTracks().forEach(track =>
                 peerRef.current.addTrack(track, streamRef.current)
             )
-            
+
             const offer = await peerRef.current.createOffer()
             await peerRef.current.setLocalDescription(offer)
 
@@ -156,8 +161,8 @@ export const CallProvider = ({ children }) => {
             startCallTimeout()
 
             addToast(response?.data?.message || "Success", 'green')
-            isInCallRef.current = {data: userdata, online: false}
-            setIsInCall({data: userdata, online: false})
+            isInCallRef.current = { data: userdata, online: false }
+            setIsInCall({ data: userdata, online: false })
         } catch (err) {
             endCall(false)
             addToast(err.response?.data?.message || "An error occurred", "red")
@@ -196,8 +201,7 @@ export const CallProvider = ({ children }) => {
     }
 
     const endCall = async (share = true) => {
-        if (share)
-        {
+        if (share) {
             try {
                 await axios.post('/auth/endcall', {}, {
                     withCredentials: true
@@ -211,7 +215,7 @@ export const CallProvider = ({ children }) => {
             clearTimeout(callTimeoutRef.current)
             callTimeoutRef.current = null
         }
-        
+
         isInCallRef.current = null
         setIsInCall(null)
 
@@ -236,24 +240,47 @@ export const CallProvider = ({ children }) => {
         startCall
     }
 
+    const callBoxRef = useRef(null)
+    const dragBoxRef = useRef(null)
+    const [shortUsername, setShortUsername] = useState(isInCall?.data?.username)
+
+    useEffect(() => {
+        if (!isInCall) return
+
+        setShortUsername(shortenUsername(isInCall.data.username))
+
+        const box = callBoxRef.current
+        box.addEventListener("dragend", dragEnd)
+
+        box.style.transform = "translate(-50%, -50%)"
+
+        function dragEnd(e) {
+            box.style.transform = "translate(0%, -0%)"
+            box.style.left = e.pageX - box.offsetWidth / 2 + "px";
+            box.style.top = e.pageY - box.offsetHeight / 2 + "px";
+        }
+    }, [isInCall])
+
+
+
     return (
         <CallContext.Provider value={contextData}>
-            <div>
-                {isInCall && <>
+            {isInCall && <>
+                <div draggable="true" className="call" ref={callBoxRef}>
+                    <div className="call-drag" ref={dragBoxRef}></div>
 
-                <p>Call with {isInCall.data.username}</p>
-                <img src={isInCall.data.avatar} alt="avatar" className={`avatar ${isInCall.online ? "call-online-avatar" : "call-offline-avatar"}`} />
+                    {isInCall?.data?.id && isInCall?.data?.avatar && <NavLink draggable="false" className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${isInCall.data.id}`}><img draggable="false" className={`avatar clickable-icon ${isInCall.online ? "call-online-avatar" : "call-offline-avatar"}`} src={isInCall.data.avatar} alt="avatar" /></NavLink>}
 
-                <button onClick={() => {isInCall.online ? endCall() : endCall(false)}}>End Call</button>
-                
-                </>
-                }
-            <audio ref={remoteAudioRef} autoPlay />
-            </div>
+                    {shortUsername && <h2>{shortUsername}</h2>}
+
+                    <PhoneOff draggable="false" className="clickable-icon" onClick={() => { isInCall.online ? endCall() : endCall(false) }}/>
+                    <audio ref={remoteAudioRef} autoPlay />
+                </div>
+            </>}
             {children}
         </CallContext.Provider>
     )
-    
+
 }
 
 export const useCall = () => useContext(CallContext)
