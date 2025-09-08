@@ -6,7 +6,7 @@ import { BiographyInput, TagInput, UsernameInput } from './inputs'
 import { RotateCcw, Pencil } from 'lucide-react'
 
 function ProfileEditor({ setUserdata }) {
-    const { setUser, user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
+    const { setUser, user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef, updatetoken } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
     const [show, setShow] = useState(false)
 
@@ -69,7 +69,11 @@ function ProfileEditor({ setUserdata }) {
             setUser(prev => ({ ...prev, username: data.username, bio: data.bio, tag: data.tag }))
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) editprofile(e)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 

@@ -12,7 +12,7 @@ export const CallContext = createContext()
 
 export const CallProvider = ({ children }) => {
 
-    const { socket } = useAuth()
+    const { socket, updatetoken } = useAuth()
     const { addToast } = useContext(ToastContext)
 
     const [isInCall, setIsInCall] = useState(null)
@@ -24,6 +24,8 @@ export const CallProvider = ({ children }) => {
     const remoteAudioRef = useRef(null)
 
     const iceCandidateQueue = useRef([]);
+
+
 
     useEffect(() => {
         if (!socket) return
@@ -103,7 +105,6 @@ export const CallProvider = ({ children }) => {
 
             peerRef.current = createPeerConnection(data.from)
 
-
             await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.offer))
 
             streamRef.current.getTracks().forEach(track =>
@@ -113,7 +114,7 @@ export const CallProvider = ({ children }) => {
             const answer = await peerRef.current.createAnswer()
             await peerRef.current.setLocalDescription(answer)
 
-            const response = await axios.post('/auth/acceptcall', {
+            await axios.post('/auth/acceptcall', {
                 callerid: data.from,
                 answer
             }, {
@@ -128,7 +129,11 @@ export const CallProvider = ({ children }) => {
             isInCallRef.current = { data: caller[0], online: true }
             setIsInCall({ data: caller[0], online: true })
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) acceptCall(data)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
@@ -164,13 +169,19 @@ export const CallProvider = ({ children }) => {
             isInCallRef.current = { data: userdata, online: false }
             setIsInCall({ data: userdata, online: false })
         } catch (err) {
-            endCall(false)
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) startCall(userdata)
+            } else {
+                endCall(false)
+                addToast(err.response?.data?.message || "An error occurred", "red")
+            }
         }
     }
 
     const startCallTimeout = async () => {
-        callTimeoutRef.current = setTimeout(async () => {
+
+        const getCallState = async () => {
             try {
 
                 const response = await axios.get('/auth/getcallstate', {
@@ -180,23 +191,35 @@ export const CallProvider = ({ children }) => {
                 if (response?.data?.state == false) return endCall(false)
 
             } catch (err) {
-                return endCall(false)
+                if (err?.response?.status == 401) {
+                    const isloggedin = await updatetoken()
+                    if (isloggedin) getCallState()
+                }
+                else endCall(false)
+                
+                return
             }
 
             startCallTimeout()
-        }, 5000)
+        }
+
+        callTimeoutRef.current = setTimeout(getCallState, 5000)
     }
 
     const rejectCall = async (from) => {
         try {
-            const response = await axios.post('/auth/rejectcall', {
+            await axios.post('/auth/rejectcall', {
                 from
             }, {
                 withCredentials: true
             })
 
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) rejectCall(from)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
@@ -206,9 +229,7 @@ export const CallProvider = ({ children }) => {
                 await axios.post('/auth/endcall', {}, {
                     withCredentials: true
                 })
-            } catch (err) {
-                addToast(err.response?.data?.message || "An error occurred", "red")
-            }
+            } catch (err) {}
         }
 
         if (callTimeoutRef.current) {

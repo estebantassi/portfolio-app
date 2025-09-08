@@ -89,7 +89,7 @@ function Posts({ overrideLink }) {
     let { link } = useParams()
     if (overrideLink != null) link = overrideLink
 
-    const { user, avatar, banner, startnetworkrequest, networkControllerRef } = useAuth()
+    const { user, avatar, banner, startnetworkrequest, networkControllerRef, updatetoken } = useAuth()
     const { showImage } = useImageViewer()
     const { addToast } = useContext(ToastContext)
 
@@ -205,6 +205,8 @@ function Posts({ overrideLink }) {
 
         canLoadMorePostsAboveRef.current = true
         setCanLoadMorePostsAbove(true)
+
+        PostsAboveScrollCheck()
     }
 
     const getReplies = async (offset) => {
@@ -224,6 +226,8 @@ function Posts({ overrideLink }) {
 
         canLoadMoreRepliesRef.current = true
         setCanLoadMoreReplies(true)
+
+        RepliesScrollCheck()
     }
 
     const likePost = useCallback(async (postid) => {
@@ -248,7 +252,11 @@ function Posts({ overrideLink }) {
                 )
             )
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) likePost(postid)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }, [])
 
@@ -273,7 +281,11 @@ function Posts({ overrideLink }) {
             if (list == "above") navigate("/home")
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) deletepost(link, id, list)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }, [])
 

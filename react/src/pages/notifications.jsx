@@ -61,7 +61,7 @@ const NotificationItem = memo(({ navigate, notification, notifiers }) => {
 
 function Notifications() {
   const navigate = useNavigate()
-  const { socket } = useAuth()
+  const { socket, updatetoken } = useAuth()
 
   const [date, setDate] = useState(new Date())
   const [notifications, setNotifications] = useState([])
@@ -156,7 +156,10 @@ function Notifications() {
       if (response.data.end) return
 
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        await updatetoken()
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
 
     canLoadNotificationsRef.current = true

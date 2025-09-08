@@ -10,7 +10,7 @@ import { NavLink } from 'react-router'
 import { StopPropagation } from './utils'
 
 function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster, link, type="inline" }) {
-    const { user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef } = useContext(AuthContext)
+    const { user, avatar, banner, isNetworkButtonDisabled, startnetworkrequest, networkControllerRef, updatetoken } = useContext(AuthContext)
     const { addToast } = useContext(ToastContext)
 
     const [text, setText] = useState("")
@@ -87,7 +87,11 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster
             addToast(response?.data?.message || "Success", "green")
             if (type == "fullscreen") setShowPoster(false)
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) sendPost(e)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 

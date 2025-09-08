@@ -82,7 +82,7 @@ const UpdateAccessToken = async (req, res) => {
         CheckUserExpirations(data.id)
 
         await connection.commit()
-        return res.status(200).json({message: "Updated token"})
+        return res.status(200).json({message: "Updated token" })
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
         if (connection) await connection.rollback()

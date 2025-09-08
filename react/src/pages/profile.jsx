@@ -14,7 +14,7 @@ import { Mail, UserRoundPlus, UserRoundMinus, LockOpen, Lock } from 'lucide-reac
 function Profile() {
 
     const { showImage } = useImageViewer()
-    const { user, socket, avatar, banner } = useAuth()
+    const { user, socket, avatar, banner, updatetoken } = useAuth()
     const { addToast } = useContext(ToastContext)
     const { link } = useParams()
     const navigate = useNavigate()
@@ -123,7 +123,11 @@ function Profile() {
 
             setIsFollowing(response.data.followed)
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) processfollow()
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 
@@ -140,7 +144,11 @@ function Profile() {
             setIsFollowed(false)
             setIsFollowing(false)
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) processblock()
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
     }
 

@@ -13,7 +13,7 @@ function AccountSettings() {
   const navigate = useNavigate()
 
   const { addToast } = useContext(ToastContext)
-  const { logout, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled, setIsNetworkButtonDisabled } = useAuth()
+  const { logout, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled, setIsNetworkButtonDisabled, updatetoken } = useAuth()
   const [isauth, setIsauth] = useState(false)
   const [password, setPassword] = useState("")
   const [showaccesscode2FA, setShowaccesscode2FA] = useState(false)
@@ -101,7 +101,11 @@ function AccountSettings() {
         setShowaccesscode2FA(true)
       }
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) accesssettings(e)
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
 
     setIsNetworkButtonDisabled(false)
@@ -125,7 +129,11 @@ function AccountSettings() {
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) requestnewemail(e)
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
     setIsNetworkButtonDisabled(false)
   }
@@ -176,7 +184,11 @@ function AccountSettings() {
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) requestnewpassword(e)
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
     setIsNetworkButtonDisabled(false)
   }
@@ -196,7 +208,11 @@ function AccountSettings() {
 
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) request2fa(e)
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
     setIsNetworkButtonDisabled(false)
   }
@@ -246,7 +262,11 @@ function AccountSettings() {
       setHas2FA(true)
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) check2FAcode(e)
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
     setIsNetworkButtonDisabled(false)
   }
@@ -293,7 +313,11 @@ function AccountSettings() {
       setHas2FA(false)
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) disable2FA(e)
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
 
     setIsNetworkButtonDisabled(false)
@@ -312,7 +336,11 @@ function AccountSettings() {
       logout()
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
-      addToast(err.response?.data?.message || "An error occurred", "red")
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) LogoutAllUsers(e)
+      }
+      else addToast(err.response?.data?.message || "An error occurred", "red")
     }
 
     setIsNetworkButtonDisabled(false)

@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
         if (!user) return
         if (socketioRef.current) return
 
-        socketTimeoutRef.current = setTimeout(async () => {
+        const handleSocketUpdate = async () => {
             try {
                 //Connect to websockets after 1 second on page reload to prevent spamming
                 socketioRef.current = io('http://localhost:4444', {
@@ -90,10 +90,15 @@ export const AuthProvider = ({ children }) => {
                 JSON.stringify(user) != JSON.stringify({...user, ...newuserdata}) && setUser(prev => ({...prev, ...newuserdata}))
 
             } catch (err) {
-                console.log(err)
-                addToast(err.response?.data?.message || "An error occurred", "red")
+                if (err?.response?.status == 401) {
+                    const isloggedin = await updatetoken()
+                    if (isloggedin) handleSocketUpdate()
+                }
+                else addToast(err.response?.data?.message || "An error occurred", "red")
             }
-        }, 1000)
+        }
+
+        socketTimeoutRef.current = setTimeout(handleSocketUpdate, 1000)
 
         return () => {
             if (socketTimeoutRef.current) {
@@ -113,15 +118,8 @@ export const AuthProvider = ({ children }) => {
     //Update user on change and restart the auth logic
     useEffect(() => {
         if (!user) return
-        if (!authCheckTimeoutRef.current) checkauth()
         Cookies.set("user", JSON.stringify(user))
 
-        return () => {
-            if (authCheckTimeoutRef.current) {
-                clearTimeout(authCheckTimeoutRef.current)
-                authCheckTimeoutRef.current = null
-            }
-        }
     }, [user])
     
     //Check for expired items in localstorage
@@ -176,33 +174,15 @@ export const AuthProvider = ({ children }) => {
 
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) logout()
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
+
         navigate("/home")
         setIsNetworkButtonDisabled(false)
-    }
-
-    const checkauth = async () => {
-        const timer = 1000 * 60 * 15
-        const now = Date.now()
-        const lastCheck = parseInt(localStorage.getItem("authtimer") || "0", 10)
-        const nextCheckDelay = Math.max(timer, lastCheck + timer - now)
-
-        if (now - lastCheck >= timer) {
-            localStorage.setItem("authtimer", now)
-            if (await checktoken()) authCheckTimeoutRef.current = setTimeout(checkauth, timer)
-        } else {
-            authCheckTimeoutRef.current = setTimeout(checkauth, nextCheckDelay)
-        }
-    }
-
-    const checktoken = async () => {
-        try {
-            await axios.get('/auth/checkaccesstoken', { withCredentials: true })
-            return true
-        } catch (err) {
-            return await updatetoken()
-        }
     }
 
     const updatetoken = async () => {
@@ -227,7 +207,8 @@ export const AuthProvider = ({ children }) => {
         avatar,
         setAvatar,
         banner,
-        setBanner
+        setBanner,
+        updatetoken
     }
 
     return (

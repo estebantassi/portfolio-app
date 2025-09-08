@@ -44,7 +44,7 @@ const MessageItem = memo(({ msg, userId, onDelete, showImage, userdata }) => {
 function Messages() {
 
     const { startCall } = useCall()
-    const { user, avatar, banner, startnetworkrequest, networkControllerRef, socket, setIsNetworkButtonDisabled, isNetworkButtonDisabled } = useAuth()
+    const { user, avatar, banner, startnetworkrequest, networkControllerRef, socket, setIsNetworkButtonDisabled, updatetoken } = useAuth()
     const { addToast } = useContext(ToastContext)
     const { showImage } = useImageViewer()
     const { link } = useParams()
@@ -128,7 +128,6 @@ function Messages() {
     }
 
     useEffect(() => {
-        console.log(userdata.messagekey_public)
         if (userdata == null || userdata.messagekey_public == null) return
 
         async function getsecret() {
@@ -212,7 +211,11 @@ function Messages() {
             setImagePreview("") 
             setMessagetext("")
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) sendmessage(e)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
 
         setIsNetworkButtonDisabled(false)
@@ -248,8 +251,14 @@ function Messages() {
 
             if (response.data.end) return
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
-            if (err?.response?.status == 403) navigate("/profile/" + link)
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) getmessages()
+            }
+            else {
+                addToast(err.response?.data?.message || "An error occurred", "red")
+                if (err?.response?.status == 403) navigate("/profile/" + link)
+            }
         }
 
         setCanLoadMessages(true)
@@ -272,7 +281,11 @@ function Messages() {
             setMessages(prev => prev.filter(msg => msg.id !== id));
             addToast(response?.data?.message || "Success", "green")
         } catch (err) {
-            addToast(err.response?.data?.message || "An error occurred", "red")
+            if (err?.response?.status == 401) {
+                const isloggedin = await updatetoken()
+                if (isloggedin) deletemessage(id)
+            }
+            else addToast(err.response?.data?.message || "An error occurred", "red")
         }
 
         setIsNetworkButtonDisabled(false)
