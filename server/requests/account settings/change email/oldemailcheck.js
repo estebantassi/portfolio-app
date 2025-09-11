@@ -40,7 +40,7 @@ const OldEmailCheck = async (req, res) => {
             html: `
             <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">
                 <h2 style="color: black;">Here is your verification link:</h2>
-                <a href="http://localhost:5173/newemailcheck/${verifytoken}" style="margin-top: 10; color: #2c3e50;">CONFIRM</a>
+                <a href="${process.env.WEBSITE_URL}/newemailcheck/${verifytoken}" style="margin-top: 10; color: #2c3e50;">CONFIRM</a>
                 <h3 style="margin-top: 20px; color: black;">
                     If you did not initiate this, please contact our support team to get this resolved.
                 </h3>

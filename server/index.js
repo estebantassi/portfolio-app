@@ -7,6 +7,35 @@ const { initSocket } = require('./config/socketio')
 const http = require('http')
 const fileUpload = require('express-fileupload')
 
+const {
+    sendMessages,
+    settings2FA,
+    logoutusers,
+    emailchange,
+    passwordchange,
+    linkVerifications,
+    accountCreation,
+    accesssettings,
+    login,
+    deleteMessages,
+    getMessages,
+    callState,
+    callActions,
+    followAndBlock,
+    updateToken,
+    logout,
+    getBlock,
+    getFollow,
+    getUsers,
+    editProfile,
+    getNotifications,
+    sendPost,
+    like,
+    getPosts,
+    getPostsAbove,
+    deletePost
+} = require('./config/limiters');
+
 const app = express()
 const PORT = process.env.PORT
 
@@ -29,74 +58,74 @@ app.use(bodyParser.json({ limit: '10mb' }))
 app.use(fileUpload())
 
 //ACCOUNT CREATION
-app.post('/signup', require('./requests/signup/signup').Signup)
-app.post('/verifyemail', require('./requests/signup/verifyemail').VerifyEmail)
+app.post('/signup', accountCreation, require('./requests/signup/signup').Signup)
+app.post('/verifyemail', linkVerifications, require('./requests/signup/verifyemail').VerifyEmail)
 
 //FULL LOGIN
-app.post('/loginstart', require('./requests/login/loginstart').LoginStart)
-app.post('/logintoken/login', require('./requests/login/login').Login)
-app.post('/logintoken/logincode', require('./requests/login/logincode').LoginCode)
+app.post('/loginstart', login, require('./requests/login/loginstart').LoginStart)
+app.post('/logintoken/login', login, require('./requests/login/login').Login)
+app.post('/logintoken/logincode', login, require('./requests/login/logincode').LoginCode)
 
 //ACCESS ACCOUNT SETTINGS
-app.post('/auth/accountsettings/checkstart', require('./requests/account settings/access/checkstart').CheckStart)
-app.post('/auth/sensitivedata/accountsettings/check', require('./requests/account settings/access/check').Check)
-app.post('/auth/sensitivedata/accountsettings/check2fa', require('./requests/account settings/access/check2fa').Check2FA)
+app.post('/auth/accountsettings/checkstart', accesssettings, require('./requests/account settings/access/checkstart').CheckStart)
+app.post('/auth/sensitivedata/accountsettings/check', accesssettings, require('./requests/account settings/access/check').Check)
+app.post('/auth/sensitivedata/accountsettings/check2fa', accesssettings, require('./requests/account settings/access/check2fa').Check2FA)
 
 //CHANGE EMAIL
-app.post('/oldemailcheck', require('./requests/account settings/change email/oldemailcheck').OldEmailCheck)
-app.post('/newemailcheck', require('./requests/account settings/change email/newemailcheck').NewEmailCheck)
-app.post('/auth/sensitivedata/accountsettings/requestemailchange', require('./requests/account settings/change email/requestemailchange').RequestEmailChange)
+app.post('/oldemailcheck', linkVerifications, require('./requests/account settings/change email/oldemailcheck').OldEmailCheck)
+app.post('/newemailcheck', linkVerifications, require('./requests/account settings/change email/newemailcheck').NewEmailCheck)
+app.post('/auth/sensitivedata/accountsettings/requestemailchange', emailchange, require('./requests/account settings/change email/requestemailchange').RequestEmailChange)
 
 //CHANGE PASSWORD
-app.post('/confirmpasswordchange', require('./requests/account settings/change password/confirmpasswordchange').ConfirmPasswordChange)
-app.post('/auth/sensitivedata/accountsettings/requestpasswordchange', require('./requests/account settings/change password/requestpasswordchange').RequestPasswordChange)
+app.post('/confirmpasswordchange', linkVerifications, require('./requests/account settings/change password/confirmpasswordchange').ConfirmPasswordChange)
+app.post('/auth/sensitivedata/accountsettings/requestpasswordchange', passwordchange, require('./requests/account settings/change password/requestpasswordchange').RequestPasswordChange)
 
 //LOGOUT ALL USERS
-app.post('/auth/sensitivedata/accountsettings/logoutallusers', require('./requests/account settings/logoutallusers').LogoutAllUsers)
+app.post('/auth/sensitivedata/accountsettings/logoutallusers', logoutusers, require('./requests/account settings/logoutallusers').LogoutAllUsers)
 
 //CHANGE 2FA
-app.post('/auth/sensitivedata/accountsettings/request2fa', require('./requests/account settings/change 2FA/request2fa').Request2FA)
-app.post('/auth/sensitivedata/accountsettings/enable2fa', require('./requests/account settings/change 2FA/enable2fa').Enable2FA)
-app.post('/auth/sensitivedata/accountsettings/disable2fa', require('./requests/account settings/change 2FA/disable2fa').Disable2FA)
+app.post('/auth/sensitivedata/accountsettings/request2fa', settings2FA, require('./requests/account settings/change 2FA/request2fa').Request2FA)
+app.post('/auth/sensitivedata/accountsettings/enable2fa', settings2FA, require('./requests/account settings/change 2FA/enable2fa').Enable2FA)
+app.post('/auth/sensitivedata/accountsettings/disable2fa', settings2FA, require('./requests/account settings/change 2FA/disable2fa').Disable2FA)
 
 //MESSAGES
-app.post('/auth/sendmessage', require ("./requests/messages/sendmessage").SendMessage)
-app.get('/auth/getmessages', require ("./requests/messages/getmessages").GetMessages)
-app.post('/auth/deletemessage', require ("./requests/messages/deletemessage").DeleteMessage)
+app.post('/auth/sendmessage', sendMessages, require("./requests/messages/sendmessage").SendMessage)
+app.get('/auth/getmessages', getMessages, require("./requests/messages/getmessages").GetMessages)
+app.post('/auth/deletemessage', deleteMessages, require("./requests/messages/deletemessage").DeleteMessage)
 
 //CALL
-app.post('/auth/requestcall', require('./requests/messages/call/requestcall').RequestCall)
-app.post('/auth/acceptcall', require('./requests/messages/call/acceptcall').AcceptCall)
-app.post('/auth/endcall', require('./requests/messages/call/endcall').EndCall)
-app.post('/auth/rejectcall', require('./requests/messages/call/rejectcall').RejectCall)
-app.get('/auth/getcallstate', require('./requests/messages/call/getcallstate').GetCallState)
+app.post('/auth/requestcall', callActions, require('./requests/messages/call/requestcall').RequestCall)
+app.post('/auth/acceptcall', callActions, require('./requests/messages/call/acceptcall').AcceptCall)
+app.post('/auth/endcall', callActions, require('./requests/messages/call/endcall').EndCall)
+app.post('/auth/rejectcall', callActions, require('./requests/messages/call/rejectcall').RejectCall)
+app.get('/auth/getcallstate', callState, require('./requests/messages/call/getcallstate').GetCallState)
 
 //FOLLOW
-app.post('/auth/follow', require ("./requests/profile/follow/follow").Follow)
-app.get('/getfollowstate', require ("./requests/profile/follow/getfollowstate").GetFollowState)
+app.post('/auth/follow', followAndBlock, require ("./requests/profile/follow/follow").Follow)
+app.get('/getfollowstate', getFollow, require ("./requests/profile/follow/getfollowstate").GetFollowState)
 
 //BLOCK
-app.post('/auth/block', require ("./requests/profile/block/block").Block)
-app.get('/getblockstate', require ("./requests/profile/block/getblockstate").GetBlockState)
+app.post('/auth/block', followAndBlock, require ("./requests/profile/block/block").Block)
+app.get('/getblockstate', getBlock, require ("./requests/profile/block/getblockstate").GetBlockState)
 
 //TOKENS
-app.get('/auth/checkaccesstoken', require('./requests/session/checkaccesstoken').CheckAccessToken)
-app.get('/auth/refreshtoken/logout', require('./requests/login/logout').Logout)
-app.get('/auth/refreshtoken/update', require('./requests/session/updateaccesstoken').UpdateAccessToken)
+// app.get('/auth/checkaccesstoken', require('./requests/session/checkaccesstoken').CheckAccessToken)
+app.get('/auth/refreshtoken/logout', logout, require('./requests/login/logout').Logout)
+app.get('/auth/refreshtoken/update', updateToken, require('./requests/session/updateaccesstoken').UpdateAccessToken)
 
 //PROFILE
-app.post('/auth/editprofile', require("./requests/profile/editprofile").EditProfile)
-app.get('/getuserprofile', require('./requests/profile/getuserprofile').GetUserProfile)
+app.post('/auth/editprofile', editProfile, require("./requests/profile/editprofile").EditProfile)
+app.get('/getuserprofile', getUsers, require('./requests/profile/getuserprofile').GetUserProfile)
 
 //NOTIFICATIONS
-app.get('/auth/getnotifications', require('./requests/notifications/getnotifications').GetNotifications)
+app.get('/auth/getnotifications', getNotifications, require('./requests/notifications/getnotifications').GetNotifications)
 
 //POSTS
-app.post('/auth/sendpost', require('./requests/posts/sendpost').SendPost)
-app.post('/auth/like', require('./requests/posts/likes/like').Like)
-app.get('/auth/getposts', require('./requests/posts/getposts').GetPosts)
-app.get('/auth/getpostsabove', require('./requests/posts/getpostsabove').GetPostsAbove)
-app.post('/auth/deletepost', require('./requests/posts/deletepost').DeletePost)
+app.post('/auth/sendpost', sendPost, require('./requests/posts/sendpost').SendPost)
+app.post('/auth/like', like, require('./requests/posts/likes/like').Like)
+app.get('/auth/getposts', getPosts, require('./requests/posts/getposts').GetPosts)
+app.get('/auth/getpostsabove', getPostsAbove, require('./requests/posts/getpostsabove').GetPostsAbove)
+app.post('/auth/deletepost', deletePost, require('./requests/posts/deletepost').DeletePost)
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 

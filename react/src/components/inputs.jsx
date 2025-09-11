@@ -49,10 +49,10 @@ function PasswordInput({value, onChange, inputRef}) {
         <input
             ref={inputRef}
             type='password'
-            title='Password must be 12 to 32 characters long. Only ASCII characters are allowed.'
-            placeholder="..."
+            title='Password must be at least 12 characters long.'
+            placeholder="..." 
             value={value}
-            pattern=".{12,32}"
+            pattern=".{12,}"
             onChange={onChange}
             required
         />

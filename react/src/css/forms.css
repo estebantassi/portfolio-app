@@ -1,6 +1,6 @@
 :root{
-    --form-border-color: yellow;
-    --form-border-color-opacity: rgba(255, 255, 0, 0.3);
+    --form-border-color: white;
+    --form-border-color-opacity: rgba(255, 255, 255, 0.3);
 }
 
 .form{

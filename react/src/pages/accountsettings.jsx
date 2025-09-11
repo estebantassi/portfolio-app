@@ -7,10 +7,14 @@ import { useNavigate } from "react-router"
 import { decryptDataKey, deriveKey, encryptDataKey, arrayBufferToBase64, base64ToArrayBuffer } from "../tools/tools"
 import srp from "secure-remote-password/client"
 import { CodeInput, EmailInput, PasswordInput } from '../components/inputs'
+import { useImageViewer } from '../context/imageviewercontext'
+import "../css/settings.css"
 
 function AccountSettings() {
 
   const navigate = useNavigate()
+
+  const { showImage } = useImageViewer()
 
   const { addToast } = useContext(ToastContext)
   const { logout, setUser, startnetworkrequest, networkControllerRef, isNetworkButtonDisabled, setIsNetworkButtonDisabled, updatetoken } = useAuth()
@@ -63,6 +67,7 @@ function AccountSettings() {
         setEmail(response.data.user.email)
         setHas2FA(true)
         setIsauth(true)
+        setIsNetworkButtonDisabled(false)
         return
       }
 
@@ -311,6 +316,8 @@ function AccountSettings() {
       setUser(prev => ({ ...prev, key: keyBase64 }))
 
       setHas2FA(false)
+      setQrcode(null)
+      setIsqrcodescanned(false)
       addToast(request?.data?.message || "Success", "green")
     } catch (err) {
       if (err?.response?.status == 401) {
@@ -363,17 +370,21 @@ function AccountSettings() {
   const code2FAButtonDisabled = isNetworkButtonDisabled || !code2FAInputRef.current?.checkValidity()
 
   return (
-    <div>
+    <div className='wrapper'>
       {isauth ? <>
-      
-        <p>Email: {email}</p>
-        <button onClick={() => { LogoutAllUsers() }} disabled={isNetworkButtonDisabled}>Logout all sessions</button>
+      <div className='settings'>
+        <div className='form'>
+          <button onClick={() => { LogoutAllUsers() }} disabled={isNetworkButtonDisabled}>Logout all sessions</button>
+        </div>
 
         {/*//////////////////// CHANGE EMAIL ////////////////////*/}
 
-        <form onSubmit={(e) => requestnewemail(e)}>
+        <form className='form' onSubmit={(e) => requestnewemail(e)}>
+          <h1>Change email</h1>
+          <h2>Current email: {email}</h2>
           <label>New email</label>
           <EmailInput value={newemail} onChange={(e) => setNewemail(e.target.value)} inputRef={newemailInputRef} />
+          <label>Validate new email</label>
           <EmailInput value={newemailcheck} onChange={(e) => setNewemailcheck(e.target.value)} inputRef={newemailcheckInputRef} />
 
           <button disabled={newemailButtonDisabled}>Change email</button>
@@ -381,9 +392,11 @@ function AccountSettings() {
 
         {/*//////////////////// CHANGE PASSWORD ////////////////////*/}
 
-        <form onSubmit={(e) => requestnewpassword(e)}>
+        <form className='form' onSubmit={(e) => requestnewpassword(e)}>
+          <h1>Change password</h1>
           <label>New password</label>
           <PasswordInput value={newpassword} onChange={(e) => setNewpassword(e.target.value)} inputRef={newpasswordInputRef} />
+            <label>Validate new password</label>
           <PasswordInput value={newpasswordcheck} onChange={(e) => setNewpasswordcheck(e.target.value)} inputRef={newpasswordcheckInputRef} />
 
           <button disabled={newpasswordButtonDisabled}>Change password</button>
@@ -392,32 +405,31 @@ function AccountSettings() {
         {/*//////////////////// TOGGLE 2FA ////////////////////*/}
 
         {has2FA ? <>
-          <h1>2FA Enabled</h1>
-
-          <form onSubmit={(e) => disable2FA(e)}>
+          <form className='form' onSubmit={(e) => disable2FA(e)}>
+            <h1>2FA</h1>
             <button disabled={isNetworkButtonDisabled}>Disable 2FA</button>
           </form>
         </> : <></>}
 
         {!qrcode && !isqrcodescanned && !has2FA ? <>
-
-          <form onSubmit={(e) => request2fa(e)}>
+          <form className='form' onSubmit={(e) => request2fa(e)}>
+            <h1>2FA</h1>
             <button disabled={isNetworkButtonDisabled}>Enable 2FA</button>
           </form>
-
         </> : <>
         </>}
 
         {/*//////////////////// ENABLE 2FA ////////////////////*/}
         {qrcode && !has2FA ? <>
-          <form onSubmit={(e) => {
+          <form className='form' onSubmit={(e) => {
             e.preventDefault()
             setIsqrcodescanned(true)
             setQrcode(null)
           }}>
-            <img
+            <h1>2FA</h1>
+            <img className='clickable-icon' onClick={() => showImage(qrcode, "2FAqrcode")}
               src={qrcode}
-              alt="new"
+              alt="2FAqrcode"
             />
             <button>I scanned the QR code</button>
           </form>
@@ -426,17 +438,20 @@ function AccountSettings() {
         </>}
 
         {isqrcodescanned && !has2FA ? <>
-          <form onSubmit={(e) => check2FAcode(e)}>
+          <form className='form' onSubmit={(e) => check2FAcode(e)}>
+            <h1>2FA</h1>
+            <label>Enter your 2FA code</label>
             <CodeInput value={code2FA} onChange={(e) => setCode2FA(e.target.value)} inputRef={code2FAInputRef} />
-            <button disabled={code2FAButtonDisabled}>Enable 2FA</button>
+            <button>Enable 2FA</button>
           </form>
         </> : <></>}
-
+      </div>
         {/*//////////////////// ACCESS THE PAGE ////////////////////*/}
       </>
         :
         <>
-          <form onSubmit={(e) => accesssettings(e)}>
+          <form className='form' onSubmit={(e) => accesssettings(e)}>
+            <h1>Account Settings</h1>
             {
               showaccesscode2FA ? <>
                 <label>Enter 2FA code from Authenticator App</label>

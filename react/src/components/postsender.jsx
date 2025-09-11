@@ -103,7 +103,7 @@ function PostSender({ setPosts, setReplies, repliedto, setShowPoster, showPoster
             if (type == "fullscreen") closePostSender()
         }}>
             <StopPropagation>
-                <form>
+                <form onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) sendPost(e) }}>
                     <NavLink className="navlink" onClick={(e) => e.stopPropagation()} to={`/profile/${user.id}`}><img className="avatar clickable-icon" src={avatar} alt="avatar" /></NavLink>
 
                     <div className='post-write'>

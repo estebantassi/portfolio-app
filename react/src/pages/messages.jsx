@@ -12,7 +12,7 @@ import { MessageInput } from '../components/inputs'
 import "../css/messages.css"
 import { Phone, Trash } from 'lucide-react'
 import { useImageViewer } from '../context/imageviewercontext'
-import { ImageUp, CircleX, Send } from 'lucide-react'
+import { ImageUp, CircleX, Send, ChevronDown } from 'lucide-react'
 
 const MessageItem = memo(({ msg, userId, onDelete, showImage, userdata }) => {
     const created_at = new Date(msg.created_at).toLocaleString()
@@ -65,6 +65,9 @@ function Messages() {
     const messagesWrapperRef = useRef(null)
     const messagesLengthRef = useRef(0)
 
+    const [isNewMessage, setIsNewMessage] = useState(false)
+    const [showScroll, setShowScroll] = useState(false)
+
     useEffect(() => {
         if (!socket) return
 
@@ -79,6 +82,12 @@ function Messages() {
                 message = { ...data, text: "[Failed to decrypt]" }
             }
             setMessages(prev => [message, ...prev])
+
+            if (messagesWrapperRef.current.scrollTop >= -10) messagesWrapperRef.current.scrollTop = 0
+            else if (data.senderid == link) {
+                setIsNewMessage(true)
+                setShowScroll(true)
+            }
         })
 
         socket.on('deletemessage', async (data) => {
@@ -125,6 +134,13 @@ function Messages() {
         if (messagesWrapperRef.current.clientHeight - messagesWrapperRef.current.scrollTop >= messagesWrapperRef.current.scrollHeight - 200
             || !(messagesWrapperRef.current.scrollHeight > messagesWrapperRef.current.clientHeight)
         ) getmessages()
+
+        if (messagesWrapperRef.current.scrollTop >= -10) {
+            setIsNewMessage(false)
+            setShowScroll(false)
+        }
+
+        if (messagesWrapperRef.current.scrollTop <= -200) setShowScroll(true)
     }
 
     useEffect(() => {
@@ -300,20 +316,28 @@ function Messages() {
                     <Phone className='clickable-icon' onClick={() => { startCall(userdata) }}/>
                 </div>
 
-                <div className='messages-wrapper' ref={messagesWrapperRef}>
-                    {messages.map((msg) => (
-                        <MessageItem
-                            key={msg.id}
-                            msg={msg}
-                            userId={user.id}
-                            onDelete={deletemessage}
-                            showImage={showImage}
-                            userdata={msg.senderid == user.id ? {...user, avatar, banner} : userdata}
-                        />  
-                    ))}
-                </div>
+                    <div className='messages-wrapper' ref={messagesWrapperRef}>
+                        
+                        {messages.map((msg) => (
+                            <MessageItem
+                                key={msg.id}
+                                msg={msg}
+                                userId={user.id}
+                                onDelete={deletemessage}
+                                showImage={showImage}
+                                userdata={msg.senderid == user.id ? {...user, avatar, banner} : userdata}
+                            />  
+                        ))}
 
-                <form className='message-sender'>
+                    </div>
+                    {showScroll && <div className='messages-down' onClick={() => {
+                        if (messagesWrapperRef?.current) messagesWrapperRef.current.scrollTo({top: 0, behavior: "smooth"})
+                    }}>
+                        {isNewMessage && <span>New message</span>}
+                        <ChevronDown/>
+                    </div>}
+
+                <form className='message-sender' onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) sendmessage(e) }}>
 
                     {imagePreview && <div className='message-preview-image'>
                         <img src={imagePreview} alt="imagetosend"/>

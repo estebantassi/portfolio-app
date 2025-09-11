@@ -98,11 +98,6 @@
     height: 100px;
 }
 
-@media (max-width: 1200px) {
-    .message-sender{
-        width: 90%;
-    }
-}
 
 .message-sender textarea{
     width: 100%;
@@ -145,4 +140,36 @@
 
 .message-send-icon{
     margin: auto;
+}
+
+.messages-down{
+    position: fixed;
+    bottom: 220px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: black;
+    width: auto;
+
+    display: flex;
+    justify-content: center;
+    user-select: none;
+    border-radius: 10px;
+    transition: all 0.1s;
+    padding: 10px;
+}
+
+.messages-down:hover{
+    transition: all 0.1s;
+    opacity: 0.75;
+    cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+    .message-sender{
+        width: 90%;
+    }
+
+    .messages-down{
+        bottom: 280px;
+    }
 }

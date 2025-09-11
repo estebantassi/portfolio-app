@@ -13,7 +13,7 @@ const Request2FA = async (req, res) => {
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
         const data2 = await GetTokenData(req, req?.cookies?.sensitivedatatoken, "sensitivedata")
-        if (data2?.step != 1) return res.status(401).json({ message: "Authentication required" })
+        if (data2?.step < 1) return res.status(401).json({ message: "Authentication required" })
 
         const secret = speakeasy.generateSecret({ name: 'Portfolio' })
         let cryptedsecret = encrypt(secret.base32, process.env.SECRET_ENCRYPTION_KEY)

@@ -61,7 +61,7 @@ const Signup = async (req, res) => {
             html: `
             <div style="text-align: center; font-family: Arial, sans-serif; padding: 20px;">
                 <h2 style="color: black;">Here is your verification link:</h2>
-                <a href="http://localhost:5173/verifyemail/${verifytoken}" style="margin-top: 10; color: #2c3e50;">VERIFY</a>
+                <a href="${process.env.WEBSITE_URL}/verifyemail/${verifytoken}" style="margin-top: 10; color: #2c3e50;">VERIFY</a>
                 <h3 style="margin-top: 20px; color: black;">
                     If you did not create this account, please contact our support team to get it removed.
                 </h3>
