@@ -28,7 +28,7 @@ const MessageItem = memo(({ msg, userId, onDelete, showImage, userdata }) => {
             <div className='message-data'>
                 <div className='message-content'>
                     {msg?.text && <h3>{msg.text}</h3>}
-                    {msg?.image && <img className='clickable' src={msg.image} alt="image" onClick={() => showImage(msg.image, "image")} />}
+                    {msg?.images[0] && <img className='clickable' src={msg.images[0]} alt="image" onClick={() => showImage(msg.images[0], "image")} />}
                 </div>
 
                 <p className='date' title={created_at}>{formateddate}</p>
@@ -74,8 +74,11 @@ function Messages() {
         socket.on('newmessage', async (data) => {
             let message
             try {
-                const decryptedText = await decryptMessage(secretRef.current, data.text, "text")
-                data.image = await reconstructImage(data.image, secretRef.current)
+                const decryptedText = data.text ? await decryptMessage(secretRef.current, data.text, "text") : ""
+
+                data.images = await Promise.all(
+                    data.images.map(link => reconstructImage(link, secretRef.current))
+                )
 
                 message = { ...data, text: decryptedText }
             } catch {
@@ -249,16 +252,20 @@ function Messages() {
 
             const encryptedMessages = response.data.data
             const decryptedMessages = await Promise.all(
-            encryptedMessages.map(async (msg) => {
-                try {
-                    const decryptedText = await decryptMessage(secretRef.current, msg.text, "text")
-                    msg.image = await reconstructImage(msg.image, secretRef.current) 
+                encryptedMessages.map(async (msg) => {
+                    try {
+                        const decryptedText = msg.text ? await decryptMessage(secretRef.current, msg.text, "text") : ""
 
-                    return { ...msg, text: decryptedText }
-                } catch {
-                    return { ...msg, text: "[Failed to decrypt]" }
-                }
-            })
+                        const images = msg.images
+                        msg.images = await Promise.all(
+                            images.map(link => reconstructImage(link, secretRef.current))
+                        )
+
+                        return { ...msg, text: decryptedText }
+                    } catch {
+                        return { ...msg, text: "[Failed to decrypt]" }
+                    }
+                })
             )
 
             setMessages(prev => [...prev, ...decryptedMessages])

@@ -5,7 +5,7 @@ const { validateid, validatetoken, validatemessage, getmessagelength } = require
 const { getIO } = require('../../config/socketio')
 const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
 const bucket = require('../../config/gcs')
-const { GetImage } = require('../../tools/helper functions/getimage')
+const { GetImage, GetImagesFromFolder } = require('../../tools/helper functions/getimage')
 const { Notify } = require('../../tools/helper functions/notify')
 
 const SendMessage = async (req, res) => {
@@ -37,15 +37,18 @@ const SendMessage = async (req, res) => {
             VALUES (?, ?, ?, ?, ?)
         `, [text, receiverid, data.id, date.toISOString(), image ? "1" : "0"])
 
+        //REPLACE WITH FOR LOOP TO ALLOW MULTIPLE IMAGES
+        let images = []
         if (image)
         {
-            await bucket.file(`messages/${message.insertId}`).save(image, {
+            await bucket.file(`messages/${message.insertId}/0`).save(image, {
                 metadata: {
                     contentType: 'application/octet-stream',
                     cacheControl: 'no-store'
                 }
             })
-            image = await GetImage(`messages/${message.insertId}`)
+            
+            images = await GetImagesFromFolder(`messages/${message.insertId}`)
         }
 
         const messagedata = {
@@ -53,7 +56,7 @@ const SendMessage = async (req, res) => {
             id: message.insertId,
             created_at: date.toISOString(),
             senderid: data.id,
-            image
+            images
         }
 
         getIO().to(receiverid.toString()).emit('newmessage', {...messagedata, text})

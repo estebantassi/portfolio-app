@@ -53,6 +53,7 @@ app.use(credentials)
 app.use(cors(corsOptions))
 
 const bodyParser = require('body-parser')
+const { DeleteImageFromFolder } = require('./tools/helper functions/getimage')
 app.use(bodyParser.json({ limit: '10mb' }))
 
 app.use(fileUpload())
@@ -144,4 +145,28 @@ setInterval(async () => {
     DELETE FROM tokens 
     WHERE expires_at < ?
     `, [new Date().toISOString()])
+}, 60 * 60 * 1000)
+
+setInterval(async () => {
+
+    const [rows] = await db.query(`
+        SELECT message_id
+        FROM messages_to_delete
+        ORDER BY message_id ASC
+        LIMIT 50
+    `, [])
+
+    if (!rows.length) return;
+
+    try {
+        await Promise.all(rows.map(row => DeleteImageFromFolder(`messages/${row.message_id}`)))
+
+        const idsToDelete = rows.map(row => row.message_id)
+        await db.query(
+            `DELETE FROM messages_to_delete WHERE message_id IN (?)`,
+            [idsToDelete]
+        )
+
+        console.log("Deleted unused images")
+    } catch {}
 }, 60 * 60 * 1000)

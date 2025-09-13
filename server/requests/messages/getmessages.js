@@ -3,8 +3,9 @@ const db = require('../../config/database')
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 const { validateid, validatetoken } = require('../../tools/tools')
 const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
-const { GetImage } = require('../../tools/helper functions/getimage')
+const { GetImage, GetImagesFromFolder } = require('../../tools/helper functions/getimage')
 const { setCachedValue } = require('../../config/redis')
+const bucket = require('../../config/gcs')
 
 const GetMessages = async (req, res) => {
     try {
@@ -41,7 +42,10 @@ const GetMessages = async (req, res) => {
         request = request.slice(0, batchSize)
 
         for (const message of request) {
-            if (message?.image == 1) message.image = await GetImage(`messages/${message.id}`)
+            if (message.image == 1)
+            {
+                message.images = await GetImagesFromFolder(`messages/${message.id}/`)
+            } else message.images = []
         }
 
         return res.status(200).json({message: "Message sent", data: request, end: !hasMore})
