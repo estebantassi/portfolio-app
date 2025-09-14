@@ -1,7 +1,7 @@
 require('dotenv').config()
 const db = require('../../config/database')
 const { getCachedValue, setCachedValue } = require('../../config/redis')
-const { GetImage } = require("../../tools/helper functions/getimage")
+const { GetImage, GetImagesFromFolder } = require("../../tools/helper functions/getimage")
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 const { validatetoken, validateid, makeFakeReqRes } = require('../../tools/tools')
 const { GetUserProfile } = require('../profile/getuserprofile')
@@ -40,7 +40,8 @@ const GetPosts = async (req, res) => {
         let ids = []
         for (const post of request) {
             ids.push(parseInt(post.poster_id, 10))
-            post.image = post.image ? await GetImage(`posts/${post.id}`) : null
+            const path = `${post.poster_id}/posts/${post.id}/`
+            post.images = post.image ? await GetImagesFromFolder(path) : []
         }
 
         let profiles = []

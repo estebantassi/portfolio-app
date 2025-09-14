@@ -132,8 +132,8 @@ const LoginCode = async (req, res) => {
 
         CheckUserExpirations(data.id)
 
-        const avatar = await GetImage(requestuser.avatar == 1 ? `avatar/${data.id}` : "avatar/0")
-        const banner = await GetImage(requestuser.banner == 1 ? `banner/${data.id}` : "banner/0")
+        const avatar = await GetImage(requestuser.avatar == 1 ? `${data.id}/avatar` : "default/avatar")
+        const banner = await GetImage(requestuser.banner == 1 ? `${data.id}/banner` : "default/banner")
 
         await connection.commit()
         return res.status(200).json({

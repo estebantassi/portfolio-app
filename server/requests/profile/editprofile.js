@@ -72,7 +72,7 @@ const EditProfile = async (req, res) => {
 
                 if (avatar.length > 500 * 1024) return res.status(400).json({ message: "Your avatar is too big, its compression is over 500KB" })
 
-                await bucket.file(`avatar/${data.id}`).save(avatar, {
+                await bucket.file(`${data.id}/avatar`).save(avatar, {
                     metadata: {
                         contentType: 'image/webp',
                         cacheControl: 'no-store'
@@ -112,7 +112,7 @@ const EditProfile = async (req, res) => {
 
                 if (banner.length > 1000 * 1024) return res.status(400).json({ message: `Your banner is too big, its compression is over 1MB (${(banner.length / (1024 * 1024)).toFixed(2)}MB)` })
 
-                await bucket.file(`banner/${data.id}`).save(banner, {
+                await bucket.file(`${data.id}/banner`).save(banner, {
                     metadata: {
                         contentType: 'image/webp',
                         cacheControl: 'no-store'
@@ -136,8 +136,8 @@ const EditProfile = async (req, res) => {
             WHERE id=?
         `, [...updateValues, data.id])
 
-        const latestavatar = await GetImage("avatar/" + (request.avatar == 1 ? request.id : "0"))
-        const latestbanner = await GetImage("banner/" + (request.banner == 1 ? request.id : "0"))
+        const latestavatar = await GetImage(request.avatar == 1 ? `${request.id}/avatar` : "default/avatar")
+        const latestbanner = await GetImage(request.banner == 1 ? `${request.id}/banner` : "default/banner")
 
         let newuser = {
             avatar: latestavatar,

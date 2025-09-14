@@ -1,6 +1,6 @@
 require('dotenv').config()
 const db = require('../../config/database')
-const { GetImage } = require("../../tools/helper functions/getimage")
+const { GetImage, GetImagesFromFolder } = require("../../tools/helper functions/getimage")
 const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 const { validateid, validatetoken, makeFakeReqRes } = require('../../tools/tools')
 const { GetUserProfile } = require('../profile/getuserprofile')
@@ -56,7 +56,7 @@ const GetPostsAbove = async (req, res) => {
         let ids = []
         for (const post of posts) {
             ids.push(post.poster_id)
-            post.image = post.image ? await GetImage(`posts/${post.id}`) : null
+            post.images = post.image ? await GetImagesFromFolder(`${post.poster_id}/posts/${post.id}/`) : []
         }
 
         let profiles = []

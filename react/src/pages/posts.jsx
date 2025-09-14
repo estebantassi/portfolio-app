@@ -18,6 +18,7 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
     if (post.id == 0) return null
     const created_at = (new Date(post.created_at)).toLocaleString()
     const formateddate = formatTime(post.created_at)
+    console.log(post)
 
     return (
         <div className={(type == "reply" ? 'reply' : 'postabove') + " post"} onClick={() => {
@@ -40,9 +41,9 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
 
                 <div className='post-data' >
                     {post?.text && <h2>{post.text}</h2>}
-                    {post?.image && <img className='clickable' src={post.image} alt="image" onClick={(e) => {
+                    {post?.images && <img className='clickable' src={post.images[0]} alt="image" onClick={(e) => {
                         e.stopPropagation()
-                        showImage(post.image, "image")
+                        showImage(post.images[0], "image")
                     }} />}
                 </div>
 

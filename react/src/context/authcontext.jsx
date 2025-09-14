@@ -49,8 +49,13 @@ export const AuthProvider = ({ children }) => {
                 })
 
                 //Log the errors (might not need in release)
-                socketioRef.current.on('error', (data) => {
-                    console.log(data?.message || "Error with websockets")
+                socketioRef.current.on('error', async (data) => {
+                    if (data?.message == "Invalid token format")
+                    {
+                        const isloggedin = await updatetoken()
+                        if (isloggedin) socketioRef.current.disconnect().connect()
+                    }
+                    else console.log(data?.message || "Error with websockets")
                 })
 
                 //Update profile in real-time

@@ -4,6 +4,7 @@ const { GetTokenData } = require('../../tools/helper functions/gettokendata')
 const { validateid } = require('../../tools/tools')
 const bucket = require('../../config/gcs')
 const { deleteCachedValue } = require('../../config/redis')
+const { DeleteImageFromFolder } = require('../../tools/helper functions/getimage')
 
 const DeletePost = async (req, res) => {
     try {
@@ -37,7 +38,7 @@ const DeletePost = async (req, res) => {
 
         if (post.image == 1) {
             try {
-                await bucket.file(`posts/${postid}`).delete()
+                await DeleteImageFromFolder(`${data.id}/posts/${postid}/`)
             } catch (err) {
                 if (err.code !== 404) throw err
             }

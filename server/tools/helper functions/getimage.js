@@ -39,15 +39,18 @@ const GetImagesFromFolder = async (folderpath) => {
         const [files] = await bucket.getFiles({ prefix: folderpath })
 
         const signedUrls = await Promise.all(
-            files.map(file => {
-                const options = {
-                    version: 'v4',
-                    action: 'read',
-                    expires: Date.now() + 60 * 60 * 1000,
-                }
-                return file.getSignedUrl(options)
-                    .then(([url]) => url)
-            })
+            
+            files
+                .filter(file => !file.name.endsWith('/'))
+                .map(file => {
+                    const options = {
+                        version: 'v4',
+                        action: 'read',
+                        expires: Date.now() + 60 * 60 * 1000,
+                    }
+                    return file.getSignedUrl(options)
+                        .then(([url]) => url)
+                })
         )
 
         await setCachedValue(folderpath, 55 * 60, JSON.stringify(signedUrls))

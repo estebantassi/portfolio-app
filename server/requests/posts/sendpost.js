@@ -5,7 +5,7 @@ const { validateid, validatetoken, validatemessage, validateposttext } = require
 const { getIO } = require('../../config/socketio')
 const { GetBlockStateServer } = require('../profile/block/getblockstateserver')
 const bucket = require('../../config/gcs')
-const { GetImage } = require('../../tools/helper functions/getimage')
+const { GetImage, GetImagesFromFolder } = require('../../tools/helper functions/getimage')
 const { Notify } = require('../../tools/helper functions/notify')
 const sharp = require('sharp')
 
@@ -69,16 +69,18 @@ const SendPost = async (req, res) => {
             `, [repliedto])
         }
 
+        //REPLACE WITH FOR LOOP FOR MULTIPLE IMAGES
+        let images = []
         if (image)
         {
-            await bucket.file(`posts/${post.insertId}`).save(image, {
+            await bucket.file(`${data.id}/posts/${post.insertId}/0`).save(image, {
                 metadata: {
                     contentType: 'image/webp',
                     cacheControl: 'no-store'
                 }
             })
 
-            image = await GetImage(`posts/${post.insertId}`)
+            images = await GetImagesFromFolder(`${data.id}/posts/${post.insertId}/`)
         }
 
         const postdata = {
@@ -86,7 +88,7 @@ const SendPost = async (req, res) => {
             id: post.insertId,
             created_at: date.toISOString(),
             poster_id: data.id,
-            image,
+            images,
             text,
             like_count: 0,
             reply_count: 0
