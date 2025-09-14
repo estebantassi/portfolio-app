@@ -10,12 +10,13 @@ let lookup
 })()
 
 function getClientIp(req) {
-  const xForwarded = req.headers['x-forwarded-for']
+  if (!req) return NonNullable
+
+  const xForwarded = req.headers?.['x-forwarded-for']
   if (xForwarded) {
     return xForwarded.split(',')[0].trim()
   }
-
-  return req.socket.remoteAddress
+  return req.socket?.remoteAddress || req.connection?.remoteAddress || null
 }
 
 function getGeoFromIp(ip) {
