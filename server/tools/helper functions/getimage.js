@@ -12,7 +12,7 @@ const GetImage = async (filepath) => {
             action: 'read',
             expires: Date.now() + 60 * 60 * 1000,
         }
-        const [signedUrl] = bucket.file(filepath).getSignedUrl(options)
+        const [signedUrl] = await bucket.file(filepath).getSignedUrl(options)
 
         await setCachedValue(filepath, 55 * 60, signedUrl)
         return signedUrl
