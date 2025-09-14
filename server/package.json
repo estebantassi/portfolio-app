@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "dev": "nodemon --no-deprecation index"
+    "dev": "nodemon --no-deprecation index",
+    "start": "node index.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
