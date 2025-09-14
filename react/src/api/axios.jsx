@@ -1,5 +1,5 @@
 import axios from 'axios'
-const BASE_URL = 'http://localhost:4444'
+const BASE_URL = 'https://portfolio-app-yyju.onrender.com'
 
 export default axios.create({
     baseURL: BASE_URL

@@ -34,10 +34,12 @@ const {
     getPosts,
     getPostsAbove,
     deletePost
-} = require('./config/limiters');
+} = require('./config/limiters')
 
 const app = express()
 const PORT = process.env.PORT
+
+app.set('trust proxy', 1)
 
 //WEB SOCKETS
 const server = http.createServer(app)

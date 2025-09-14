@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
         const handleSocketUpdate = async () => {
             try {
                 //Connect to websockets after 1 second on page reload to prevent spamming
-                socketioRef.current = io('http://localhost:4444', {
+                socketioRef.current = io('https://portfolio-app-yyju.onrender.com', {
                     path: '/auth/socket.io',
                     withCredentials: true,
                 })
