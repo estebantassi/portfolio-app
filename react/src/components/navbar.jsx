@@ -15,7 +15,7 @@ function Navbar() {
       {!user && <NavLink className="navlink navbar-element" to="/login"><span className="navbar-text">Login</span><LogIn /></NavLink>}
       {!user && <NavLink className="navlink navbar-element" to="/signup"><span className="navbar-text">Signup</span><ClipboardPen /></NavLink>}
 
-      {user && <NavLink className="navlink navbar-element" to={`/profile/${user.tag}`}><img src={avatar} alt="avatar" /></NavLink> }
+      {user && <NavLink className="navlink navbar-element" to={`/profile/${user.id}`}><img src={avatar} alt="avatar" /></NavLink> }
       {user && <NavLink className="navlink navbar-element" to="/notifications"><span className="navbar-text">Notification</span><Bell /></NavLink> }
       {user && <NavLink className="navlink navbar-element" to="/accountsettings"><span className="navbar-text">Settings</span><Settings /></NavLink> }
       {user && <NavLink className="navlink navbar-element" to="/logout"><span className="navbar-text">Logout</span><LogOut /></NavLink> }
