@@ -25,6 +25,13 @@ export const CallProvider = ({ children }) => {
 
     const iceCandidateQueue = useRef([]);
 
+    const [remoteStream, setRemoteStream] = useState(null)
+    useEffect(() => {
+        if (remoteStream && remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = remoteStream
+            remoteAudioRef.current.play().catch(err => console.warn(err))
+        }
+    }, [remoteStream])
 
 
     useEffect(() => {
@@ -86,18 +93,7 @@ export const CallProvider = ({ children }) => {
         const peer = new RTCPeerConnection()
 
         peer.ontrack = (event) => {
-            if (remoteAudioRef.current) {
-                remoteAudioRef.current.srcObject = event.streams[0]
-                remoteAudioRef.current.play().catch(err => console.warn("Audio play error:", err))
-            } else {
-                console.warn("remoteAudioRef is null; delaying assignment")
-                setTimeout(() => {
-                    if (remoteAudioRef.current) {
-                        remoteAudioRef.current.srcObject = event.streams[0]
-                        remoteAudioRef.current.play().catch(err => console.warn("Audio play error:", err))
-                    }
-                }, 100)
-            }
+            setRemoteStream(event.streams[0])
         }
 
         peer.onicecandidate = (event) => {
