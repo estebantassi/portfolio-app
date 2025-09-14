@@ -18,7 +18,6 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
     if (post.id == 0) return null
     const created_at = (new Date(post.created_at)).toLocaleString()
     const formateddate = formatTime(post.created_at)
-    console.log(post)
 
     return (
         <div className={(type == "reply" ? 'reply' : 'postabove') + " post"} onClick={() => {
