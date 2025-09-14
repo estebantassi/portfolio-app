@@ -76,7 +76,7 @@ const LoginCode = async (req, res) => {
         res.cookie("accesstoken", accesstoken, {
             httpOnly: true,
             secure: true,
-            sameSite: 'Strict',
+            sameSite: 'none',
             path: "/auth",
             maxAge: accessDurationMs
         })
@@ -98,7 +98,7 @@ const LoginCode = async (req, res) => {
         res.cookie("refreshtoken", refreshtoken, {
             httpOnly: true,
             secure: true,
-            sameSite: 'Strict',
+            sameSite: 'none',
             path: "/auth/refreshtoken",
             maxAge: refreshDurationMs
         })

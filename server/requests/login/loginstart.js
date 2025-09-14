@@ -30,7 +30,7 @@ const LoginStart = async (req, res) => {
         res.cookie("logintoken", temptoken, {
             httpOnly: true,
             secure: true,
-            sameSite: 'Strict',
+            sameSite: 'none',
             path: "/logintoken",
             maxAge: tempDurationMs
         })

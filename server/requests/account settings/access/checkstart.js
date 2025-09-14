@@ -33,7 +33,7 @@ const CheckStart = async (req, res) => {
         res.cookie("sensitivedatatoken", sensitivedatatoken, {
             httpOnly: true,
             secure: true,
-            sameSite: 'Strict',
+            sameSite: 'none',
             path: "/auth/sensitivedata",
             maxAge: sensitivedataDurationMs
         })
