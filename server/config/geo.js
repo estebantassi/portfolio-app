@@ -10,8 +10,6 @@ let lookup
 })()
 
 function getClientIp(req) {
-  return "0"
-  
   const xForwarded = req.headers['x-forwarded-for']
   if (xForwarded) {
     return xForwarded.split(',')[0].trim()

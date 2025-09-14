@@ -13,7 +13,7 @@ function initSocket(server) {
     io = new Server(server, {
         path: '/auth/socket.io',
         cors: {
-            origin: 'http://localhost:5173',
+            origin: 'https://portfolio-app-client-8j4e.onrender.com',
             credentials: true,
         },
     })
