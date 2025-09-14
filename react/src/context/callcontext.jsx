@@ -86,8 +86,18 @@ export const CallProvider = ({ children }) => {
         const peer = new RTCPeerConnection()
 
         peer.ontrack = (event) => {
-            remoteAudioRef.current.srcObject = event.streams[0]
-            remoteAudioRef.current.play()
+            if (remoteAudioRef.current) {
+                remoteAudioRef.current.srcObject = event.streams[0]
+                remoteAudioRef.current.play().catch(err => console.warn("Audio play error:", err))
+            } else {
+                console.warn("remoteAudioRef is null; delaying assignment")
+                setTimeout(() => {
+                    if (remoteAudioRef.current) {
+                        remoteAudioRef.current.srcObject = event.streams[0]
+                        remoteAudioRef.current.play().catch(err => console.warn("Audio play error:", err))
+                    }
+                }, 100)
+            }
         }
 
         peer.onicecandidate = (event) => {
