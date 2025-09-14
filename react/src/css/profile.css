@@ -70,6 +70,8 @@
   bottom: 6%;
   left: 2%;
   height: 50%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
   border-radius: 100%;
 }
 

@@ -40,7 +40,7 @@ const Post = memo(forwardRef(({ link, post, poster, navigate, setRepliedto, setS
 
                 <div className='post-data' >
                     {post?.text && <h2>{post.text}</h2>}
-                    {post?.images && <img className='clickable' src={post.images[0]} alt="image" onClick={(e) => {
+                    {post?.images[0] && <img className='clickable' src={post.images[0]} alt="image" onClick={(e) => {
                         e.stopPropagation()
                         showImage(post.images[0], "image")
                     }} />}
