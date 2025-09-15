@@ -37,7 +37,7 @@ const {
 } = require('./config/limiters')
 
 const app = express()
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3000
 
 app.set('trust proxy', 1)
 
