@@ -1,7 +1,0 @@
- {
-  "schemaVersion": 2,
-  "dockerfileLines": [
-                        "npm install",
-                        "npm start"
-                    ]
- }
