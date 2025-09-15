@@ -4,7 +4,7 @@
     "# Use official Node.js image",
     "FROM node:20-alpine",
     
-    "COPY /captain/data/secrets/server/key.json /usr/src/app"
+    "COPY /captain/data/secrets/server/key.json /usr/src/app",
 
     "# Set working directory to /usr/src/app",
     "WORKDIR /usr/src/app",
