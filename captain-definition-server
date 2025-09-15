@@ -4,11 +4,14 @@
     "# Use official Node.js image",
     "FROM node:20-alpine",
     
+    "COPY /captain/data/secrets/server/key.json /usr/src/app"
+
     "# Set working directory to /usr/src/app",
     "WORKDIR /usr/src/app",
     
     "# Copy package.json and package-lock.json from the server folder",
     "COPY server/package*.json ./",
+    
     
     "# Install dependencies",
     "RUN npm install --production",
