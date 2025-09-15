@@ -10,7 +10,7 @@ let lookup
 })()
 
 function getClientIp(req) {
-  if (!req) return NonNullable
+  if (!req) return null
 
   const xForwarded = req.headers?.['x-forwarded-for']
   if (xForwarded) {

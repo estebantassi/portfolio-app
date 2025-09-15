@@ -24,9 +24,7 @@ function Profile() {
 
     const [isBlocked, setIsBlocked] = useState(false)
     const [isBlocking, setIsBlocking] = useState(false)
-
-    const [showProfileEditor, setShowProfileEditor] = useState(false)
-
+    
     useEffect(() => {
         if (!socket) return
 
