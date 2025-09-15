@@ -17,7 +17,7 @@
     "COPY server/. ./",
     
     "# Expose the port your app listens on",
-    "EXPOSE $PORT",
+    "EXPOSE 3000",
     
     "# Start the server",
     "CMD [\"npm\", \"start\"]"
