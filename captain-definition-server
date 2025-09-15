@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "dockerfileLines": [
     "# Use official Node.js image",
-    "FROM node:8",
+    "FROM node:20-alpine",
   
     "# Set working directory to /usr/src/app",
     "WORKDIR /usr/src/app",
