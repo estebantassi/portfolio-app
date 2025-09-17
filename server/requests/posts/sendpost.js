@@ -29,7 +29,7 @@ const SendPost = async (req, res) => {
                     .resize({
                         width: 1920,
                         height: 1920,
-                        fit: 'cover',
+                        fit: 'contain',
                         withoutEnlargement: true
                     })
                     .webp()
