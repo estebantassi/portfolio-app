@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
                 socketioRef.current = io('https://nodejsserver.portfolioapp.org', {
                     path: '/auth/socket.io',
                     withCredentials: true,
+                    transports: ['polling']
                 })
 
                 //Initiate socket
