@@ -38,7 +38,7 @@ const UpdateAccessToken = async (req, res) => {
         res.cookie("accesstoken", accesstoken, {
             httpOnly: true,
             secure: true,
-            sameSite: 'none',
+            sameSite: 'Strict',
             path: "/auth",
             maxAge: accessDurationMs
         })
@@ -68,7 +68,7 @@ const UpdateAccessToken = async (req, res) => {
         res.cookie("refreshtoken", newrefreshtoken, {
             httpOnly: true,
             secure: true,
-            sameSite: 'none',
+            sameSite: 'Strict',
             path: "/auth/refreshtoken",
             maxAge: refreshDurationMs
         })

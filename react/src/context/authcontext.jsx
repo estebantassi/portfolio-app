@@ -124,7 +124,11 @@ export const AuthProvider = ({ children }) => {
     //Update user on change and restart the auth logic
     useEffect(() => {
         if (!user) return
-        Cookies.set("user", JSON.stringify(user))
+        Cookies.set("user", JSON.stringify(user), {
+            expires: 3650,
+            secure: true,
+            sameSite: "Strict",
+        })
 
     }, [user])
     
