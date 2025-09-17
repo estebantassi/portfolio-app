@@ -26,7 +26,6 @@ const GetUserProfile = async (req, res) => {
         for (const id of ids)
         {
             let cacheduser = JSON.parse(await getCachedValue(`profile/${id}`))
-            console.log(cacheduser)
             if (cacheduser) {
                 cacheduser.id = id
                 cacheduser.avatar = await GetImage(cacheduser.avatar == 1 ? `${id}/avatar` : "default/avatar")
@@ -60,7 +59,9 @@ const GetUserProfile = async (req, res) => {
                     id: request.id
                 }
 
+                console.log("i got you")
                 await setCachedValue(`profile/${request.id}`, process.env.PROFILE_CACHE_DURATION, JSON.stringify(profile))
+                console.log("you'r there arent u")
 
                 
                 profile.avatar = await GetImage(request.avatar == 1 ? `${request.id}/avatar` : "default/avatar")
