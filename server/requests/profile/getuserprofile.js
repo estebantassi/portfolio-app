@@ -59,10 +59,7 @@ const GetUserProfile = async (req, res) => {
                     id: request.id
                 }
 
-                console.log("i got you")
                 await setCachedValue(`profile/${request.id}`, process.env.PROFILE_CACHE_DURATION, JSON.stringify(profile))
-                console.log("you'r there arent u")
-
                 
                 profile.avatar = await GetImage(request.avatar == 1 ? `${request.id}/avatar` : "default/avatar")
                 profile.banner = await GetImage(request.banner == 1 ? `${request.id}/banner` : "default/banner")
