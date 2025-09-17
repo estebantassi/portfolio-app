@@ -2,12 +2,14 @@
   "schemaVersion": 2,
   "dockerfileLines": [
     "FROM node:23.6.1 AS build-server",
+
+    "RUN apk add --no-cache python3 make g++ libc6-compat",
   
     "WORKDIR /usr/src/server",
     
     "COPY server/package*.json ./",
     
-    "RUN npm install",
+    "RUN npm ci",
     
     "COPY server/. ./",
     
