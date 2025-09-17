@@ -12,6 +12,8 @@
     async function connectRedis() {
     if (!redisClient.isOpen) {
         await redisClient.connect()
+    } else {
+        console.log("redis used")
     }
     }
 
