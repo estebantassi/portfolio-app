@@ -63,6 +63,7 @@ const GetPostsAbove = async (req, res) => {
         try {
             const makeRequest = makeFakeReqRes()
             makeRequest.req.query.id = ids
+            console.log(ids)
             profiles = (await GetUserProfile(makeRequest.req, makeRequest.res))._getStore().body.profiles
         } catch (err) { return }
 
