@@ -12,10 +12,13 @@ const GetPostsAbove = async (req, res) => {
             
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
+        if (postid == 0) return res.status(200).json({ message: "Data retrieved", posts: [], end: true})
+            
         let currentid = postid
         let postIds = []
 
         const batchSize = parseInt(process.env.POSTSABOVE_FETCH_SIZE, 10)
+
 
         while (true) {
             const [[post]] = await db.query(`
