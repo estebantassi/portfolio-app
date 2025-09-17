@@ -5,6 +5,7 @@ const { validatetoken } = require('../tools/tools')
 const { getCachedValue, deleteCachedValue, setCachedValue } = require('./redis')
 const { GetFollowStateServer } = require('../requests/profile/follow/getfollowstateserver')
 const { GetBlockStateServer } = require('../requests/profile/block/getblockstateserver')
+const allowedOrigins = require('./cors-allowed-origins');
 require('dotenv').config()
 
 let io
@@ -13,7 +14,7 @@ function initSocket(server) {
     io = new Server(server, {
         path: '/auth/socket.io',
         cors: {
-            origin: 'https://portfolio-app-client-8j4e.onrender.com',
+            origin: allowedOrigins,
             credentials: true,
         },
     })
