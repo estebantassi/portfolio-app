@@ -34,6 +34,8 @@ const GetPosts = async (req, res) => {
         let params = data?.id ? [data.id, date.toISOString(), repliedto, batchSize + 1, offset] : [date.toISOString(), repliedto, batchSize + 1, offset]
         let [request] = await db.query(sql, params)
 
+        console.log(request)
+
         const hasMore = request.length > batchSize
         request = request.slice(0, batchSize)
 

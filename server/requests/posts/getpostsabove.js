@@ -12,8 +12,6 @@ const GetPostsAbove = async (req, res) => {
             
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
 
-        if (postid == 0) return res.status(200).json({ message: "Data retrieved", posts: [], end: true})
-            
         let currentid = postid
         let postIds = []
 
@@ -66,7 +64,6 @@ const GetPostsAbove = async (req, res) => {
         try {
             const makeRequest = makeFakeReqRes()
             makeRequest.req.query.id = ids
-            console.log(ids)
             profiles = (await GetUserProfile(makeRequest.req, makeRequest.res))._getStore().body.profiles
         } catch (err) { return }
 
