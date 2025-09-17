@@ -64,6 +64,7 @@ const GetPostsAbove = async (req, res) => {
             const makeRequest = makeFakeReqRes()
             makeRequest.req.query.id = ids
             profiles = (await GetUserProfile(makeRequest.req, makeRequest.res))._getStore().body.profiles
+            console.log(profiles)
         } catch (err) { return }
 
         const profileMap = new Map()

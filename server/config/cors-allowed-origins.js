@@ -1,5 +1,7 @@
+require('dotenv').config()
+
 const allowedOrigins = [
-    "https://reactclient.portfolioapp.org"
+    process.env.WEBSITE_URL
 ];
 
 module.exports = allowedOrigins
