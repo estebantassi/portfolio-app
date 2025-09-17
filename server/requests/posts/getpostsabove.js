@@ -16,7 +16,6 @@ const GetPostsAbove = async (req, res) => {
         let postIds = []
 
         const batchSize = parseInt(process.env.POSTSABOVE_FETCH_SIZE, 10)
-        console.log("batch size " + batchSize)
 
         while (true) {
             const [[post]] = await db.query(`
