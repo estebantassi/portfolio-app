@@ -156,7 +156,13 @@ function Notifications() {
       if (response.data.end) return
 
     } catch (err) {
-      if (err?.response?.status == 401) await updatetoken()
+      if (err?.response?.status == 401) {
+        const isloggedin = await updatetoken()
+        if (isloggedin) {
+          canLoadNotificationsRef.current = true
+          return GetNotifications(offset)
+        }
+      }
       else addToast(err.response?.data?.message || "An error occurred", "red")
     }
 
