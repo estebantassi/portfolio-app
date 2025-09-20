@@ -29,9 +29,8 @@ const SendPost = async (req, res) => {
                     .resize({
                         width: 1920,
                         height: 1920,
-                        fit: 'contain',
+                        fit: 'inside',
                         withoutEnlargement: true,
-                        background: { r: 0, g: 0, b: 0, alpha: 0 }
                     })
                     .webp()
                     .toBuffer()
