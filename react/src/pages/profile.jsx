@@ -162,7 +162,10 @@ function Profile() {
                         </div>
                     </div>
 
-                    {userdata.username && <h1>{userdata.username}</h1>}
+                    <div className='profile-usernamebox'>
+                        {userdata.username && <h1>{userdata.username}</h1>}
+                        {userdata.tag && <h2 className='profile-tag'>@{userdata.tag}</h2>}
+                    </div>
                     {userdata.bio && <h2 className='bio'>{userdata.bio}</h2>}
 
                     {user && user.id != link ? <>

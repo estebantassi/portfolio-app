@@ -28,6 +28,17 @@
   height: 50%;
 }
 
+.profile-usernamebox{
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.profile-tag{
+  color: gray;
+}
+
 .profile-avatar-wrapper > img{
   height: 100%;
   border-radius: 100%;
