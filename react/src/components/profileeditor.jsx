@@ -80,7 +80,12 @@ function ProfileEditor({ setUserdata }) {
     const usernameInputRef = useRef(null)
     const biographyInputRef = useRef(null)
     const tagInputRef = useRef(null)
-    const editprofileButtonDisabled = isNetworkButtonDisabled || !usernameInputRef.current?.checkValidity() || !biographyInputRef.current?.checkValidity() || !tagInputRef.current?.checkValidity() || (!isNaN(data.tag) && data.tag != user.id)
+    const [editprofileButtonDisabled, setEditprofileButtonDisabled] = useState(true)
+
+    useEffect(() => {
+        setEditprofileButtonDisabled(isNetworkButtonDisabled || !usernameInputRef.current?.checkValidity() || !biographyInputRef.current?.checkValidity() || !tagInputRef.current?.checkValidity() || (!isNaN(data.tag) && data.tag != user.id))
+    }, [data])
+
 
     return (
         user && <>
