@@ -182,13 +182,9 @@ export const AuthProvider = ({ children }) => {
                 signal: networkControllerRef.current.signal
             })
 
-            addToast(response?.data?.message || "Success", "green")
+            addToast(response?.data?.message || "Successfully logged out", "green")
         } catch (err) {
-            if (err?.response?.status == 401) {
-                const isloggedin = await updatetoken()
-                if (isloggedin) logout()
-            }
-            else addToast(err.response?.data?.message || "An error occurred", "red")
+            addToast(err.response?.data?.message || "An error occurred", "red")
         }
 
         navigate("/home")

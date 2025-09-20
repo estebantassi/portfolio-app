@@ -148,6 +148,11 @@ export const CallProvider = ({ children }) => {
         if (userdata.id == isInCallRef?.current?.data?.id) return
         else if (isInCallRef.current) await endCall()
 
+        if (remoteAudioRef.current && remoteStream) {
+            remoteAudioRef.current.srcObject = remoteStream
+            remoteAudioRef.current.play().catch(err => console.warn(err))
+        }
+
         try {
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true })
 
@@ -195,6 +200,10 @@ export const CallProvider = ({ children }) => {
                 })
 
                 if (response?.data?.state == false) return endCall(false)
+
+                const audio = remoteAudioRef.current
+                audio.muted = true
+                audio.play().then(() => { audio.muted = false })
 
             } catch (err) {
                 if (err?.response?.status == 401) {
@@ -301,7 +310,7 @@ export const CallProvider = ({ children }) => {
                     {shortUsername && <h2>{shortUsername}</h2>}
 
                     <PhoneOff draggable="false" className="clickable-icon" onClick={() => { isInCall.online ? endCall() : endCall(false) }}/>
-                    <audio ref={remoteAudioRef} autoPlay />
+                    <audio ref={remoteAudioRef} autoPlay playsInline />
                 </div>
             </>}
             {children}

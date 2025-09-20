@@ -274,10 +274,7 @@ function Messages() {
 
             if (response.data.end) return
         } catch (err) {
-            if (err?.response?.status == 401) {
-                const isloggedin = await updatetoken()
-                if (isloggedin) getmessages()
-            }
+            if (err?.response?.status == 401) await updatetoken()
             else {
                 addToast(err.response?.data?.message || "An error occurred", "red")
                 if (err?.response?.status == 403) navigate("/profile/" + link)

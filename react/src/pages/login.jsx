@@ -34,7 +34,6 @@ function Login() {
         {
           email: data.email
         }, {
-        withCredentials: true,
         signal: networkControllerRef.current.signal
       })
 

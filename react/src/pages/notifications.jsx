@@ -156,9 +156,7 @@ function Notifications() {
       if (response.data.end) return
 
     } catch (err) {
-      if (err?.response?.status == 401) {
-        await updatetoken()
-      }
+      if (err?.response?.status == 401) await updatetoken()
       else addToast(err.response?.data?.message || "An error occurred", "red")
     }
 
