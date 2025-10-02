@@ -37,7 +37,7 @@ const LoginCode = async (req, res) => {
             [[request]] = await connection.query(`
                 SELECT expires_at, id
                 FROM tokens
-                WHERE userid=? AND value=? AND type=?
+                WHERE userid=? AND BINARY value=? AND type=?
                 LIMIT 1
             `, [data.id, req.body.code, 'logincode'])
 
