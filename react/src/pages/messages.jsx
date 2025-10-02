@@ -221,6 +221,7 @@ function Messages() {
                 formdata.append('image', blob)
             }
 
+            setCanSendMessage(false)
             const message = await axios.post('/auth/sendmessage',
                 formdata, {
                 withCredentials: true,
@@ -230,9 +231,10 @@ function Messages() {
             if (message.data == null || message.data.messagedata == null) throw 'Error'
             message.data.messagedata.text = messagetext
 
-            setImage("")
-            setImagePreview("") 
+            setImage(null)
+            setImagePreview(null) 
             setMessagetext("")
+            setCanSendMessage(true)
         } catch (err) {
             if (err?.response?.status == 401) {
                 const isloggedin = await updatetoken()
@@ -316,6 +318,7 @@ function Messages() {
     }, [])
 
     const [isImageCompressed, setIsImageCompressed] = useState(true)
+    const [canSendMessage, setCanSendMessage] = useState(true)
 
     return (
         <>
@@ -399,8 +402,8 @@ function Messages() {
                         setIsImageCompressed(true)
                     }}/>
                     
-                    <Send className={`message-send-icon ${isImageCompressed ? "clickable-icon" : "unclickable-icon"}`} onClick={(e) => {
-                        if (isImageCompressed) sendmessage(e)
+                    <Send className={`message-send-icon ${(isImageCompressed && canSendMessage && (messagetext != "" || image)) ? "clickable-icon" : "unclickable-icon"}`} onClick={(e) => {
+                        if (isImageCompressed && canSendMessage && (messagetext != "" || image)) sendmessage(e)
                     }}/>
                 </form>
 
