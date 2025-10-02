@@ -32,16 +32,19 @@ function ProfileEditor({ setUserdata }) {
         return () => window.removeEventListener("keydown", handleKeyDown)
     }, [show])
 
-    const close = async () => {
-        setData({
-            username: user.username,
-            tag: user.tag,
-            bio: user.bio,
-            avatar: avatar,
-            avatarurl: null,
-            banner: banner,
-            bannerurl: null
-        })
+    const close = async (resetdata = true) => {
+        if (resetdata)
+        {
+            setData({
+                username: user.username,
+                tag: user.tag,
+                bio: user.bio,
+                avatar: avatar,
+                avatarurl: null,
+                banner: banner,
+                bannerurl: null
+            })
+        }
 
         setShow(false)
     }
@@ -68,6 +71,7 @@ function ProfileEditor({ setUserdata }) {
 
             setUser(prev => ({ ...prev, username: data.username, bio: data.bio, tag: data.tag }))
             addToast(response?.data?.message || "Success", "green")
+            close(false)
         } catch (err) {
             if (err?.response?.status == 401) {
                 const isloggedin = await updatetoken()
