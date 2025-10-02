@@ -13,6 +13,8 @@ import "../css/messages.css"
 import { Phone, Trash } from 'lucide-react'
 import { useImageViewer } from '../context/imageviewercontext'
 import { ImageUp, CircleX, Send, ChevronDown } from 'lucide-react'
+import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { fetchFile } from '@ffmpeg/util'
 
 const MessageItem = memo(({ msg, userId, onDelete, showImage, userdata }) => {
     const created_at = new Date(msg.created_at).toLocaleString()
@@ -53,6 +55,8 @@ function Messages() {
     const [messagetext, setMessagetext] = useState("")
     const [messages, setMessages] = useState([])
     const secretRef = useRef(null)
+
+    const ffmpeg = new FFmpeg()
 
     const [image, setImage] = useState()
     const [imagePreview, setImagePreview] = useState()
@@ -311,6 +315,8 @@ function Messages() {
         setIsNetworkButtonDisabled(false)
     }, [])
 
+    const [isImageCompressed, setIsImageCompressed] = useState(true)
+
     return (
         <>
             <div className='wrapper'>
@@ -358,16 +364,44 @@ function Messages() {
                         </label>
                     </div>
 
-                    <input id='messageimg' hidden type="file" accept="image/*" onChange={(e) => {
+                    <input id='messageimg' hidden type="file" accept="image/*" onChange={async (e) => {
                         const file = e.target.files[0]
-                        if (file) {
-                            setImage(file)
-                            setImagePreview(URL.createObjectURL(file))
+                        e.target.value = null
+                        if (!file) return
+                        setIsImageCompressed(false)
+                        setImagePreview(URL.createObjectURL(file))
+
+                        await ffmpeg.load()
+
+                        try { await ffmpeg.unlink("input.webp") } catch {}
+                        try { await ffmpeg.unlink("output.webp") } catch {}
+
+                        await ffmpeg.writeFile("input.webp", await fetchFile(file))
+
+                        await ffmpeg.exec([
+                            "-i",
+                            "input.webp",
+                            "-vf",
+                            "scale='min(1920,iw)':'min(1920,ih)':force_original_aspect_ratio=decrease",
+                            "-c:v",
+                            "libwebp",
+                            "-q:v",
+                            "80",
+                            "output.webp"
+                        ])
+
+                        const data = await ffmpeg.readFile('output.webp')
+                        const webpBlob = new Blob([data.buffer], { type: "image/webp" })
+
+                        if (webpBlob) {
+                            setImage(new File([webpBlob], "messageimage.webp", { type: "image/webp" }))
                         }
+                        setIsImageCompressed(true)
                     }}/>
                     
-
-                    <Send className="message-send-icon clickable-icon" onClick={(e) => sendmessage(e)}/>
+                    <Send className={`message-send-icon ${isImageCompressed ? "clickable-icon" : "unclickable-icon"}`} onClick={(e) => {
+                        if (isImageCompressed) sendmessage(e)
+                    }}/>
                 </form>
 
             </div>

@@ -87,6 +87,11 @@ html, body, #root{
     margin: 0;
 }
 
+.unclickable-icon{
+    opacity: 0.75;
+}
+
+
 .clickable-icon{
     transition: all 0.1s;
 }
