@@ -81,14 +81,15 @@ const GetTokenData = async (req, token, type) => {
             return null
         }
 
-        if (type == "refresh" || type == "access")
-        {
-            if (decode.ip == null || cachedtoken.ip == null) return null
+        ////UNCOMMENT WHEN USING IP BASED TOKENS
+        // if (type == "refresh" || type == "access")
+        // {
+        //     if (decode.ip == null || cachedtoken.ip == null) return null
 
-            const ip = getClientIp(req)
-            const match = await bcrypt.compare(ip, cachedtoken.ip)
-            if (!match) return null
-        }
+        //     const ip = getClientIp(req)
+        //     const match = await bcrypt.compare(ip, cachedtoken.ip)
+        //     if (!match) return null
+        // }
 
         decode.tokenid = cachedtoken.id
         return decode
