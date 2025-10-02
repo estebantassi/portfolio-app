@@ -1,7 +1,7 @@
 function formatTime(dateString) {
   const date = new Date(dateString)
   const now = new Date()
-  const diffMs = now - date
+  const diffMs = Math.max(0, now - date)
   const diffSec = Math.floor(diffMs / 1000)
   const diffMin = Math.floor(diffSec / 60)
   const diffHr = Math.floor(diffMin / 60)
