@@ -350,7 +350,12 @@ function Messages() {
                         <ChevronDown/>
                     </div>}
 
-                <form className='message-sender' onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && (isImageCompressed && canSendMessage && (messagetext != "" || image))) sendmessage(e) }}>
+                <form className='message-sender' onKeyDown={(e) => { 
+                    if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault()
+                        if (isImageCompressed && canSendMessage && (messagetext !== "" || image)) sendmessage(e)
+                    }
+                 }}>
 
                     {imagePreview && <div className='message-preview-image'>
                         <img src={imagePreview} alt="imagetosend"/>
