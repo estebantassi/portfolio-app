@@ -73,14 +73,14 @@ const SendPost = async (req, res) => {
         let images = []
         if (image)
         {
-            await bucket.file(`${data.id}/posts/${post.insertId}/0`).save(image, {
+            await bucket.file(`users/${data.id}/posts/${post.insertId}/0`).save(image, {
                 metadata: {
                     contentType: 'image/webp',
                     cacheControl: 'no-store'
                 }
             })
 
-            images = await GetImagesFromFolder(`${data.id}/posts/${post.insertId}/`)
+            images = await GetImagesFromFolder(`users/${data.id}/posts/${post.insertId}/`)
         }
 
         const postdata = {

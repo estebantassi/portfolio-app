@@ -38,7 +38,7 @@ const DeletePost = async (req, res) => {
 
         if (post.image == 1) {
             try {
-                await DeleteImageFromFolder(`${data.id}/posts/${postid}/`)
+                await DeleteImageFromFolder(`users/${data.id}/posts/${postid}/`)
             } catch (err) {
                 if (err.code !== 404) throw err
             }

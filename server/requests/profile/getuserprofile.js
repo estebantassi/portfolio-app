@@ -28,8 +28,8 @@ const GetUserProfile = async (req, res) => {
             let cacheduser = JSON.parse(await getCachedValue(`profile/${id}`))
             if (cacheduser) {
                 cacheduser.id = id
-                cacheduser.avatar = await GetImage(cacheduser.avatar == 1 ? `${id}/avatar` : "default/avatar")
-                cacheduser.banner = await GetImage(cacheduser.banner == 1 ? `${id}/banner` : "default/banner")
+                cacheduser.avatar = await GetImage(cacheduser.avatar == 1 ? `users/${id}/avatar` : "default/avatar")
+                cacheduser.banner = await GetImage(cacheduser.banner == 1 ? `users/${id}/banner` : "default/banner")
                 finalprofiles.push(cacheduser)
             }
             else requestedprofiles.push(parseInt(id, 10))
@@ -61,8 +61,8 @@ const GetUserProfile = async (req, res) => {
 
                 await setCachedValue(`profile/${request.id}`, process.env.PROFILE_CACHE_DURATION, JSON.stringify(profile))
                 
-                profile.avatar = await GetImage(request.avatar == 1 ? `${request.id}/avatar` : "default/avatar")
-                profile.banner = await GetImage(request.banner == 1 ? `${request.id}/banner` : "default/banner")
+                profile.avatar = await GetImage(request.avatar == 1 ? `users/${request.id}/avatar` : "default/avatar")
+                profile.banner = await GetImage(request.banner == 1 ? `users/${request.id}/banner` : "default/banner")
 
                 finalprofiles.push(profile)
             }

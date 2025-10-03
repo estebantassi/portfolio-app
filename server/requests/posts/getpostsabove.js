@@ -57,7 +57,7 @@ const GetPostsAbove = async (req, res) => {
         let ids = []
         for (const post of posts) {
             ids.push(post.poster_id)
-            post.images = post.image ? await GetImagesFromFolder(`${post.poster_id}/posts/${post.id}/`) : []
+            post.images = post.image ? await GetImagesFromFolder(`users/${post.poster_id}/posts/${post.id}/`) : []
         }
 
         let profiles = []

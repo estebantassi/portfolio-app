@@ -40,7 +40,7 @@ const GetPosts = async (req, res) => {
         let ids = []
         for (const post of request) {
             ids.push(parseInt(post.poster_id, 10))
-            const path = `${post.poster_id}/posts/${post.id}/`
+            const path = `users/${post.poster_id}/posts/${post.id}/`
             post.images = post.image ? await GetImagesFromFolder(path) : []
         }
 
