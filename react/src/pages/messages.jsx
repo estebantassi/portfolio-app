@@ -75,6 +75,8 @@ function Messages() {
     useEffect(() => {
         if (!socket) return
 
+        setCanSendMessage(true)
+
         socket.on('newmessage', async (data) => {
             let message
             try {
@@ -318,7 +320,7 @@ function Messages() {
     }, [])
 
     const [isImageCompressed, setIsImageCompressed] = useState(true)
-    const [canSendMessage, setCanSendMessage] = useState(true)
+    const [canSendMessage, setCanSendMessage] = useState(false)
 
     return (
         <>
@@ -353,7 +355,7 @@ function Messages() {
                 <form className='message-sender' onKeyDown={(e) => { 
                     if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault()
-                        if (isImageCompressed && canSendMessage && (messagetext !== "" || image)) sendmessage(e)
+                        if (isImageCompressed && canSendMessage && socket && (messagetext !== "" || image)) sendmessage(e)
                     }
                  }}>
 
@@ -407,8 +409,8 @@ function Messages() {
                         setIsImageCompressed(true)
                     }}/>
                     
-                    <Send className={`message-send-icon ${(isImageCompressed && canSendMessage && (messagetext != "" || image)) ? "clickable-icon" : "unclickable-icon"}`} onClick={(e) => {
-                        if (isImageCompressed && canSendMessage && (messagetext != "" || image)) sendmessage(e)
+                    <Send className={`message-send-icon ${isImageCompressed && socket && canSendMessage && (messagetext != "" || image) ? "clickable-icon" : "unclickable-icon"}`} onClick={(e) => {
+                        if (isImageCompressed && socket && canSendMessage && (messagetext != "" || image)) sendmessage(e)
                     }}/>
                 </form>
 
