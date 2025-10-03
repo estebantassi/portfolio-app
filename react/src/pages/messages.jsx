@@ -381,16 +381,19 @@ function Messages() {
                         setIsImageCompressed(false)
                         setImagePreview(URL.createObjectURL(file))
 
+                        const ext = file.name.split('.').pop().toLowerCase()
+                        const inputName = `input.${ext}`
+
                         await ffmpeg.load()
 
-                        try { await ffmpeg.unlink("input.webp") } catch {}
+                        try { await ffmpeg.unlink(inputName) } catch {}
                         try { await ffmpeg.unlink("output.webp") } catch {}
 
-                        await ffmpeg.writeFile("input.webp", await fetchFile(file))
+                        await ffmpeg.writeFile(inputName, await fetchFile(file))
 
                         await ffmpeg.exec([
                             "-i",
-                            "input.webp",
+                            inputName,
                             "-vf",
                             "scale='min(1920,iw)':'min(1920,ih)':force_original_aspect_ratio=decrease",
                             "-c:v",
