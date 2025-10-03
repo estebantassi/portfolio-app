@@ -1,7 +1,7 @@
 require('dotenv').config()
 
-const allowedOrigins = process.env.WEBSITE_URL
-  ? process.env.WEBSITE_URL.split(",").map(origin => origin.trim())
+const allowedOrigins = process.env.CORS_URLS
+  ? process.env.CORS_URLS.split(",").map(origin => origin.trim())
   : []
 
 module.exports = allowedOrigins
