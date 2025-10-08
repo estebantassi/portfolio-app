@@ -123,23 +123,20 @@ function validateemail(email) {
 }
 
 function validateusername(username) {
-  const usernameregex = /[\x20-\x7E]/
-  return username != null && typeof username === "string" && usernameregex.test(username)
+  return username != null && typeof username === "string"
   && username.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
   && username.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatetag(tag, id) {
-  const tagregex = /[\x20-\x7E]/
   return tag != null && typeof tag === "string"
-  && (isNaN(tag) || tag == id) && tagregex.test(tag)
+  && (isNaN(tag) || tag == id)
   && tag.length >= parseInt(process.env.MIN_USERNAME_LENGTH, 10)
   && tag.length <= parseInt(process.env.MAX_USERNAME_LENGTH, 10)
 }
 
 function validatebio(bio) {
-  const bioregex = /[\x20-\x7E]/
-  return bio != null && typeof bio === "string" && bioregex.test(bio)
+  return bio != null && typeof bio === "string"
   && bio.length >= parseInt(process.env.MIN_BIO_LENGTH, 10)
   && bio.length <= parseInt(process.env.MAX_BIO_LENGTH, 10)
 }
