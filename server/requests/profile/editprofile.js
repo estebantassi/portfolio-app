@@ -9,6 +9,7 @@ const { validatetoken, validateusername, validatetag, validatebio } = require('.
 const sharp = require('sharp')
 
 const EditProfile = async (req, res) => {
+    let connection
     try {
         let bio = req?.body?.bio
         let username = req?.body?.username
@@ -19,10 +20,13 @@ const EditProfile = async (req, res) => {
         const data = await GetTokenData(req, req?.cookies?.accesstoken, "access")
         if (data == null) return res.status(401).json({ message: "Authentication required" })
 
-        const [[request]] = await db.query(`
+        connection = await db.getConnection()
+        await connection.beginTransaction()
+        const [[request]] = await connection.query(`
             SELECT username, avatar, banner, tag, bio, messagekey_public
             FROM users
             WHERE id=?
+            FOR UPDATE
         `, [data.id])
 
         let updateFields = []
@@ -30,21 +34,42 @@ const EditProfile = async (req, res) => {
 
         if (request?.tag != tag)
         {
-            if (!validatetag(tag, data.id)) return res.status(400).json({message: "Invalid tag format"})
+            if (!validatetag(tag, data.id)) {
+                await connection.rollback()
+                return res.status(400).json({message: "Invalid tag format"})
+            }
+
+            const [[tagrequest]] = await connection.query(`
+                SELECT 1
+                FROM users
+                WHERE tag=?
+            `, [tag])
+
+            if (tagrequest) {
+                await connection.rollback()
+                return res.status(400).json({message: "Tag is already used"})
+            }
+
             updateFields.push(`tag = ?`)
             updateValues.push(tag)
         } else tag = request.tag
 
         if (request?.username != username)
         {
-            if (!validateusername(username)) return res.status(400).json({message: "Invalid username format"})
+            if (!validateusername(username)) {
+                await connection.rollback()
+                return res.status(400).json({message: "Invalid username format"})
+            }
             updateFields.push(`username = ?`)
             updateValues.push(username)
         } else username = request.username
 
         if (request?.bio != bio)
         {
-            if (!validatebio(bio)) return res.status(400).json({message: "Invalid bio format"})
+            if (!validatebio(bio)) {
+                await connection.rollback()
+                return res.status(400).json({message: "Invalid bio format"})
+            }
             updateFields.push(`bio = ?`)
             updateValues.push(bio)
         } else bio = request.bio
@@ -70,7 +95,10 @@ const EditProfile = async (req, res) => {
                     .webp({ quality: 75})
                     .toBuffer()
 
-                if (avatar.length > 500 * 1024) return res.status(400).json({ message: "Your avatar is too big, its compression is over 500KB" })
+                if (avatar.length > 500 * 1024) {
+                    await connection.rollback()
+                    return res.status(400).json({ message: "Your avatar is too big, its compression is over 500KB" })
+                }
 
                 await bucket.file(`users/${data.id}/avatar`).save(avatar, {
                     metadata: {
@@ -81,7 +109,10 @@ const EditProfile = async (req, res) => {
 
                 avatar = `data:image/webp;base64,${avatar.toString('base64')}`
                 updateFields.push('avatar = 1')
-            } else return res.status(400).json({ message: "Invalid avatar format" })
+            } else {
+                await connection.rollback()
+                return res.status(400).json({ message: "Invalid avatar format" })
+            }
         }
 
         if (banner)
@@ -110,7 +141,10 @@ const EditProfile = async (req, res) => {
             
 
 
-                if (banner.length > 1000 * 1024) return res.status(400).json({ message: `Your banner is too big, its compression is over 1MB (${(banner.length / (1024 * 1024)).toFixed(2)}MB)` })
+                if (banner.length > 1000 * 1024) {
+                    await connection.rollback()
+                    return res.status(400).json({ message: `Your banner is too big, its compression is over 1MB (${(banner.length / (1024 * 1024)).toFixed(2)}MB)` })
+                }
 
                 await bucket.file(`users/${data.id}/banner`).save(banner, {
                     metadata: {
@@ -121,16 +155,22 @@ const EditProfile = async (req, res) => {
 
                 banner = `data:image/webp;base64,${banner.toString('base64')}`
                 updateFields.push('banner = 1')
-            } else return res.status(400).json({ message: "Invalid banner format" })
+            } else {
+                await connection.rollback()
+                return res.status(400).json({ message: "Invalid banner format" })
+            }
         }
 
         let combinedfields
         if (updateFields.length > 1) combinedfields = updateFields.join(', ')
         else combinedfields = updateFields[0]
 
-        if (!combinedfields) return res.status(400).json({ message: "Nothing changed" })
+        if (!combinedfields) {
+            await connection.rollback()
+            return res.status(400).json({ message: "Nothing changed" })
+        }
 
-        await db.query(`
+        await connection.query(`
             UPDATE users
             SET ${combinedfields}
             WHERE id=?
@@ -157,10 +197,15 @@ const EditProfile = async (req, res) => {
 
         getIO().to(data.id.toString()).emit('profileupdate', {...newuser, banner, avatar})
 
+        await connection.commit()
+
         return res.status(200).json({message: "Profile edited", avatar, banner})
     } catch (err) {
         if (process.env.STATE == 'dev') console.error(err)
+        if (connection) await connection.rollback()
         return res.status(500).json({message: "An error occured, please try again later"})
+    } finally {
+        if (connection) connection.release()
     }
 }
 
