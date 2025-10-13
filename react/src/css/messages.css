@@ -59,6 +59,11 @@
     flex-direction: row-reverse;
 }
 
+.message-right h3{
+    text-align: left;
+}
+
+
 .message .message-data{
     padding: 20px;
     border-radius: 20px;
