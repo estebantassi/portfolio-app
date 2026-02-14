@@ -4,7 +4,7 @@
 ***
 
 ## 1. Introduction
-- **Who am I ?** My name is Esteban Tassi and I'm a self-taught junior developer. I always wanted to become a game developer, but as I grew up, my mind scattered, I wanted to be a teacher, an artist, or even a translator. I learnt and did a lot of things, traveled, studied, met people. But I always came back to my roots: coding. So after trying different things I decided on using my skills to live, I made this website in hopes of getting hired overseas, because I have no prior experience or proper education. If you're looking for a developer, please consider looking at what I made, as well as my Resume <a href="/images/resume.pdf" style="text-decoration: underline;">here</a>.
+- If you see this I probably sent you my CV and applied for a job. If you came here differently, feel free to contact me at esteban.tassi.perso@gmail.com
 - **What is this project ?** This project is, as the name implies, my portfolio: it shows a variety of skills I possess. It is still a prototype, with bugs and some ugly code. Since the start of this project, I have learnt a lot of things, making some of it obsolete. If you want to know what I'd like to change, please take a look at this <a href="#todo" style="text-decoration: underline;">todo list</a>. I made.
 
 ***
